@@ -1,0 +1,39 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.92"
+repository = "https://github.com/PoHsuanLai/files"
+publish = false
+
+# The layer table in scripts/check-boundary.sh says which of these may name which.
+[workspace.dependencies]
+files-core = { path = "crates/files-core" }
+thiserror = "2"
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_debug_implementations = "warn"
+missing_docs = "warn"
+
+# Matching on our own enums names every variant, so adding one is a compile error wherever it
+# matters. Tests may unwrap (clippy.toml).
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+wildcard_enum_match_arm = "deny"
+match_wildcard_for_single_variants = "deny"
+
+# Line tables only, as quire, sill and anyview build: backtraces keep file and line, and test
+# binaries link in a fraction of the memory and disk.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"

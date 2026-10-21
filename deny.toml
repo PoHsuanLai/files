@@ -1,0 +1,85 @@
+# cargo-deny gate. Run: cargo deny check (advisories, bans, licenses, sources).
+#
+# A dependency whose licence is not listed fails the gate rather than being noticed later by
+# someone reading Cargo.lock.
+
+[graph]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "0BSD",
+    "CC0-1.0",
+    "Unicode-3.0",
+    "Zlib",
+    # Weak, file-level copyleft. The note below says why this one is here and GPL is not.
+    "MPL-2.0",
+]
+confidence-threshold = 0.9
+
+# MPL-2.0 is allowed, and it is a decision rather than an oversight.
+#
+# MPL is file-level copyleft: fine to link or depend on, never to paste source from. That
+# position is about the *licence*, so encoding it per-crate would be busywork. Several crates
+# arrive under it by unrelated routes (stylo, app_units, cssparser and selectors in blitz; option-ext
+# through dirs; freedesktop-desktop-entry in the shell), and the
+# versions churn. anyview reaches them through the Blitz stack once `anyview-ui` exists.
+#
+# Depending on them obliges us to make *those files'* source available, which their registries
+# already do, and obliges nothing of ours. The rule that actually constrains these repositories,
+# do not copy MPL source into them, is not something a dependency gate can check; it lives in
+# CONVENTIONS.md where it can be read by the person about to break it.
+#
+# What stays out of that list is strong copyleft: GPL, AGPL, EUPL. Those would change what this
+# project may be distributed as, and a dependency arriving under one should stop the build.
+
+[advisories]
+ignore = []
+
+[bans]
+# Two versions of one crate are a size and noise cost, not a fault: they warn and never fail.
+multiple-versions = "warn"
+wildcards = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# The pinned git dependencies, all rev-pinned in Cargo.lock: quire and blitz-kit (the desktop
+# manifest's revs), our forks, mpv-wgpu, and
+# taffy (reached through blitz).
+allow-git = [
+    "https://github.com/PoHsuanLai/anyrender",
+    # The viewer's preview, thumbnail and file-kind crates (Quick Look, the icon view). MIT OR Apache-2.0.
+    "https://github.com/PoHsuanLai/anyview",
+    "https://github.com/PoHsuanLai/blitz",
+    "https://github.com/PoHsuanLai/blitz-kit",
+    # The desktop's portable keymap (quire v0.3.14 resolves keys to actions with it, and anyview-core
+    # declares the viewer's own default chords): one rev, quire's. MIT OR Apache-2.0.
+    "https://github.com/PoHsuanLai/chordkit",
+    # dioxus-core 0.7.10 with the dirty-task fix backported (quire's [patch], v0.2.15+).
+    "https://github.com/PoHsuanLai/dioxus",
+    # Single instance without D-Bus (anyview-platform): MIT OR Apache-2.0, one rev in Cargo.toml.
+    "https://github.com/PoHsuanLai/latchkey",
+    "https://github.com/PoHsuanLai/quire",
+    # The plugin library (the wire, the manifest envelope, discovery and the process handling): one
+    # rev in Cargo.toml. MIT OR Apache-2.0.
+    "https://github.com/PoHsuanLai/bayonet",
+    "https://github.com/PoHsuanLai/mpv-wgpu",
+    "https://github.com/PoHsuanLai/vello",
+    # The desktop's agent layer (anyview-platform, quire-desktop): docket at the manifest's rev, and
+    # porter, almanac and stoker at the revs docket pins, and peephole (porter-dbus's caller check,
+    # at the tag porter pins). All MIT OR Apache-2.0.
+    "https://github.com/PoHsuanLai/docket",
+    "https://github.com/PoHsuanLai/porter",
+    "https://github.com/PoHsuanLai/almanac",
+    "https://github.com/PoHsuanLai/stoker",
+    "https://github.com/PoHsuanLai/peephole",
+    "https://github.com/DioxusLabs/taffy",
+]
