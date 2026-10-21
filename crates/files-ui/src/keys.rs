@@ -44,7 +44,8 @@ enum Own {
     EmptyTrash,
     /// Show the properties of the selection (Command+I).
     GetInfo,
-    /// Go to a folder typed by path (Command+Shift+G).
+    /// Go to a folder typed by path (Command+L, the location key of Linux file managers;
+    /// Finder's Shift+Command+G is held by "find previous" in every app for now).
     GoToFolder,
     /// Put the paths of the selection on the clipboard (Command+Option+C).
     CopyAsPathname,
@@ -76,7 +77,7 @@ const OWN: &[(Own, &str, &[&str])] = &[
         &["Primary+Shift+Backspace"],
     ),
     (Own::GetInfo, "files.get-info", &["Primary+I"]),
-    (Own::GoToFolder, "files.go-to-folder", &["Primary+Shift+G"]),
+    (Own::GoToFolder, "files.go-to-folder", &["Primary+L"]),
     (
         Own::CopyAsPathname,
         "files.copy-pathname",

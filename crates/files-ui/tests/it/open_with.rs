@@ -55,7 +55,7 @@ impl Rig {
     }
 
     /// Down to "Open With" (the second line), and Right into its submenu.
-    fn into_submenu(&mut self) {
+    fn enter_submenu(&mut self) {
         self.menu_on_report();
         self.key(ShortcutKey::Down);
         self.key(ShortcutKey::Down);
@@ -71,7 +71,7 @@ fn viewer() -> AppPick {
 #[test]
 fn the_submenu_lists_the_default_first_then_the_rest_by_name_then_other() {
     let mut rig = open();
-    rig.into_submenu();
+    rig.enter_submenu();
     let html = rig.harness.html();
     let at = |text: &str| {
         html.find(text)
@@ -90,7 +90,7 @@ fn the_submenu_lists_the_default_first_then_the_rest_by_name_then_other() {
 #[test]
 fn picking_the_default_opens_the_file_with_it() {
     let mut rig = open();
-    rig.into_submenu();
+    rig.enter_submenu();
     rig.key(ShortcutKey::Enter);
     settle_until(&mut rig.harness, |_| !rig.opener.calls().is_empty());
     assert_eq!(
@@ -105,14 +105,15 @@ fn picking_the_default_opens_the_file_with_it() {
 #[test]
 fn other_lists_every_app_and_a_pick_opens_with_it() {
     let mut rig = open();
-    rig.into_submenu();
+    rig.enter_submenu();
     // Viewer, editor, Zed, then Other.
     for _ in 0..3 {
         rig.key(ShortcutKey::Down);
     }
     rig.key(ShortcutKey::Enter);
     settle_until(&mut rig.harness, |h| {
-        h.html().contains("Choose Application")
+        // The menu blinks its pick and fades out as the sheet comes up.
+        h.html().contains("Choose Application") && h.count(".ds-menu") == 0
     });
     let html = rig.harness.html();
     for text in ["Calculator", "Viewer", "Zed"] {
@@ -139,13 +140,14 @@ fn other_lists_every_app_and_a_pick_opens_with_it() {
 #[test]
 fn escape_puts_the_sheet_of_apps_away_and_opens_nothing() {
     let mut rig = open();
-    rig.into_submenu();
+    rig.enter_submenu();
     for _ in 0..3 {
         rig.key(ShortcutKey::Down);
     }
     rig.key(ShortcutKey::Enter);
     settle_until(&mut rig.harness, |h| {
-        h.html().contains("Choose Application")
+        // The menu blinks its pick and fades out as the sheet comes up.
+        h.html().contains("Choose Application") && h.count(".ds-menu") == 0
     });
     rig.key(ShortcutKey::Escape);
     settle_until(&mut rig.harness, |h| {

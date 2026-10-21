@@ -268,12 +268,14 @@ fn offers(rig: &Rig, paths: &[&str]) -> Vec<(String, Standing)> {
         .collect()
 }
 
+/// A label, the files, and the apps offered for them in order.
+type OfferCase<'a> = (&'a str, Vec<&'a str>, Vec<(&'a str, Standing)>);
+
 #[test]
 fn the_apps_offered_for_files_put_the_default_first() {
     let added = format!("{MIMEAPPS}[Added Associations]\ntext/plain=viewer.desktop;\n");
     let rig = rig(&added, FakeSpawn::new());
-    // label, files, offers
-    let cases: Vec<(&str, Vec<&str>, Vec<(&str, Standing)>)> = vec![
+    let cases: Vec<OfferCase> = vec![
         (
             "one type, two apps",
             vec!["/p/a.txt"],

@@ -157,10 +157,7 @@ fn page(pose: Pose) -> String {
             }
         }
         Pose::GoTo | Pose::GoToWrong => {
-            window.send(Input::chord(
-                &[ShortcutKey::Super, ShortcutKey::Shift],
-                ShortcutKey::Char('g'),
-            ));
+            window.send(Input::chord(&[ShortcutKey::Super], ShortcutKey::Char('l')));
             settle_until(&mut window, |h| h.count(".ds-text-field") > 0);
             if matches!(pose, Pose::GoToWrong) {
                 for key in [

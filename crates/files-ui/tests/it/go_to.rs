@@ -1,4 +1,4 @@
-//! Go to Folder in the window: Shift+Command+G, a path typed, Return to go and Escape to stay.
+//! Go to Folder in the window: Command+L, a path typed, Return to go and Escape to stay.
 
 use std::path::Path;
 use std::sync::Arc;
@@ -48,12 +48,10 @@ impl Rig {
         }
     }
 
-    /// Shift+Command+G, and the sheet is up with the folder shown as its text.
+    /// Command+L, and the sheet is up with the folder shown as its text.
     fn ask(&mut self) {
-        self.harness.send(Input::chord(
-            &[ShortcutKey::Super, ShortcutKey::Shift],
-            ShortcutKey::Char('g'),
-        ));
+        self.harness
+            .send(Input::chord(&[ShortcutKey::Super], ShortcutKey::Char('l')));
         settle_until(&mut self.harness, |h| h.count(".ds-text-field") > 0);
     }
 

@@ -30,11 +30,18 @@ fn typed(text: &str) -> Input {
     Input::GoToTyped(text.to_owned())
 }
 
+/// A label, the typed text, the home folder, and the folder (or problem) it means.
+type GoToCase<'a> = (
+    &'a str,
+    &'a str,
+    Option<&'a FolderPath>,
+    Result<&'a str, GoToProblem>,
+);
+
 #[test]
 fn a_typed_path_means_a_folder() {
     let home = home_path();
-    // label, text, home, folder
-    let cases: Vec<(&str, &str, Option<&FolderPath>, Result<&str, GoToProblem>)> = vec![
+    let cases: Vec<GoToCase> = vec![
         ("a full path", "/usr/share", Some(&home), Ok("/usr/share")),
         (
             "spaces around it",
