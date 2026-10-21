@@ -1,0 +1,32 @@
+[package]
+name = "files-desktop"
+description = "How files meets the desktop: the file manager service on the session bus, one running instance, and opening files with apps."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+# `FakeSpawn` and `FakeActivate`, for tests of the crates above.
+testing = []
+
+[dependencies]
+ds-helpers = { workspace = true }
+files-core = { workspace = true }
+files-mime = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+zbus = { workspace = true }
+
+[dev-dependencies]
+files-desktop = { path = ".", features = ["testing"] }
+tempfile = { workspace = true }
+
+[lints]
+workspace = true
+
+[[test]]
+name = "it"
+path = "tests/it/main.rs"
