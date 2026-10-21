@@ -76,7 +76,12 @@ the edge lists the disks, lists them again whenever the seam says they changed, 
 ejects in order. `files-desktop::Disks` is the real one: UDisks2 on the system bus (one
 `GetManagedObjects` read, a signal stream for hot-plug, `Filesystem.Mount` and `Unmount`, then
 `Drive.PowerOff` or `Eject`), with polkit asking the person when the system's rules say so. A busy
-disk is told in Finder's words, with the programs found in `/proc` (`DiskUsers`) when there are any.
+disk is not just told: `EjectFailure::InUse` (with the programs found in `/proc` by `DiskUsers`, when
+there are any) becomes `Question::ForceEject(BusyDisk)`, drawn as quire's `Alert` in Finder's words
+with Force Eject (destructive) and Cancel. Confirming is `Effect::ForceEjectVolume`, which the seam
+does as `Disks::force_eject`: `Filesystem.Unmount` with `{"force": true}`, then the drive is powered
+off as a normal eject does. If that fails it is told as a toast, never asked again; every other
+eject failure is a toast.
 The binary adapts `Disks` to `Volumes` and runs it on the bus runtime.
 
 ## 7. Asks from outside: intents
