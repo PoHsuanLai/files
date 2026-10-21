@@ -8,6 +8,7 @@ mod disks;
 mod exec;
 mod file_manager;
 mod instance;
+mod intent_calls;
 mod intents;
 mod launch;
 mod udisks;

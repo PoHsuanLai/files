@@ -21,3 +21,4 @@ mod tabs;
 mod tags;
 mod typeselect;
 mod volumes;
+mod work;
