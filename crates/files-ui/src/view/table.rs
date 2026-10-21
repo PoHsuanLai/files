@@ -12,6 +12,7 @@ use files_model::{Browser, Input, Opens, Rename, opens};
 use super::menu::ContextAt;
 use super::rename::RenameCell;
 use super::row::{RowCell, Takes};
+use super::tags::marks;
 use crate::edge::Zone;
 use crate::rows::{Column, cursor_of, direction_of, modifier_of, order_of, selection_of};
 use crate::state::Browse;
@@ -59,6 +60,7 @@ fn name_cell(browse: Browse, state: &Browser, entry: &Entry) -> Element {
     rsx! {
         IconView { source: IconSource::from(icon_of(entry)) }
         Label { text: entry.shown_name().display().into_owned() }
+        {marks(&entry.tags)}
     }
 }
 

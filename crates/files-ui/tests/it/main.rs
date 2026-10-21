@@ -4,6 +4,7 @@
 mod coherence;
 mod edge;
 mod edge_apps;
+mod edge_tabs;
 mod edge_views;
 mod go_to;
 mod looks;
@@ -13,6 +14,8 @@ mod places;
 mod requests;
 mod rows;
 mod support;
+mod tabs;
+mod tags;
 mod volumes;
 mod window;
 mod words;

@@ -49,6 +49,12 @@ enum Own {
     GoToFolder,
     /// Put the paths of the selection on the clipboard (Command+Option+C).
     CopyAsPathname,
+    /// Open a new tab on this folder (Command+T).
+    NewTab,
+    /// Show the next tab (Command+Shift+]).
+    NextTab,
+    /// Show the previous tab (Command+Shift+[).
+    PreviousTab,
 }
 
 /// Each action with its id and its default chords. `Primary` is Command or Ctrl. A symbol typed
@@ -82,6 +88,17 @@ const OWN: &[(Own, &str, &[&str])] = &[
         Own::CopyAsPathname,
         "files.copy-pathname",
         &["Primary+Alt+C"],
+    ),
+    (Own::NewTab, "files.new-tab", &["Primary+T"]),
+    (
+        Own::NextTab,
+        "files.next-tab",
+        &["Primary+Shift+]", "Primary+Shift+}"],
+    ),
+    (
+        Own::PreviousTab,
+        "files.previous-tab",
+        &["Primary+Shift+[", "Primary+Shift+{"],
     ),
 ];
 
@@ -189,6 +206,8 @@ fn act(
         Action::Standard(standard) if *standard == StandardAction::QuickLook => {
             send(Input::QuickLook)
         }
+        // Close (Command+W) closes the tab, and the window with the last one.
+        Action::Standard(standard) if *standard == StandardAction::Close => send(Input::CloseTab),
         Action::Standard(standard) if *standard == StandardAction::ToggleSidebar => {
             let next = sidebar().flipped();
             sidebar.set(next);
@@ -216,6 +235,9 @@ fn act(
             Some(Own::GetInfo) => send(Input::GetInfo),
             Some(Own::GoToFolder) => send(Input::GoToFolder),
             Some(Own::CopyAsPathname) => send(Input::CopyAsPathname),
+            Some(Own::NewTab) => send(Input::NewTab),
+            Some(Own::NextTab) => send(Input::NextTab),
+            Some(Own::PreviousTab) => send(Input::PreviousTab),
             None => ActionTaken::No,
         },
         // A standard action the window does not offer, or one chordkit adds later.

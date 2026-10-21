@@ -6,15 +6,15 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 
 use files_core::{FolderPrefs, Location};
 use files_fs::{PrefsError, PrefsStore};
-use files_model::Input;
+use files_model::{Input, TabId};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::Heard;
 
 /// One thing asked of the store.
 enum Job {
-    /// How was this place shown?
-    Load(Location),
+    /// How was this place shown, for this tab?
+    Load(TabId, Location),
     /// Remember how this place is shown.
     Save(Location, FolderPrefs),
 }
@@ -39,8 +39,8 @@ impl Prefs {
     }
 
     /// Asks how `at` was last shown; the answer comes back as `Input::PrefsLoaded`.
-    pub(super) fn load(&self, at: Location) {
-        self.send(Job::Load(at));
+    pub(super) fn load(&self, tab: TabId, at: Location) {
+        self.send(Job::Load(tab, at));
     }
 
     /// Asks to remember that `at` is shown with `prefs`.
@@ -60,12 +60,12 @@ impl Prefs {
 fn serve(store: &dyn PrefsStore, inbox: &Receiver<Job>, heard: &UnboundedSender<Heard>) {
     while let Ok(job) = inbox.recv() {
         match job {
-            Job::Load(at) => {
+            Job::Load(tab, at) => {
                 let prefs = match &at {
                     Location::Folder(folder) => store.load(folder),
                     Location::Trash | _ => FolderPrefs::default(),
                 };
-                let _ = heard.send(Heard::Input(Input::PrefsLoaded(at, prefs)));
+                let _ = heard.send(Heard::Tab(tab, Input::PrefsLoaded(at, prefs)));
             }
             Job::Save(Location::Folder(folder), prefs) => match store.save(&folder, prefs) {
                 // The file is there but unusable: the view works, it just is not remembered.

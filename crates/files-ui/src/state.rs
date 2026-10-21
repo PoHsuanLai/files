@@ -9,9 +9,9 @@ use anyview_peek::AnyPeeked;
 use dioxus::prelude::*;
 use ds::prelude::use_toasts;
 use ds::stack::toast_hub::UndoToken;
-use ds_blitz::use_window_handle;
+use ds_blitz::{WindowHandle, use_window_handle};
 use files_core::ItemRef;
-use files_model::{Browser, Input, Rename};
+use files_model::{Browser, Input, Rename, TabId, Tabs};
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::edge::{self, AppChoiceView, Edge, Heard};
@@ -22,12 +22,18 @@ use crate::words::announce_words;
 /// The newest preview Quick Look was given, and the item it is of.
 pub(crate) type Looked = Option<(ItemRef, Arc<AnyPeeked>)>;
 
-/// One window's browser. `Copy`: hand it to any handler. The views read [`Browse::state`]; every
-/// change goes through [`Browse::send`].
+/// The browser in front, read through the tabs: what the views draw and ask.
+pub(crate) type Front = MappedSignal<Browser, Signal<Tabs>, fn(&Tabs) -> &Browser>;
+
+/// One window's tabs. `Copy`: hand it to any handler. The views read [`Browse::state`] (the browser
+/// in front) and [`Browse::tabs`]; every change goes through [`Browse::send`].
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) struct Browse {
-    /// The browser. Read it; change it only with [`Browse::send`].
-    pub(crate) state: Signal<Browser>,
+    /// The tabs. Read them; change them only with [`Browse::send`] and its kin.
+    pub(crate) tabs: Signal<Tabs>,
+    /// The browser in front.
+    pub(crate) state: Front,
+    window: CopyValue<Option<WindowHandle>>,
     edge: CopyValue<Rc<Edge>>,
     start: Instant,
     /// The browser as it was just before the last click, for the length of one event: a key the
@@ -47,18 +53,19 @@ impl std::fmt::Debug for Browse {
 /// What the first render makes once: the browser, the edge and the end of its channel.
 #[derive(Clone)]
 struct Setup {
-    first: Browser,
+    first: Tabs,
     edge: Rc<Edge>,
     inbox: Rc<RefCell<Option<UnboundedReceiver<Heard>>>>,
     start: Instant,
 }
 
 impl Browse {
-    /// Steps the browser with `input` and carries out the effects it asks for.
+    /// Steps the tab in front with `input` and carries out the effects it asks for. The tab inputs
+    /// (new, close, switch) are the window's.
     pub(crate) fn send(&self, input: Input) {
-        let mut state = self.state;
-        let current = Browser::clone(&state.peek());
-        let before = matches!(input, Input::Click(..)).then(|| current.clone());
+        let mut tabs = self.tabs;
+        let current = Tabs::clone(&tabs.peek());
+        let before = matches!(input, Input::Click(..)).then(|| current.front().clone());
         let (next, effects) = current.step(input, edge::now(self.start));
         if let Some(before) = before {
             let mut trail = self.trail;
@@ -66,21 +73,48 @@ impl Browse {
             // Gone by the next turn of the loop, which is after every handler of this event.
             spawn(async move { trail.set(None) });
         }
-        state.set(next);
+        tabs.set(next);
         self.edge.read().run(effects);
     }
 
-    /// What the browser was before this event's click, once; `None` if no click came first.
+    /// Gives `input` to the tab `tab`, the one that asked for it, whichever is in front now.
+    fn send_to(&self, tab: TabId, input: Input) {
+        let mut tabs = self.tabs;
+        let current = Tabs::clone(&tabs.peek());
+        let (next, effects) = current.heard(tab, input, edge::now(self.start));
+        tabs.set(next);
+        self.edge.read().run(effects);
+    }
+
+    /// Gives `input` to every tab.
+    fn send_to_all(&self, input: &Input) {
+        let mut tabs = self.tabs;
+        let current = Tabs::clone(&tabs.peek());
+        let (next, effects) = current.broadcast(input, edge::now(self.start));
+        tabs.set(next);
+        self.edge.read().run(effects);
+    }
+
+    /// Closes the window.
+    fn close_window(&self) {
+        let window = self.window.read();
+        if let Some(window) = &*window {
+            window.close();
+        }
+    }
+
+    /// What the front browser was before this event's click, once; `None` if no click came first.
     pub(crate) fn take_trail(&self) -> Option<Browser> {
         let mut trail = self.trail;
         std::mem::take(&mut *trail.write())
     }
 
-    /// Puts the browser back as it was, without asking for anything: a click this event made is
-    /// undone.
+    /// Puts the front browser back as it was, without asking for anything: a click this event
+    /// made is undone.
     pub(crate) fn restore(&self, before: Browser) {
-        let mut state = self.state;
-        state.set(before);
+        let mut tabs = self.tabs;
+        let current = Tabs::clone(&tabs.peek());
+        tabs.set(current.with_front(before));
     }
 
     /// The apps that open every selected item, for Open With.
@@ -105,7 +139,7 @@ impl Browse {
 /// told as a toast).
 pub(crate) fn use_browse(launch: &Launch) -> Browse {
     let setup = use_hook(|| {
-        let (first, effects) = Browser::new(launch.start.clone());
+        let (first, effects) = Tabs::new(launch.start.clone());
         let first = match &launch.home {
             Some(home) => first.with_home(home.clone()),
             None => first,
@@ -119,18 +153,20 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
             start: edge::start(),
         }
     });
-    let state = use_signal(|| setup.first.clone());
+    let tabs = use_signal(|| setup.first.clone());
     let trail = use_signal(|| None);
     let looked = use_signal(|| None);
+    let window = use_window_handle();
     let browse = Browse {
-        state,
+        tabs,
+        state: tabs.map(Tabs::front as fn(&Tabs) -> &Browser),
+        window: use_hook(|| CopyValue::new(window.clone())),
         edge: use_hook(|| CopyValue::new(Rc::clone(&setup.edge))),
         start: setup.start,
         trail,
         looked,
     };
     let toasts = use_toasts();
-    let window = use_window_handle();
     let requests = launch.requests.clone();
     use_hook(move || {
         spawn(async move {
@@ -141,7 +177,8 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
                 match asked {
                     Asked::Do(request) => {
                         browse.send(request.input);
-                        if let Some(window) = &window {
+                        let window = browse.window.read();
+                        if let Some(window) = &*window {
                             window.focus_with_token(request.raise.map(|token| token.0));
                         }
                     }
@@ -162,7 +199,9 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
             let mut announced: u64 = 0;
             while let Some(heard) = inbox.recv().await {
                 match heard {
-                    Heard::Input(input) => browse.send(input),
+                    Heard::Tab(tab, input) => browse.send_to(tab, input),
+                    Heard::All(input) => browse.send_to_all(&input),
+                    Heard::CloseWindow => browse.close_window(),
                     Heard::Told(text) => toasts.push(text, None),
                     Heard::Looked(item, card) => {
                         let mut slot = browse.looked;

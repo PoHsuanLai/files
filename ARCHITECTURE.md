@@ -82,3 +82,35 @@ turns each `Ask` into a model input sent through `files-ui`'s request channel
 own. The two reads and the undo are questions (`RequestSender::ask`) the window answers with a
 `Reading`. An undo token names the change (`undo:trash:3`); the window takes back the newest change
 only if it is that one. Emptying the Trash only puts up the window's own question.
+
+## 8. Tabs
+
+`files-model::Tabs` holds the window's browsers as a non-empty row with one in front. Each tab has a
+stable `TabId` (never reused). `Tabs::step` gives an input to the front tab, or opens (`NewTab`,
+`OpenInNewTab`), closes (`CloseTab`) and switches (`NextTab`, `PreviousTab`, `ShowTab`) tabs; every
+effect it returns is a `Tabbed`, the effect and the tab that asked. The edge carries the tag through:
+its listing, watch, prefs, Get Info, folder check and mount threads answer as `Heard::Tab(tab, input)`,
+and the window feeds that to `Tabs::heard`, so a listing asked for by a tab in the background lands in
+that tab, and an answer for a closed tab is dropped. A watch belongs to a tab and a place, so two tabs
+on one folder each follow it. What is no tab's goes to every tab (`Heard::All`, `Tabs::broadcast`): the
+disks changing, and the rescans after a change. The queue of changes reports to the tab that last put
+work on it; the clipboard and what Undo would take back are the window's, copied to every tab when one
+changes them. Closing the last tab is `Effect::CloseWindow`, which the edge says as `Heard::CloseWindow`
+and the window turns into the window handle's `close`. The tab bar is quire's `SegmentedControl` (the
+strip `TabView` is made of), drawn only from two tabs on; ⌘T, ⇧⌘] and ⇧⌘[ are files' actions, ⌘W is
+chordkit's standard Close. Requests from outside (FileManager1, the intents) act on the front tab. Folder
+views and Quick Look are per tab.
+
+## 9. Tags
+
+A file's tags are the comma-separated list in its `user.xdg.tags` extended attribute, as GNOME and KDE
+keep them. `files-core` has `Tag`, `TagColour` (Finder's seven) and `Tags`; an `Entry` carries its
+`tags`. `files-fs::Tagger` reads and writes them (`XattrTagger`, `FakeTagger`, `NoTags`), and `Tagged`
+wraps any `Lister` so every entry it gives has its tags. `Input::Tag(colour)` puts the colour on the
+selection, or takes it off when every selected item has it (`Effect::Tag`); the edge does the
+read-modify-write on a thread, rescans the folders it touched, and tells "Tags can't be added on this
+disk." when the disk keeps no attributes. `Location::Tag(colour)` is a search: `Effect::Find` walks the
+home folder (`files_fs::find_tagged`, at most 20,000 entries, links not followed, dot folders not entered)
+and streams batches as `Input::Found` and `Input::SearchDone`; `Listing::Searching` shows them while it
+walks, with a progress bar. A result row is keyed by its whole path and carries the item it stands for
+(`Entry::found`), so Open, Copy and Move to Trash act on the real file.

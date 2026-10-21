@@ -3,7 +3,7 @@
 //! Pure data and mappings. The binary finds the folders (the XDG user directories that exist) and
 //! passes them in as [`Places`]; [`groups`] says what the sidebar lists; `view` draws it.
 
-use files_core::{FolderPath, Location, Volume, VolumeId};
+use files_core::{FolderPath, Location, TagColour, Volume, VolumeId};
 
 /// A place the sidebar can list.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -26,6 +26,8 @@ pub enum PlaceKind {
     Computer,
     /// The Trash.
     Trash,
+    /// The files tagged with this colour, under the home folder.
+    Tag(TagColour),
 }
 
 impl PlaceKind {
@@ -52,6 +54,7 @@ impl PlaceKind {
             PlaceKind::Videos => "Videos",
             PlaceKind::Computer => "Computer",
             PlaceKind::Trash => "Trash",
+            PlaceKind::Tag(colour) => colour.label(),
         }
     }
 }
@@ -63,6 +66,8 @@ pub enum Heading {
     Favorites,
     /// Where things are kept: the computer's disk.
     Locations,
+    /// The seven tag colours.
+    Tags,
 }
 
 impl Heading {
@@ -71,6 +76,7 @@ impl Heading {
         match self {
             Heading::Favorites => "Favorites",
             Heading::Locations => "Locations",
+            Heading::Tags => "Tags",
         }
     }
 }
@@ -119,6 +125,12 @@ impl Places {
         match kind {
             PlaceKind::Computer => FolderPath::new("/").ok().map(Location::Folder),
             PlaceKind::Trash => Some(Location::Trash),
+            // A search starts from the home folder, so it is a place only when there is one.
+            PlaceKind::Tag(colour) => self
+                .folders
+                .iter()
+                .any(|(known, _)| *known == PlaceKind::Home)
+                .then_some(Location::Tag(colour)),
             PlaceKind::Home
             | PlaceKind::Desktop
             | PlaceKind::Documents
@@ -139,6 +151,7 @@ impl Places {
         PlaceKind::FAVORITES
             .into_iter()
             .chain([PlaceKind::Computer, PlaceKind::Trash])
+            .chain(TagColour::ALL.map(PlaceKind::Tag))
             .find(|kind| self.location_of(*kind).as_ref() == Some(location))
             .map(PlaceKey::Place)
     }
@@ -154,7 +167,7 @@ pub struct Group {
 }
 
 /// What the sidebar lists: the favourites that have a folder (none, no group), then the computer
-/// and the Trash.
+/// and the Trash, then the seven tag colours (when there is a home folder to search).
 ///
 /// Recents is left out until the place behind it is built.
 pub fn groups(places: &Places) -> Vec<Group> {
@@ -173,6 +186,17 @@ pub fn groups(places: &Places) -> Vec<Group> {
         heading: Heading::Locations,
         rows: vec![PlaceKind::Computer, PlaceKind::Trash],
     });
+    let tags: Vec<PlaceKind> = TagColour::ALL
+        .into_iter()
+        .map(PlaceKind::Tag)
+        .filter(|kind| places.location_of(*kind).is_some())
+        .collect();
+    if !tags.is_empty() {
+        groups.push(Group {
+            heading: Heading::Tags,
+            rows: tags,
+        });
+    }
     groups
 }
 
@@ -185,6 +209,7 @@ pub fn title_words(location: &Location) -> String {
             |name| name.to_string_lossy().into_owned(),
         ),
         Location::Trash => "Trash".to_owned(),
+        Location::Tag(colour) => colour.label().to_owned(),
         // A place files-core adds later has no name until this gives it one.
         _ => "Files".to_owned(),
     }

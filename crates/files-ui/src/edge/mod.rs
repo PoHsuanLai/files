@@ -5,6 +5,11 @@
 //! of their own and answer on a channel as [`Heard`]; the window's loop (`state`) feeds them back
 //! to the browser. Everything ambient is read here and in [`Zone`], once, and handed down as values.
 //!
+//! Every effect arrives tagged with the tab that asked for it ([`Tabbed`]), and every answer goes
+//! back tagged with that tab ([`Heard::Tab`]), so a listing asked for by a tab in the background
+//! lands in that tab; what is no tab's (the disks changing, a folder rescanned after a change) is
+//! [`Heard::All`].
+//!
 //! Changes to the files (`Effect::Run`, `Undo`, `Answer`, `Cancel`) go to a [`files_ops::Worker`],
 //! one queue on a thread of its own; its events come back as `Input::Op`, and each finished
 //! change is followed by a rescan of the places it touched. The Trash is listed from
@@ -22,13 +27,15 @@ mod look;
 mod opener;
 mod ops;
 mod prefs;
+mod search;
+mod tagging;
 mod volumes;
 mod zone;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Instant;
 
 use crate::words::volume_trouble_words;
@@ -37,10 +44,10 @@ use ds::base::time::clock;
 use ds_blitz::clipboard;
 use files_core::{FileName, FolderPath, ItemRef, Location, OpFailure, OpPlan, Summary};
 use files_fs::{
-    DiskLister, FolderEvent, ListError, Lister, NoPrefs, NotifyWatcher, PrefsStore, WatchHandle,
-    Watcher,
+    DiskLister, FolderEvent, ListError, Lister, NoPrefs, NotifyWatcher, PrefsStore, Tagged, Tagger,
+    WatchHandle, Watcher, XattrTagger,
 };
-use files_model::{Change, Effect, Input, ListFailure, Now, OpenTarget};
+use files_model::{Change, Effect, Input, ListFailure, Now, OpenTarget, TabId, Tabbed};
 use files_ops::{Job, Worker};
 use files_trash::{SystemTrash, Trash};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
@@ -65,6 +72,8 @@ pub struct Seams {
     pub trash: Arc<dyn Trash>,
     /// Where each folder's view and sort are remembered.
     pub prefs: Arc<dyn PrefsStore>,
+    /// The tags of files: read with every listing, written by the tag menu.
+    pub tagger: Arc<dyn Tagger>,
     /// Which apps open what, for Open With.
     pub apps: Arc<dyn Apps>,
     /// The computer's disks: listing, opening and ejecting them.
@@ -80,6 +89,7 @@ impl Seams {
             opener,
             trash: Arc::new(SystemTrash),
             prefs: Arc::new(NoPrefs),
+            tagger: Arc::new(XattrTagger),
             apps: Arc::new(NoApps),
             volumes: Arc::new(NoVolumes),
         }
@@ -93,6 +103,11 @@ impl Seams {
     /// The same seams over the disks `volumes` knows.
     pub fn with_volumes(self, volumes: Arc<dyn Volumes>) -> Seams {
         Seams { volumes, ..self }
+    }
+
+    /// The same seams keeping tags with `tagger`.
+    pub fn with_tagger(self, tagger: Arc<dyn Tagger>) -> Seams {
+        Seams { tagger, ..self }
     }
 
     /// The same seams remembering folder views in `prefs`.
@@ -113,8 +128,12 @@ const COPY_FAILED: &str = "The pathnames couldn\u{2019}t be copied.";
 /// What a worker tells the window.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Heard {
-    /// An answer for the browser.
-    Input(Input),
+    /// An answer for the tab that asked.
+    Tab(TabId, Input),
+    /// News for every tab (the disks changed, a place was rescanned).
+    All(Input),
+    /// The last tab was closed: close the window.
+    CloseWindow,
     /// Something the person should read, in plain words.
     Told(String),
     /// A change was made that can be undone (a move to the Trash): said with an Undo button.
@@ -126,10 +145,16 @@ pub enum Heard {
 /// Carries out effects. Lives on the window's thread; its workers answer on the channel it made.
 pub struct Edge {
     seams: Seams,
+    /// The lister of the seams, with every entry carrying its tags.
+    lister: Arc<dyn Lister>,
     heard: UnboundedSender<Heard>,
-    watches: RefCell<HashMap<Location, WatchHandle>>,
+    watches: RefCell<HashMap<(TabId, Location), WatchHandle>>,
+    /// The searches under way, to stop the one a tab leaves.
+    searches: search::Searches,
     /// The queue of changes; `None` when the system would not start its thread.
     ops: Option<Worker>,
+    /// The tab that put work on the queue last, which hears its reports.
+    ops_tab: Arc<Mutex<TabId>>,
     /// Remembers how each folder is shown.
     prefs: prefs::Prefs,
     /// Makes Quick Look's previews.
@@ -150,14 +175,23 @@ impl Edge {
     /// An edge over `seams`, and the end where its answers arrive.
     pub fn new(seams: Seams) -> (Edge, UnboundedReceiver<Heard>) {
         let (heard, inbox) = unbounded_channel();
-        let ops = Worker::start(Arc::clone(&seams.trash), ops::sink(heard.clone())).ok();
+        let ops_tab = Arc::new(Mutex::new(TabId::FIRST));
+        let sink = ops::sink(heard.clone(), Arc::clone(&ops_tab));
+        let ops = Worker::start(Arc::clone(&seams.trash), sink).ok();
+        let lister: Arc<dyn Lister> = Arc::new(Tagged::new(
+            Arc::clone(&seams.lister),
+            Arc::clone(&seams.tagger),
+        ));
         let prefs = prefs::Prefs::start(Arc::clone(&seams.prefs), heard.clone());
         let disks = volumes::Disks::start(Arc::clone(&seams.volumes), heard.clone());
         let edge = Edge {
             seams,
+            lister,
             heard,
             watches: RefCell::new(HashMap::new()),
+            searches: search::Searches::default(),
             ops,
+            ops_tab,
             prefs,
             peek: look::worker(),
             disks,
@@ -166,32 +200,39 @@ impl Edge {
     }
 
     /// Carries out `effects`, in order. Work that takes time runs on a thread.
-    pub fn run(&self, effects: Vec<Effect>) {
-        for effect in effects {
-            self.carry_out(effect);
+    pub fn run(&self, effects: Vec<Tabbed>) {
+        for Tabbed { tab, effect, .. } in effects {
+            self.carry_out(tab, effect);
         }
     }
 
-    fn carry_out(&self, effect: Effect) {
+    /// Carries out `effects` that `tab` asked for.
+    pub fn run_in(&self, tab: TabId, effects: Vec<Effect>) {
+        self.run(Tabbed::all(tab, effects));
+    }
+
+    fn carry_out(&self, tab: TabId, effect: Effect) {
         match effect {
-            Effect::List(at) => self.list(at),
-            Effect::Watch(at) => self.watch(at),
+            Effect::List(at) => self.list(tab, at),
+            Effect::Find { colour, within } => self.find(tab, colour, within),
+            Effect::Watch(at) => self.watch(tab, at),
             Effect::Unwatch(at) => {
-                self.watches.borrow_mut().remove(&at);
+                self.searches.stop(tab, &at);
+                self.watches.borrow_mut().remove(&(tab, at));
             }
             Effect::OpenFiles(targets) => {
                 self.open(&targets, OpenAs::Default);
             }
             Effect::OpenFilesWith { targets, app } => self.open(&targets, OpenAs::App(app)),
-            Effect::CheckFolder(folder) => self.check(folder),
+            Effect::CheckFolder(folder) => self.check(tab, folder),
             Effect::CopyText(text) => {
                 if clipboard::write_text(&text).is_err() {
                     self.say(Heard::Told(COPY_FAILED.to_owned()));
                 }
             }
-            Effect::Rename { folder, from, to } => self.rename(folder, from, to),
-            Effect::Run(plan) => self.submit(Job::Run(plan)),
-            Effect::Undo => self.submit(Job::Undo),
+            Effect::Rename { folder, from, to } => self.rename(tab, folder, from, to),
+            Effect::Run(plan) => self.submit(tab, Job::Run(plan)),
+            Effect::Undo => self.submit(tab, Job::Undo),
             Effect::Answer(resolution) => {
                 if let Some(queue) = &self.ops {
                     queue.answer(resolution);
@@ -204,12 +245,14 @@ impl Edge {
             }
             Effect::Tell(failure) => self.say(Heard::Told(failure.to_string())),
             Effect::Announce(summary) => self.say(Heard::Announced(summary)),
-            Effect::LoadPrefs(at) => self.prefs.load(at),
+            Effect::LoadPrefs(at) => self.prefs.load(tab, at),
             Effect::SavePrefs(at, prefs) => self.prefs.save(at, prefs),
             Effect::Look(item) => look::ask(&self.peek, item, self.heard.clone()),
-            Effect::ReadInfo(item) => self.read_info(item),
-            Effect::MountVolume(id) => self.disks.mount(id),
-            Effect::EjectVolume(id) => self.disks.eject(id),
+            Effect::ReadInfo(item) => self.read_info(tab, item),
+            Effect::Tag { items, colour, how } => self.tag(items, colour, how),
+            Effect::CloseWindow => self.say(Heard::CloseWindow),
+            Effect::MountVolume(id) => self.disks.mount(tab, id),
+            Effect::EjectVolume(id) => self.disks.eject(tab, id),
             Effect::TellVolume { name, trouble } => {
                 self.say(Heard::Told(volume_trouble_words(&name, &trouble)));
             }
@@ -239,18 +282,18 @@ impl Edge {
 
     /// Finds out off the window's thread whether `folder` can be listed, which is what makes it
     /// somewhere to go.
-    fn check(&self, folder: FolderPath) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
+    fn check(&self, tab: TabId, folder: FolderPath) {
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
         let failed = folder.clone();
         let started = Edge::work("files-check", move || {
             let result = lister.list(&folder).map(|_| ()).map_err(failure_of);
-            let _ = heard.send(Heard::Input(Input::FolderChecked(folder, result)));
+            let _ = heard.send(Heard::Tab(tab, Input::FolderChecked(folder, result)));
         });
         if started.is_err() {
-            self.say(Heard::Input(Input::FolderChecked(
-                failed,
-                Err(ListFailure::Other),
-            )));
+            self.say(Heard::Tab(
+                tab,
+                Input::FolderChecked(failed, Err(ListFailure::Other)),
+            ));
         }
     }
 
@@ -267,8 +310,8 @@ impl Edge {
             .map(|_| ())
     }
 
-    fn list(&self, at: Location) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
+    fn list(&self, tab: TabId, at: Location) {
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
         let trash = Arc::clone(&self.seams.trash);
         let failed = at.clone();
         let started = Edge::work("files-list", move || {
@@ -278,61 +321,69 @@ impl Edge {
                     .list()
                     .map(|items| items.into_iter().filter_map(ops::row_of).collect())
                     .map_err(ops::failure_of),
+                // A search is asked for with `Effect::Find`, not listed.
                 _ => Err(ListFailure::Other),
             };
-            let _ = heard.send(Heard::Input(Input::Listed(at, result)));
+            let _ = heard.send(Heard::Tab(tab, Input::Listed(at, result)));
         });
         if started.is_err() {
-            self.say(Heard::Input(Input::Listed(failed, Err(ListFailure::Other))));
+            self.say(Heard::Tab(
+                tab,
+                Input::Listed(failed, Err(ListFailure::Other)),
+            ));
         }
     }
 
     /// Reads the facts of `item` for Get Info, off the window's thread.
-    fn read_info(&self, item: ItemRef) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
+    fn read_info(&self, tab: TabId, item: ItemRef) {
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
         let failed = item.clone();
         let started = Edge::work("files-info", move || {
             let result = lister.info(&item).map_err(failure_of);
-            let _ = heard.send(Heard::Input(Input::InfoRead(item, result)));
+            let _ = heard.send(Heard::Tab(tab, Input::InfoRead(item, result)));
         });
         if started.is_err() {
-            self.say(Heard::Input(Input::InfoRead(
-                failed,
-                Err(ListFailure::Other),
-            )));
+            self.say(Heard::Tab(
+                tab,
+                Input::InfoRead(failed, Err(ListFailure::Other)),
+            ));
         }
     }
 
-    fn watch(&self, at: Location) {
+    fn watch(&self, tab: TabId, at: Location) {
         let Location::Folder(folder) = &at else {
             return;
         };
         let sink = {
-            let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
+            let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
             let (place, folder) = (at.clone(), folder.clone());
             move |event: FolderEvent| {
                 let change = change_of(&*lister, &folder, event);
-                let _ = heard.send(Heard::Input(Input::Changed(place.clone(), change)));
+                let _ = heard.send(Heard::Tab(tab, Input::Changed(place.clone(), change)));
             }
         };
         match self.seams.watcher.watch(folder, Box::new(sink)) {
             Ok(handle) => {
-                self.watches.borrow_mut().insert(at, handle);
+                self.watches.borrow_mut().insert((tab, at), handle);
             }
             Err(err) => self.say(Heard::Told(err.to_string())),
         }
     }
 
     /// A rename is a change like any other, so it can be undone.
-    fn rename(&self, folder: FolderPath, from: FileName, to: FileName) {
+    fn rename(&self, tab: TabId, folder: FolderPath, from: FileName, to: FileName) {
         let item = ItemRef::new(folder, from);
-        self.submit(Job::Run(OpPlan::Rename { item, to }));
+        self.submit(tab, Job::Run(OpPlan::Rename { item, to }));
     }
 
-    /// Puts `job` on the queue of changes, or says the queue could not be started.
-    fn submit(&self, job: Job) {
+    /// Puts `job` on the queue of changes for `tab`, which then hears its reports, or says the
+    /// queue could not be started.
+    fn submit(&self, tab: TabId, job: Job) {
         match &self.ops {
-            Some(queue) => queue.submit(job),
+            Some(queue) => {
+                *self.ops_tab.lock().unwrap_or_else(PoisonError::into_inner) = tab;
+                queue.submit(job);
+            }
             None => self.say(Heard::Told(OpFailure::Other.to_string())),
         }
     }

@@ -11,7 +11,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use files_core::{EjectFailure, FolderPath, MountFailure, Volume, VolumeId};
-use files_model::Input;
+use files_model::{Input, TabId};
 use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
 
 use super::Heard;
@@ -82,8 +82,8 @@ impl Volumes for NoVolumes {
 /// What the disk thread is asked.
 enum Ask {
     Refresh,
-    Mount(VolumeId),
-    Eject(VolumeId),
+    Mount(TabId, VolumeId),
+    Eject(TabId, VolumeId),
     Stop,
 }
 
@@ -101,13 +101,13 @@ impl Disks {
         let _ = std::thread::Builder::new()
             .name("files-volumes".to_owned())
             .spawn(move || {
-                let tell = |input: Input| {
+                let tell = |heard_of: Heard| {
                     // A closed channel means the window is gone.
-                    let _ = heard.send(Heard::Input(input));
+                    let _ = heard.send(heard_of);
                 };
                 let relist = || {
                     if let Ok(list) = volumes.list() {
-                        tell(Input::Volumes(list));
+                        tell(Heard::All(Input::Volumes(list)));
                     }
                 };
                 let watch = volumes.watch(Box::new(move || {
@@ -117,14 +117,14 @@ impl Disks {
                 while let Some(ask) = inbox.blocking_recv() {
                     match ask {
                         Ask::Refresh => relist(),
-                        Ask::Mount(id) => {
+                        Ask::Mount(tab, id) => {
                             let result = volumes.mount(&id);
-                            tell(Input::Mounted(id, result));
+                            tell(Heard::Tab(tab, Input::Mounted(id, result)));
                             relist();
                         }
-                        Ask::Eject(id) => {
+                        Ask::Eject(tab, id) => {
                             let result = volumes.eject(&id);
-                            tell(Input::Ejected(id, result));
+                            tell(Heard::Tab(tab, Input::Ejected(id, result)));
                             relist();
                         }
                         Ask::Stop => break,
@@ -136,13 +136,13 @@ impl Disks {
     }
 
     /// Opens the disk and tells the browser where.
-    pub(super) fn mount(&self, id: VolumeId) {
-        let _ = self.asks.send(Ask::Mount(id));
+    pub(super) fn mount(&self, tab: TabId, id: VolumeId) {
+        let _ = self.asks.send(Ask::Mount(tab, id));
     }
 
     /// Ejects the disk and tells the browser how it went.
-    pub(super) fn eject(&self, id: VolumeId) {
-        let _ = self.asks.send(Ask::Eject(id));
+    pub(super) fn eject(&self, tab: TabId, id: VolumeId) {
+        let _ = self.asks.send(Ask::Eject(tab, id));
     }
 }
 

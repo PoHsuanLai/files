@@ -8,7 +8,7 @@ use tokio::runtime::Handle;
 use ds::prelude::SystemPrefs;
 use ds_settings::{AppName, ConfigRoot, Store, SystemPrefsSource};
 use files_core::{FolderPath, Location};
-use files_fs::PrefsStore;
+use files_fs::{PrefsStore, Tagger};
 
 use crate::edge::{Apps, Opener, Seams, Volumes, Zone};
 use crate::places::Places;
@@ -131,6 +131,14 @@ impl Launch {
     pub fn with_volumes(self, volumes: Arc<dyn Volumes>) -> Launch {
         Launch {
             seams: self.seams.with_volumes(volumes),
+            ..self
+        }
+    }
+
+    /// The same launch keeping the tags of files with `tagger`.
+    pub fn with_tagger(self, tagger: Arc<dyn Tagger>) -> Launch {
+        Launch {
+            seams: self.seams.with_tagger(tagger),
             ..self
         }
     }

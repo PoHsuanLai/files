@@ -10,6 +10,7 @@ use ds::prelude::{Icon, ListItem, Row, RowAction, RowLeading, SectionHeader, Sel
 use files_core::{Eject, Volume, VolumeId, VolumeKind};
 use files_model::Input;
 
+use super::tags::dot;
 use crate::places::{Heading, PlaceKey, PlaceKind, Places, groups, volume_key};
 use crate::state::Browse;
 
@@ -25,6 +26,24 @@ fn icon_of(kind: PlaceKind) -> Icon {
         PlaceKind::Videos => Icon::Play,
         PlaceKind::Computer => Icon::Window,
         PlaceKind::Trash => Icon::Trash,
+        // A tag leads with its colour's dot, not a glyph (see `leading_of`).
+        PlaceKind::Tag(_) => Icon::Tag,
+    }
+}
+
+/// What leads a place's row: its glyph, or for a tag its colour's dot.
+fn leading_of(kind: PlaceKind) -> RowLeading {
+    match kind {
+        PlaceKind::Tag(colour) => RowLeading::Element(dot(colour)),
+        PlaceKind::Home
+        | PlaceKind::Desktop
+        | PlaceKind::Documents
+        | PlaceKind::Downloads
+        | PlaceKind::Pictures
+        | PlaceKind::Music
+        | PlaceKind::Videos
+        | PlaceKind::Computer
+        | PlaceKind::Trash => RowLeading::Icon(icon_of(kind)),
     }
 }
 
@@ -109,7 +128,7 @@ pub(super) fn sidebar_rows(
 fn PlaceRow(kind: PlaceKind, selection: Selection, onselect: EventHandler<PlaceKey>) -> Element {
     rsx! {
         Row {
-            leading: RowLeading::Icon(icon_of(kind)),
+            leading: leading_of(kind),
             title: kind.label(),
             state: RowState {
                 selection,
@@ -168,7 +187,7 @@ pub(super) fn PlacesPane(browse: Browse, places: Places) -> Element {
                 }
             }
             PlaceKey::Volume(id) => browse.send(Input::OpenVolume(id)),
-            PlaceKey::Heading(Heading::Favorites | Heading::Locations) => {}
+            PlaceKey::Heading(Heading::Favorites | Heading::Locations | Heading::Tags) => {}
         }
     });
     let eject = use_callback(move |id: VolumeId| browse.send(Input::Eject(id)));

@@ -3,10 +3,13 @@
 use std::time::{Duration, SystemTime};
 
 use files_core::{
-    ByteSize, Entry, EntryKind, FileName, FolderPath, ItemRef, Location, TrashId, TrashedItem,
+    ByteSize, Entry, EntryKind, FileName, FolderPath, ItemRef, Location, TagColour, Tags, TrashId,
+    TrashedItem,
 };
 use files_model::{AppPick, Availability, Browser, Input, Modifier, Now};
-use files_ui::menu::{AppLine, Command, OTHER_APP, Over, Pick, app_lines, app_names, groups_for};
+use files_ui::menu::{
+    AppLine, Command, OTHER_APP, Over, Pick, TagMark, app_lines, app_names, groups_for, tag_mark,
+};
 use files_ui::{AppChoiceView, AppRole};
 
 use Availability::{Available, Unavailable};
@@ -64,6 +67,7 @@ fn a_row_in_a_folder_offers_what_the_selection_allows_in_finders_order() {
             (Command::Copy, Available),
             (Command::CopyAsPathname, Available),
         ],
+        vec![(Command::Tags, Available)],
         vec![(Command::NewFolder, Available)],
     ];
     assert_eq!(groups_for(&one, Over::Row), want);
@@ -105,6 +109,11 @@ fn the_trash_offers_put_back_and_erasing() {
 fn each_command_asks_the_browser_for_its_input_and_says_its_words() {
     let table = [
         (Command::Open, Input::Open, "Open"),
+        (
+            Command::OpenInNewTab,
+            Input::OpenInNewTab,
+            "Open in New Tab",
+        ),
         (Command::QuickLook, Input::QuickLook, "Quick Look"),
         (Command::GetInfo, Input::GetInfo, "Get Info"),
         (Command::GetInfoFolder, Input::GetInfoFolder, "Get Info"),
@@ -199,9 +208,74 @@ fn a_menu_pick_asks_the_browser_for_its_input() {
             Some(Input::OpenWith(AppPick::new("viewer"))),
         ),
         (Pick::OtherApp, Some(Input::ChooseApp)),
+        (
+            Pick::Tag(TagColour::Green),
+            Some(Input::Tag(TagColour::Green)),
+        ),
+        (Pick::Command(Command::Tags), None),
     ];
     for (pick, input) in table {
         assert_eq!(pick.input(), input);
     }
     assert_eq!(OTHER_APP, "Other\u{2026}");
+}
+
+fn with_folder() -> Browser {
+    let here = Location::Folder(FolderPath::new("/home/p").unwrap());
+    let (browser, _) = Browser::new(here.clone());
+    let rows = vec![
+        Entry::new(name("Projects"), EntryKind::Folder),
+        Entry::new(name("a.txt"), EntryKind::File(ByteSize(1))).with_tags(Tags::parse("Red")),
+        Entry::new(name("b.txt"), EntryKind::File(ByteSize(1))),
+    ];
+    step(browser, Input::Listed(here, Ok(rows)))
+}
+
+#[test]
+fn open_in_new_tab_follows_open_on_a_lone_folder_and_is_left_out_otherwise() {
+    let folder = click(with_folder(), "Projects");
+    let first = groups_for(&folder, Over::Row)[0].clone();
+    assert_eq!(
+        first,
+        vec![
+            (Command::Open, Available),
+            (Command::OpenInNewTab, Available),
+            (Command::OpenWith, Available),
+        ]
+    );
+    let file = click(with_folder(), "a.txt");
+    let first = groups_for(&file, Over::Row)[0].clone();
+    assert_eq!(
+        first,
+        vec![(Command::Open, Available), (Command::OpenWith, Available)]
+    );
+    // Two folders-or-more selected: not a lone folder.
+    let two = step(folder, Input::Click(name("a.txt"), Modifier::Toggle));
+    assert_eq!(groups_for(&two, Over::Row)[0].len(), 2);
+}
+
+#[test]
+fn the_tags_menu_marks_a_colour_every_or_some_of_the_selection_has() {
+    let red = click(with_folder(), "a.txt");
+    assert_eq!(tag_mark(&red, TagColour::Red), Some(TagMark::Every));
+    assert_eq!(tag_mark(&red, TagColour::Blue), None);
+    let both = step(red, Input::Click(name("b.txt"), Modifier::Toggle));
+    assert_eq!(tag_mark(&both, TagColour::Red), Some(TagMark::Part));
+}
+
+#[test]
+fn the_tags_menu_is_left_out_of_the_trash_and_the_background() {
+    let selected = click(trash_browser(), "a.txt");
+    let all: Vec<Command> = groups_for(&selected, Over::Row)
+        .into_iter()
+        .flatten()
+        .map(|(command, _)| command)
+        .collect();
+    assert!(!all.contains(&Command::Tags));
+    let background: Vec<Command> = groups_for(&with_folder(), Over::Background)
+        .into_iter()
+        .flatten()
+        .map(|(command, _)| command)
+        .collect();
+    assert!(!background.contains(&Command::Tags));
 }

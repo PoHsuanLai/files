@@ -1,6 +1,6 @@
 //! The sidebar's places: what is listed, where a row goes, which row the cursor is on.
 
-use files_core::{FolderPath, Location};
+use files_core::{FolderPath, Location, TagColour};
 use files_ui::places::{Group, groups, title_words};
 use files_ui::{Heading, PlaceKey, PlaceKind, Places};
 
@@ -38,8 +38,30 @@ fn the_sidebar_lists_the_favorites_that_have_a_folder_then_the_computer_and_the_
                 heading: Heading::Locations,
                 rows: vec![PlaceKind::Computer, PlaceKind::Trash],
             },
+            Group {
+                heading: Heading::Tags,
+                rows: TagColour::ALL.map(PlaceKind::Tag).to_vec(),
+            },
         ]
     );
+}
+
+#[test]
+fn a_tag_row_goes_to_its_colours_search_and_the_cursor_finds_it_there() {
+    let places = person();
+    let red = Location::Tag(TagColour::Red);
+    assert_eq!(
+        places.location_of(PlaceKind::Tag(TagColour::Red)),
+        Some(red.clone())
+    );
+    assert_eq!(
+        places.key_of(&red),
+        Some(PlaceKey::Place(PlaceKind::Tag(TagColour::Red)))
+    );
+    // A search starts from the home folder: with none the colours are not listed.
+    let homeless = Places::default().with(PlaceKind::Desktop, folder("/d"));
+    assert_eq!(homeless.location_of(PlaceKind::Tag(TagColour::Red)), None);
+    assert_eq!(title_words(&red), "Red");
 }
 
 #[test]

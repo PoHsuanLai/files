@@ -2,10 +2,11 @@
 
 use dioxus::prelude::*;
 use ds::host::measure::Anchor;
-use ds::prelude::{Availability, Menu, MenuItem, MenuPlacement, Point, Px};
+use ds::prelude::{Availability, Check, Menu, MenuItem, MenuPlacement, Point, Px};
+use files_core::TagColour;
 use files_model::Availability as Can;
 
-use crate::menu::{Command, OTHER_APP, Over, Pick, app_lines, groups_for};
+use crate::menu::{Command, OTHER_APP, Over, Pick, TagMark, app_lines, groups_for, tag_mark};
 use crate::state::Browse;
 
 /// Where a context menu was asked for, and over what.
@@ -47,7 +48,24 @@ fn open_with(browse: Browse) -> Vec<MenuItem<Pick>> {
     lines
 }
 
-/// The menu's lines: each group's commands, a rule between groups, Open With as a submenu.
+/// The Tags submenu: the seven colours, each checked when every selected item has it.
+fn tags(browse: Browse) -> Vec<MenuItem<Pick>> {
+    let state = browse.state.read();
+    TagColour::ALL
+        .into_iter()
+        .map(|colour| {
+            let check = match tag_mark(&state, colour) {
+                Some(TagMark::Every) => Check::On,
+                Some(TagMark::Part) => Check::Mixed,
+                None => Check::Off,
+            };
+            MenuItem::new(Pick::Tag(colour), colour.label()).with_check(check)
+        })
+        .collect()
+}
+
+/// The menu's lines: each group's commands, a rule between groups, Open With and Tags as
+/// submenus.
 fn items(browse: Browse, over: Over) -> Vec<MenuItem<Pick>> {
     let groups = groups_for(&browse.state.read(), over);
     let mut lines = Vec::new();
@@ -56,12 +74,17 @@ fn items(browse: Browse, over: Over) -> Vec<MenuItem<Pick>> {
             lines.push(MenuItem::Separator);
         }
         for (command, can) in group {
-            let line = if command == Command::OpenWith {
+            let line = if command == Command::OpenWith || command == Command::Tags {
+                let children = if command == Command::Tags {
+                    tags(browse)
+                } else {
+                    open_with(browse)
+                };
                 MenuItem::Submenu {
                     title: command.title().to_owned(),
                     image: None,
                     availability: availability(can),
-                    children: open_with(browse),
+                    children,
                 }
             } else {
                 MenuItem::new(Pick::Command(command), command.title())

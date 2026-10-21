@@ -109,6 +109,14 @@ impl Browser {
         }
     }
 
+    /// Whether the selection is one folder, which "Open in New Tab" can open.
+    pub fn can_open_in_new_tab(&self) -> crate::history::Availability {
+        match self.lone_folder() {
+            Some(_) => crate::history::Availability::Available,
+            None => crate::history::Availability::Unavailable,
+        }
+    }
+
     /// Open the selection: a lone folder is entered, files go to their apps, and anything else
     /// does nothing.
     pub(crate) fn open(self) -> Stepped {

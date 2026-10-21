@@ -9,10 +9,10 @@ use files_core::{
     OpPlan, Resolution, Transfer,
 };
 use files_fs::{
-    FakeLister, FakePrefs, FakeWatcher, FolderEvent, ListError, Lister, NoPrefs, PrefsStore,
-    Watcher,
+    FakeLister, FakePrefs, FakeTagger, FakeWatcher, FolderEvent, ListError, Lister, NoPrefs,
+    NoTags, PrefsStore, Tagger, Watcher,
 };
-use files_model::{Change, Effect, End, Input, ListFailure, OpEvent, OpenTarget};
+use files_model::{Change, Effect, End, Input, ListFailure, OpEvent, OpenTarget, TabId};
 use files_trash::{FakeTrash, Trash};
 use files_ui::edge::{Edge, Heard, Seams, change_of};
 use files_ui::{NoApps, NoVolumes, Opener, Volumes};
@@ -33,7 +33,8 @@ pub(super) struct Rig {
     pub(super) edge: Edge,
     pub(super) inbox: UnboundedReceiver<Heard>,
     pub(super) lister: Arc<FakeLister>,
-    watcher: Arc<FakeWatcher>,
+    pub(super) watcher: Arc<FakeWatcher>,
+    pub(super) tagger: Arc<FakeTagger>,
     pub(super) opener: Arc<RecordingOpener>,
     trash: Arc<FakeTrash>,
     pub(super) prefs: Arc<FakePrefs>,
@@ -46,6 +47,11 @@ pub(super) fn rig() -> Rig {
 
 /// A rig whose computer has the disks `volumes` holds.
 pub(super) fn rig_over(volumes: Arc<dyn Volumes>) -> Rig {
+    rig_with(volumes, Arc::new(FakeTagger::new()))
+}
+
+/// A rig whose files are tagged by `tagger`.
+pub(super) fn rig_with(volumes: Arc<dyn Volumes>, tagger: Arc<FakeTagger>) -> Rig {
     let lister = Arc::new(FakeLister::new());
     let watcher = Arc::new(FakeWatcher::new());
     let opener = Arc::new(RecordingOpener::default());
@@ -58,6 +64,7 @@ pub(super) fn rig_over(volumes: Arc<dyn Volumes>) -> Rig {
         opener: Arc::clone(&opener) as Arc<dyn Opener>,
         trash: Arc::clone(&trash) as Arc<dyn Trash>,
         prefs: Arc::clone(&prefs) as Arc<dyn PrefsStore>,
+        tagger: Arc::clone(&tagger) as Arc<dyn Tagger>,
         apps: Arc::new(NoApps),
         volumes,
     };
@@ -67,6 +74,7 @@ pub(super) fn rig_over(volumes: Arc<dyn Volumes>) -> Rig {
         inbox,
         lister,
         watcher,
+        tagger,
         opener,
         trash,
         prefs,
@@ -99,10 +107,14 @@ fn listing_a_folder_answers_with_its_entries() {
     let here = folder("/p");
     rig.lister.set(here.clone(), Ok(vec![file("a"), file("b")]));
     let place = Location::Folder(here);
-    rig.edge.run(vec![Effect::List(place.clone())]);
+    rig.edge
+        .run_in(TabId::FIRST, vec![Effect::List(place.clone())]);
     assert_eq!(
         next(&mut rig.inbox),
-        Heard::Input(Input::Listed(place, Ok(vec![file("a"), file("b")])))
+        Heard::Tab(
+            TabId::FIRST,
+            Input::Listed(place, Ok(vec![file("a"), file("b")]))
+        )
     );
 }
 
@@ -131,10 +143,11 @@ fn a_listing_that_fails_says_why_in_the_models_terms() {
         let here = folder("/p");
         rig.lister.set(here.clone(), result);
         let place = Location::Folder(here);
-        rig.edge.run(vec![Effect::List(place.clone())]);
+        rig.edge
+            .run_in(TabId::FIRST, vec![Effect::List(place.clone())]);
         assert_eq!(
             next(&mut rig.inbox),
-            Heard::Input(Input::Listed(place, Err(want))),
+            Heard::Tab(TabId::FIRST, Input::Listed(place, Err(want))),
             "{why}"
         );
     }
@@ -148,8 +161,10 @@ fn the_trash_is_listed_as_rows_named_as_it_stores_them() {
     let item = ItemRef::new(folder, name("notes.txt"));
     let thrown = rig.trash.trash(std::slice::from_ref(&item)).unwrap();
 
-    rig.edge.run(vec![Effect::List(Location::Trash)]);
-    let Heard::Input(Input::Listed(Location::Trash, Ok(rows))) = next(&mut rig.inbox) else {
+    rig.edge
+        .run_in(TabId::FIRST, vec![Effect::List(Location::Trash)]);
+    let Heard::Tab(TabId::FIRST, Input::Listed(Location::Trash, Ok(rows))) = next(&mut rig.inbox)
+    else {
         panic!("the Trash was not listed");
     };
     assert_eq!(rows.len(), 1);
@@ -165,16 +180,20 @@ fn watching_follows_a_folder_until_it_is_left() {
     let place = Location::Folder(here.clone());
     rig.lister.set(here.clone(), Ok(vec![file("a")]));
 
-    rig.edge.run(vec![Effect::Watch(place.clone())]);
+    rig.edge
+        .run_in(TabId::FIRST, vec![Effect::Watch(place.clone())]);
     assert_eq!(rig.watcher.watched(), vec![here.clone()]);
 
     rig.watcher.push(&here, FolderEvent::Changed(name("a")));
     assert_eq!(
         next(&mut rig.inbox),
-        Heard::Input(Input::Changed(place.clone(), Change::Updated(file("a"))))
+        Heard::Tab(
+            TabId::FIRST,
+            Input::Changed(place.clone(), Change::Updated(file("a")))
+        )
     );
 
-    rig.edge.run(vec![Effect::Unwatch(place)]);
+    rig.edge.run_in(TabId::FIRST, vec![Effect::Unwatch(place)]);
     assert!(rig.watcher.watched().is_empty());
 }
 
@@ -232,7 +251,8 @@ fn an_entry_that_cannot_be_read_again_asks_for_a_rescan() {
 fn files_are_handed_to_the_opener_by_path() {
     let rig = rig();
     let target = OpenTarget::new(folder("/p"), name("a.txt"));
-    rig.edge.run(vec![Effect::OpenFiles(vec![target])]);
+    rig.edge
+        .run_in(TabId::FIRST, vec![Effect::OpenFiles(vec![target])]);
     assert_eq!(rig.opener.opened(), vec![PathBuf::from("/p/a.txt")]);
 }
 
@@ -244,12 +264,13 @@ fn a_file_no_app_opens_is_told_in_words() {
         opener: Arc::new(NoAppOpener),
         trash: Arc::new(FakeTrash::new("/nonexistent/never-used")),
         prefs: Arc::new(NoPrefs),
+        tagger: Arc::new(NoTags),
         apps: Arc::new(NoApps),
         volumes: Arc::new(NoVolumes),
     };
     let (edge, mut inbox) = Edge::new(seams);
     let target = OpenTarget::new(folder("/p"), name("x.zzz"));
-    edge.run(vec![Effect::OpenFiles(vec![target])]);
+    edge.run_in(TabId::FIRST, vec![Effect::OpenFiles(vec![target])]);
     assert_eq!(
         next(&mut inbox),
         Heard::Told("There is no app set to open \u{201c}x.zzz\u{201d}.".to_owned())
@@ -267,12 +288,15 @@ fn until(inbox: &mut UnboundedReceiver<Heard>, found: impl Fn(&Heard) -> bool) -
 }
 
 fn finished(heard: &Heard) -> bool {
-    matches!(heard, Heard::Input(Input::Op(OpEvent::Finished(_))))
+    matches!(
+        heard,
+        Heard::Tab(TabId::FIRST, Input::Op(OpEvent::Finished(_)))
+    )
 }
 
 /// How the change that just ended ended.
 fn end_of(heard: Heard) -> End {
-    let Heard::Input(Input::Op(OpEvent::Finished(outcome))) = heard else {
+    let Heard::Tab(TabId::FIRST, Input::Op(OpEvent::Finished(outcome))) = heard else {
         panic!("not a finished change");
     };
     outcome.end
@@ -283,15 +307,18 @@ fn renaming_moves_the_file_and_asks_for_the_listing_again() {
     let mut rig = rig();
     let dir = scratch_folder();
     let here = FolderPath::new(dir.path()).unwrap();
-    rig.edge.run(vec![Effect::Rename {
-        folder: here,
-        from: name("notes.txt"),
-        to: name("ideas.txt"),
-    }]);
+    rig.edge.run_in(
+        TabId::FIRST,
+        vec![Effect::Rename {
+            folder: here,
+            from: name("notes.txt"),
+            to: name("ideas.txt"),
+        }],
+    );
     assert_eq!(end_of(until(&mut rig.inbox, finished)), End::Done);
     assert_eq!(
         next(&mut rig.inbox),
-        Heard::Input(Input::Changed(at(dir.path()), Change::Rescan))
+        Heard::All(Input::Changed(at(dir.path()), Change::Rescan))
     );
     assert!(dir.path().join("ideas.txt").exists());
     assert!(!dir.path().join("notes.txt").exists());
@@ -301,11 +328,14 @@ fn renaming_moves_the_file_and_asks_for_the_listing_again() {
 fn renaming_onto_another_file_is_refused_and_the_failure_is_reported() {
     let mut rig = rig();
     let dir = scratch_folder();
-    rig.edge.run(vec![Effect::Rename {
-        folder: FolderPath::new(dir.path()).unwrap(),
-        from: name("notes.txt"),
-        to: name("report.pdf"),
-    }]);
+    rig.edge.run_in(
+        TabId::FIRST,
+        vec![Effect::Rename {
+            folder: FolderPath::new(dir.path()).unwrap(),
+            from: name("notes.txt"),
+            to: name("report.pdf"),
+        }],
+    );
     assert_eq!(
         end_of(until(&mut rig.inbox, finished)),
         End::Failed(OpFailure::Taken)
@@ -321,11 +351,14 @@ fn renaming_onto_another_file_is_refused_and_the_failure_is_reported() {
 fn renaming_a_file_that_is_gone_is_reported() {
     let mut rig = rig();
     let dir = scratch_folder();
-    rig.edge.run(vec![Effect::Rename {
-        folder: FolderPath::new(dir.path()).unwrap(),
-        from: name("nope.txt"),
-        to: name("other.txt"),
-    }]);
+    rig.edge.run_in(
+        TabId::FIRST,
+        vec![Effect::Rename {
+            folder: FolderPath::new(dir.path()).unwrap(),
+            from: name("nope.txt"),
+            to: name("other.txt"),
+        }],
+    );
     assert_eq!(
         end_of(until(&mut rig.inbox, finished)),
         End::Failed(OpFailure::NotFound)
@@ -335,7 +368,8 @@ fn renaming_a_file_that_is_gone_is_reported() {
 #[test]
 fn a_failure_the_model_tells_is_said_in_plain_words() {
     let mut rig = rig();
-    rig.edge.run(vec![Effect::Tell(OpFailure::Taken)]);
+    rig.edge
+        .run_in(TabId::FIRST, vec![Effect::Tell(OpFailure::Taken)]);
     assert_eq!(
         next(&mut rig.inbox),
         Heard::Told("That name is taken.".to_owned())
@@ -348,19 +382,22 @@ fn trashing_reports_each_step_rescans_what_changed_and_can_be_undone() {
     let dir = scratch_folder();
     let here = FolderPath::new(dir.path()).unwrap();
     let item = ItemRef::new(here.clone(), name("notes.txt"));
-    rig.edge.run(vec![Effect::Run(OpPlan::Trash {
-        items: vec![item.clone()],
-    })]);
+    rig.edge.run_in(
+        TabId::FIRST,
+        vec![Effect::Run(OpPlan::Trash {
+            items: vec![item.clone()],
+        })],
+    );
 
     let started = until(&mut rig.inbox, |h| {
-        matches!(h, Heard::Input(Input::Op(OpEvent::Started(_))))
+        matches!(h, Heard::Tab(TabId::FIRST, Input::Op(OpEvent::Started(_))))
     });
-    let Heard::Input(Input::Op(OpEvent::Started(summary))) = started else {
+    let Heard::Tab(TabId::FIRST, Input::Op(OpEvent::Started(summary))) = started else {
         panic!("not started");
     };
     assert_eq!(summary.kind, OpKind::Trash);
     let done = until(&mut rig.inbox, finished);
-    let Heard::Input(Input::Op(OpEvent::Finished(outcome))) = done else {
+    let Heard::Tab(TabId::FIRST, Input::Op(OpEvent::Finished(outcome))) = done else {
         panic!("not finished");
     };
     assert_eq!(outcome.end, End::Done);
@@ -368,11 +405,11 @@ fn trashing_reports_each_step_rescans_what_changed_and_can_be_undone() {
     assert!(!dir.path().join("notes.txt").exists());
     let rescans = [next(&mut rig.inbox), next(&mut rig.inbox)];
     for place in [Location::Folder(here), Location::Trash] {
-        let want = Heard::Input(Input::Changed(place, Change::Rescan));
+        let want = Heard::All(Input::Changed(place, Change::Rescan));
         assert!(rescans.contains(&want), "{want:?} is not in {rescans:?}");
     }
 
-    rig.edge.run(vec![Effect::Undo]);
+    rig.edge.run_in(TabId::FIRST, vec![Effect::Undo]);
     assert_eq!(end_of(until(&mut rig.inbox, finished)), End::Done);
     assert!(dir.path().join("notes.txt").exists());
 }
@@ -388,17 +425,19 @@ fn a_taken_name_is_asked_and_the_answer_goes_back_to_the_work() {
         vec![ItemRef::new(from, name("notes.txt"))],
         to,
     ));
-    rig.edge.run(vec![Effect::Run(plan)]);
+    rig.edge.run_in(TabId::FIRST, vec![Effect::Run(plan)]);
 
     let asked = until(&mut rig.inbox, |h| {
-        matches!(h, Heard::Input(Input::Op(OpEvent::Asking(_))))
+        matches!(h, Heard::Tab(TabId::FIRST, Input::Op(OpEvent::Asking(_))))
     });
-    let Heard::Input(Input::Op(OpEvent::Asking(conflict))) = asked else {
+    let Heard::Tab(TabId::FIRST, Input::Op(OpEvent::Asking(conflict))) = asked else {
         panic!("not asked");
     };
     assert_eq!(conflict.item, name("notes.txt"));
-    rig.edge
-        .run(vec![Effect::Answer(Resolution::once(Answer::KeepBoth))]);
+    rig.edge.run_in(
+        TabId::FIRST,
+        vec![Effect::Answer(Resolution::once(Answer::KeepBoth))],
+    );
     assert_eq!(end_of(until(&mut rig.inbox, finished)), End::Done);
     assert_eq!(
         std::fs::read_to_string(dir.path().join("notes 2.txt")).unwrap(),
@@ -410,6 +449,7 @@ fn a_taken_name_is_asked_and_the_answer_goes_back_to_the_work() {
 fn a_move_to_the_trash_is_announced_so_the_window_can_offer_to_undo_it() {
     let mut rig = rig();
     let summary = files_core::Summary::new(OpKind::Trash, 1, Some(name("x")));
-    rig.edge.run(vec![Effect::Announce(summary.clone())]);
+    rig.edge
+        .run_in(TabId::FIRST, vec![Effect::Announce(summary.clone())]);
     assert_eq!(next(&mut rig.inbox), Heard::Announced(summary));
 }

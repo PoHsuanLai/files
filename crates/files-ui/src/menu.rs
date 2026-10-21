@@ -1,7 +1,7 @@
 //! What the context menu offers: pure, so a table can say it.
 
-use files_core::Location;
-use files_model::{AppPick, Availability, Browser, Input};
+use files_core::{Location, TagColour};
+use files_model::{AppPick, Availability, Browser, Held, Input};
 
 use crate::edge::{AppChoiceView, AppRole};
 
@@ -10,6 +10,8 @@ use crate::edge::{AppChoiceView, AppRole};
 pub enum Command {
     /// Open the selection.
     Open,
+    /// Open the selected folder in a new tab.
+    OpenInNewTab,
     /// Open the selection with an app picked from a submenu. It is a parent, never picked itself.
     OpenWith,
     /// Open Quick Look on the selection.
@@ -20,6 +22,8 @@ pub enum Command {
     GetInfoFolder,
     /// Put the full paths of the selection on the clipboard.
     CopyAsPathname,
+    /// Tag the selection with a colour, picked from a submenu. It is a parent, never picked itself.
+    Tags,
     /// Move the selection to the Trash.
     MoveToTrash,
     /// Rename the selected item.
@@ -43,10 +47,12 @@ impl Command {
     pub fn title(self) -> &'static str {
         match self {
             Command::Open => "Open",
+            Command::OpenInNewTab => "Open in New Tab",
             Command::OpenWith => "Open With",
             Command::QuickLook => "Quick Look",
             Command::GetInfo | Command::GetInfoFolder => "Get Info",
             Command::CopyAsPathname => "Copy as Pathname",
+            Command::Tags => "Tags",
             Command::MoveToTrash => "Move to Trash",
             Command::Rename => "Rename",
             Command::Copy => "Copy",
@@ -61,8 +67,9 @@ impl Command {
     /// What picking it asks of the browser; `None` for a parent of a submenu, which is not picked.
     pub fn input(self) -> Option<Input> {
         Some(match self {
-            Command::OpenWith => return None,
+            Command::OpenWith | Command::Tags => return None,
             Command::Open => Input::Open,
+            Command::OpenInNewTab => Input::OpenInNewTab,
             Command::QuickLook => Input::QuickLook,
             Command::GetInfo => Input::GetInfo,
             Command::GetInfoFolder => Input::GetInfoFolder,
@@ -88,6 +95,8 @@ pub enum Pick {
     App(AppPick),
     /// Choose from every installed app.
     OtherApp,
+    /// A colour of the Tags submenu: put it on the selection, or take it off.
+    Tag(TagColour),
 }
 
 impl Pick {
@@ -97,8 +106,28 @@ impl Pick {
             Pick::Command(command) => command.input(),
             Pick::App(app) => Some(Input::OpenWith(app.clone())),
             Pick::OtherApp => Some(Input::ChooseApp),
+            Pick::Tag(colour) => Some(Input::Tag(*colour)),
         }
     }
+}
+
+/// How the Tags submenu marks `colour`: checked when every selected item has it, a dash when some
+/// do.
+pub fn tag_mark(browser: &Browser, colour: TagColour) -> Option<TagMark> {
+    match browser.held(colour) {
+        Held::Every => Some(TagMark::Every),
+        Held::Part => Some(TagMark::Part),
+        Held::Nothing => None,
+    }
+}
+
+/// The mark beside a colour in the Tags submenu.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TagMark {
+    /// Every selected item has the tag.
+    Every,
+    /// Some of them do.
+    Part,
 }
 
 /// The words of the line that opens the sheet of every installed app.
@@ -182,7 +211,7 @@ pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, Availabili
         ]],
         (Location::Trash, Over::Background) => vec![vec![(Command::EmptyTrash, rows)]],
         (_, Over::Row) => vec![
-            vec![(Command::Open, some), (Command::OpenWith, some)],
+            open_group(browser, some),
             vec![(Command::MoveToTrash, some)],
             vec![
                 (Command::GetInfo, some),
@@ -190,6 +219,7 @@ pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, Availabili
                 (Command::QuickLook, some),
             ],
             vec![(Command::Copy, some), (Command::CopyAsPathname, some)],
+            vec![(Command::Tags, some)],
             vec![(Command::NewFolder, Availability::Available)],
         ],
         (_, Over::Background) => vec![
@@ -198,4 +228,14 @@ pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, Availabili
             vec![(Command::Paste, browser.can_paste())],
         ],
     }
+}
+
+/// Open, Open in New Tab (only on a lone folder, right after Open) and Open With.
+fn open_group(browser: &Browser, some: Availability) -> Vec<(Command, Availability)> {
+    let mut group = vec![(Command::Open, some)];
+    if browser.can_open_in_new_tab() == Availability::Available {
+        group.push((Command::OpenInNewTab, Availability::Available));
+    }
+    group.push((Command::OpenWith, some));
+    group
 }
