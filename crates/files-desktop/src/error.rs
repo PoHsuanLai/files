@@ -84,3 +84,18 @@ impl Said {
         }
     }
 }
+
+/// Why the window would not do what was asked.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum Refusal {
+    /// The window is closed.
+    #[error("Files isn\u{2019}t open any more.")]
+    Closed,
+    /// The change asked to undo is not the newest one any more.
+    #[error("That change can\u{2019}t be undone any more.")]
+    Gone,
+    /// Anything else, in words.
+    #[error("{0}")]
+    Failed(String),
+}

@@ -35,14 +35,16 @@ pub mod disks;
 mod error;
 pub mod file_manager;
 pub mod instance;
+pub mod intents;
 pub mod launch;
 mod token;
 pub mod uri;
 
 pub use disks::{Changes, DiskUsers, Disks, NoUsers, ProcUsers};
-pub use error::{DiskError, IntentError};
+pub use error::{DiskError, IntentError, Refusal};
 pub use file_manager::{Reveal, Show, ShowKind, ShowRequest, Sink, StartupId};
 pub use instance::{Bus, Claim, FileManagerName, InstanceError, Served, claim, forward, session};
+pub use intents::{Ask, Reply, Undoing, Window};
 pub use launch::{
     Activate, AppChoice, AppEntry, AppOffer, BusActivate, DesktopLauncher, EntryError, ExecError,
     ExecLine, Expand, LaunchError, Launcher, Spawn, SpawnCommand, Standing, StartError,

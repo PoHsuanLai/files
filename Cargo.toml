@@ -43,6 +43,18 @@ dirs = "6"
 notify = "8.2"
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "process"] }
 zbus = { version = "5.19", default-features = false, features = ["tokio"] }
+# files-desktop: the only crate that names docket or porter (scripts/check-boundary.sh), as
+# temor-desktop is for temor. The rev is temor's, so docket and porter lock the same everywhere:
+# docket 7c9b57cb locks porter b2adc64d (porter-core and prov), as temor does. docket-client is
+# feature `dbus` only: no router, no cedar. No [patch] is needed for docket or porter.
+docket-client = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7c9b57cb41516f8e050e797852bc1cc3d18736f0", default-features = false, features = ["dbus"] }
+docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7c9b57cb41516f8e050e797852bc1cc3d18736f0" }
+# Who may call Files' provider (intentd's unit), and the stand-in a test names for it.
+docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7c9b57cb41516f8e050e797852bc1cc3d18736f0" }
+prov = { git = "https://github.com/PoHsuanLai/porter.git", rev = "b2adc64da9ce49b41c83c73888a7d4da9e57a8bf" }
+porter-core = { git = "https://github.com/PoHsuanLai/porter.git", rev = "b2adc64da9ce49b41c83c73888a7d4da9e57a8bf" }
+# The tests of files-desktop write the calls the router sends as JSON.
+serde_json = "1"
 # Desktop entries (the parser and the walk of the applications folders), UI-free without its default feature.
 ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4aab5a5bb4636a4235d3d92c046a58e0", default-features = false }  # 90e73d8d (v0.3.37)
 tempfile = "3"

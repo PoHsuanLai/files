@@ -1,0 +1,173 @@
+# What agents and the command line may ask Files to do (docket intents vocabulary 1). Installed to
+# $XDG_DATA_DIRS/quire/intents/org.quire.Files.toml beside dbus-1/services/org.quire.Files.service,
+# which starts Files when docket's router calls the name. Every field is written (porter's
+# provider-file rule). crates/files-desktop embeds this file, so the file the installer ships and
+# the one the window answers for are one file; a test holds it to docket's validator.
+#
+# Action names start with `files`, the app name's last element: the validator refuses any other
+# prefix.
+#
+# Effects:
+# - Showing a place, naming the selection and naming the folder only look: `read`. What the window
+#   shows is somebody's file names, so what is returned is `third_party`, source `file`; reading it
+#   taints the agent's session (`ReadUntrusted`, decided by the router).
+# - Moving to the Trash, copying, moving and making a folder run on the window's own queue of
+#   changes, so they show progress and the window's Undo takes them back: `undoable_write` with a
+#   token. A name that is taken asks the person in the window, as it does for their own copy.
+# - Emptying the Trash erases for good. It is `destructive`, always asks, and the window asks again
+#   in its own dialog before anything is erased: asking is all this action does by itself.
+
+vocab = 1
+app = "org.quire.Files"
+entities = []
+
+[[actions]]
+name = "files.open"
+label = "Show a file or folder"
+on = { kind = "nothing" }
+effect = "read"
+classes = ["files"]
+undo = "not_undoable"
+reach = "offered"
+latency = "instant"
+result = { kind = "nothing" }
+keys = { kind = "none" }
+lasting = "no"
+dry_run = "none"
+
+[[actions.params]]
+name = "path"
+label = "The file or folder to show"
+ty = { kind = "file" }
+need = { kind = "required" }
+sink = "inert"
+
+[[actions]]
+name = "files.trash"
+label = "Move to the Trash"
+on = { kind = "files" }
+effect = "undoable_write"
+classes = ["files"]
+undo = "token"
+reach = "offered"
+latency = "quick"
+result = { kind = "nothing" }
+keys = { kind = "none" }
+lasting = "no"
+dry_run = "none"
+params = []
+
+[[actions]]
+name = "files.new_folder"
+label = "Make a new folder"
+on = { kind = "nothing" }
+effect = "undoable_write"
+classes = ["files"]
+undo = "token"
+reach = "offered"
+latency = "quick"
+result = { kind = "nothing" }
+keys = { kind = "none" }
+lasting = "no"
+dry_run = "none"
+
+[[actions.params]]
+name = "folder"
+label = "The folder to make it in"
+ty = { kind = "file" }
+need = { kind = "required" }
+sink = "path"
+
+[[actions.params]]
+name = "name"
+label = "Its name (untitled folder if left out)"
+ty = { kind = "text", v = { max = 255, lines = "one" } }
+need = { kind = "optional" }
+sink = "path"
+
+[[actions]]
+name = "files.copy"
+label = "Copy to a folder"
+on = { kind = "files" }
+effect = "undoable_write"
+classes = ["files"]
+undo = "token"
+reach = "offered"
+latency = "long"
+result = { kind = "nothing" }
+keys = { kind = "none" }
+lasting = "no"
+dry_run = "none"
+
+[[actions.params]]
+name = "to"
+label = "The folder to copy into"
+ty = { kind = "file" }
+need = { kind = "required" }
+sink = "path"
+
+[[actions]]
+name = "files.move"
+label = "Move to a folder"
+on = { kind = "files" }
+effect = "undoable_write"
+classes = ["files"]
+undo = "token"
+reach = "offered"
+latency = "long"
+result = { kind = "nothing" }
+keys = { kind = "none" }
+lasting = "no"
+dry_run = "none"
+
+[[actions.params]]
+name = "to"
+label = "The folder to move into"
+ty = { kind = "file" }
+need = { kind = "required" }
+sink = "path"
+
+[[actions]]
+name = "files.empty_trash"
+label = "Empty the Trash"
+on = { kind = "nothing" }
+effect = "destructive"
+classes = ["files"]
+undo = "not_undoable"
+reach = "ask_always"
+latency = "instant"
+result = { kind = "nothing" }
+keys = { kind = "none" }
+lasting = "no"
+dry_run = "none"
+params = []
+
+[[actions]]
+name = "files.selection"
+label = "Get the selected items"
+on = { kind = "nothing" }
+effect = "read"
+classes = ["files"]
+undo = "not_undoable"
+reach = "offered"
+latency = "instant"
+result = { kind = "value", v = { ty = { kind = "text", v = { max = 65536, lines = "many" } }, trust = { kind = "third_party", v = { kind = "file" } } } }
+keys = { kind = "none" }
+lasting = "no"
+dry_run = "none"
+params = []
+
+[[actions]]
+name = "files.current_folder"
+label = "Get the folder in the window"
+on = { kind = "nothing" }
+effect = "read"
+classes = ["files"]
+undo = "not_undoable"
+reach = "offered"
+latency = "instant"
+result = { kind = "value", v = { ty = { kind = "text", v = { max = 4096, lines = "one" } }, trust = { kind = "third_party", v = { kind = "file" } } } }
+keys = { kind = "none" }
+lasting = "no"
+dry_run = "none"
+params = []
