@@ -1,5 +1,5 @@
-//! The parts of the disk service this crate calls. Properties are read from the managed-objects
-//! reply in one call, so these name only the methods.
+//! The methods of the disk service this crate calls. Properties are read from the managed-objects
+//! reply in one call, so none is named here.
 
 use std::collections::HashMap;
 
@@ -18,10 +18,6 @@ pub(super) trait Filesystem {
 
     /// Unmounts it.
     fn unmount(&self, options: HashMap<&str, Value<'_>>) -> zbus::Result<()>;
-
-    /// Where it is mounted, as NUL-ended byte strings.
-    #[zbus(property)]
-    fn mount_points(&self) -> zbus::Result<Vec<Vec<u8>>>;
 }
 
 /// A drive, for taking it away after its disks are unmounted.

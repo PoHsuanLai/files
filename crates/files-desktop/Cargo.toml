@@ -29,6 +29,7 @@ zbus = { workspace = true }
 
 [dev-dependencies]
 files-desktop = { path = ".", features = ["testing"] }
+serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
 

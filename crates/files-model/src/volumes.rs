@@ -51,7 +51,8 @@ impl Browser {
         let Some(volume) = self.volume(&id) else {
             return (self, Vec::new());
         };
-        match volume.folder().cloned() {
+        let folder = volume.folder().cloned();
+        match folder {
             Some(folder) => self.go(Location::Folder(folder)),
             None => (self, vec![Effect::MountVolume(id)]),
         }
