@@ -5,4 +5,5 @@ mod fakes;
 mod info;
 mod list;
 mod prefs;
+mod tags;
 mod watch;
