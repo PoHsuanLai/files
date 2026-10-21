@@ -13,6 +13,7 @@ publish = false
 # The layer table in scripts/check-boundary.sh says which of these may name which.
 [workspace.dependencies]
 files-core = { path = "crates/files-core" }
+files-mime = { path = "crates/files-mime" }
 files-fs = { path = "crates/files-fs" }
 notify = "8.2"
 tempfile = "3"
