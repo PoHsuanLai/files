@@ -8,9 +8,10 @@ use ds::prelude::{
     EmptyState, Operation, PendingToken, Progress as Share, ProgressIndicator, ProgressStyle, Shown,
 };
 use ds::style::tokens::control_size::ControlSize;
-use files_core::Location;
+use files_core::{Location, ViewMode};
 use files_model::{Input, ListFailure, Listing};
 
+use super::icons::FolderIcons;
 use super::menu::ContextAt;
 use super::table::FolderTable;
 use super::tabs::TabStrip;
@@ -23,6 +24,8 @@ use crate::state::Browse;
 enum Body {
     /// The table: rows, or none yet while the folder is being read.
     Table,
+    /// The grid of tiles, for the same rows.
+    Icons,
     /// The folder has nothing to show.
     Empty,
     /// The folder could not be read.
@@ -35,9 +38,14 @@ fn body_of(browse: Browse) -> Body {
     match state.listing() {
         Listing::Failed(failure) => Body::Failed(*failure),
         Listing::Loaded(_) if state.rows().is_empty() => Body::Empty,
-        // A search's rows stream into the table as they are found; a listing files-model adds
-        // later is drawn as a table until this names it.
-        Listing::Loaded(_) | Listing::Loading | Listing::Searching(_) | _ => Body::Table,
+        // A search's rows stream into the view as they are found; a listing files-model adds
+        // later is drawn as the view is until this names it.
+        Listing::Loaded(_) | Listing::Loading | Listing::Searching(_) | _ => {
+            match state.prefs().view {
+                ViewMode::Icons => Body::Icons,
+                ViewMode::List | _ => Body::Table,
+            }
+        }
     }
 }
 
@@ -81,6 +89,7 @@ pub(super) fn FolderPane(
 ) -> Element {
     let body = match body_of(browse) {
         Body::Table => rsx! { FolderTable { browse, menu, zone } },
+        Body::Icons => rsx! { FolderIcons { browse } },
         Body::Empty => rsx! {
             EmptyState { form: EmptyForm::Empty, title: empty_words(browse.state.read().location()) }
         },

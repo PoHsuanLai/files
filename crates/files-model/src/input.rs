@@ -94,7 +94,7 @@ pub enum Input {
     Forward,
     /// Go to the folder that holds this one (⌘↑).
     Enclosing,
-    /// Put up the Go to Folder sheet (⌘L), with the folder shown as its text.
+    /// Put up the Go to Folder sheet (⇧⌘G), with the folder shown as its text.
     GoToFolder,
     /// The Go to Folder field's text changed.
     GoToTyped(String),

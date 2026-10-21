@@ -30,8 +30,12 @@ the state and effects they give, with no disk.
 ## 3. Look
 
 The window is quire's, as mailo's and temor's are: `Ds` with a `SplitView`, the `Sidebar` source list,
-the `Toolbar`, `VirtualTable` for the list view. Nothing missing is drawn locally; it is asked of quire
-first. App CSS, if any, is layout only and passes `ds_lint` Strict with no exceptions.
+the `Toolbar`, `VirtualTable` for the list view and `CollectionView` for the icon view. Both views
+read the same browser and answer the same inputs: a pick is an `Input::Click`, and a double click or
+Command+Down (their `onopen`) is `Input::Open`. The view is the folder's remembered `ViewMode`, set by the
+toolbar's switcher or Command+1 (icons) and Command+2 (list). Nothing missing is drawn locally; it is asked
+of quire first. Keys the views leave alone (Return renames, Space is Quick Look, Command+Up and Command+Down
+with a modifier, Shift+Command+G for Go to Folder) reach the app's keymap in `files-ui/src/keys.rs`. App CSS, if any, is layout only and passes `ds_lint` Strict with no exceptions.
 
 ## 4. Quick Look, Get Info and remembered views
 

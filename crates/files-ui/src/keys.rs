@@ -12,6 +12,7 @@ use dioxus::prelude::{
 };
 use ds::base::command::types_text;
 use ds::prelude::{ActionTaken, Keys, Shown, use_keys};
+use files_core::ViewMode;
 use files_model::{Browser, Chooser, GoTo, InfoView, Input};
 
 use crate::state::Browse;
@@ -44,11 +45,14 @@ enum Own {
     EmptyTrash,
     /// Show the properties of the selection (Command+I).
     GetInfo,
-    /// Go to a folder typed by path (Command+L, the location key of Linux file managers;
-    /// Finder's Shift+Command+G is held by "find previous" in every app for now).
+    /// Go to a folder typed by path (Command+Shift+G).
     GoToFolder,
     /// Put the paths of the selection on the clipboard (Command+Option+C).
     CopyAsPathname,
+    /// Show the folder as icons (Command+1).
+    AsIcons,
+    /// Show the folder as a list (Command+2).
+    AsList,
     /// Open a new tab on this folder (Command+T).
     NewTab,
     /// Show the next tab (Command+Shift+]).
@@ -83,12 +87,14 @@ const OWN: &[(Own, &str, &[&str])] = &[
         &["Primary+Shift+Backspace"],
     ),
     (Own::GetInfo, "files.get-info", &["Primary+I"]),
-    (Own::GoToFolder, "files.go-to-folder", &["Primary+L"]),
+    (Own::GoToFolder, "files.go-to-folder", &["Primary+Shift+G"]),
     (
         Own::CopyAsPathname,
         "files.copy-pathname",
         &["Primary+Alt+C"],
     ),
+    (Own::AsIcons, "files.as-icons", &["Primary+1"]),
+    (Own::AsList, "files.as-list", &["Primary+2"]),
     (Own::NewTab, "files.new-tab", &["Primary+T"]),
     (
         Own::NextTab,
@@ -123,10 +129,14 @@ fn rows(id: &str, chords: &[&str]) -> Vec<(AppAction, DefaultChord)> {
 
 /// `groups` as one registration for `app`.
 fn registration(app: &AppId, groups: &[Vec<(AppAction, DefaultChord)>]) -> Registration {
-    // Files has no text styles and no fonts, so Command+I is Get Info rather than Italic and
-    // Command+T is New Tab rather than Show Fonts, as in Finder.
-    let start =
-        Registration::new(app).forgo_all([StandardAction::Italic, StandardAction::ShowFonts]);
+    // Files has no text styles, no fonts and no find, so Command+I is Get Info rather than Italic,
+    // Command+T is New Tab rather than Show Fonts, and Shift+Command+G is Go to Folder rather
+    // than Find Previous, as in Finder.
+    let start = Registration::new(app).forgo_all([
+        StandardAction::Italic,
+        StandardAction::ShowFonts,
+        StandardAction::FindPrevious,
+    ]);
     groups
         .iter()
         .flatten()
@@ -166,8 +176,6 @@ pub(crate) fn pressed(
     sidebar: Signal<Shown>,
     event: &KeyboardEvent,
 ) -> ActionTaken {
-    // Read first, whatever the key: it is only meaningful inside this one event.
-    let trail = browse.take_trail();
     // The name field has the keyboard while one is typed: its keys are its own.
     if browse.renaming() {
         return ActionTaken::No;
@@ -181,18 +189,13 @@ pub(crate) fn pressed(
         return ActionTaken::No;
     }
     match keys.action_of(event, Context::Normal) {
-        Some(action) => act(&action, browse, sidebar, trail),
+        Some(action) => act(&action, browse, sidebar),
         None => type_ahead(browse, event),
     }
 }
 
 /// Carries out `action`, when the window answers it.
-fn act(
-    action: &Action,
-    browse: Browse,
-    mut sidebar: Signal<Shown>,
-    trail: Option<files_model::Browser>,
-) -> ActionTaken {
+fn act(action: &Action, browse: Browse, mut sidebar: Signal<Shown>) -> ActionTaken {
     let send = |input: Input| {
         browse.send(input);
         ActionTaken::Yes
@@ -218,16 +221,8 @@ fn act(
         Action::App(app) => match own_of(app) {
             Some(Own::Back) => send(Input::Back),
             Some(Own::Forward) => send(Input::Forward),
-            // The table read these two as "move the cursor" first; the person meant the
-            // selection they had.
-            Some(Own::Enclosing) => {
-                put_back(browse, trail);
-                send(Input::Enclosing)
-            }
-            Some(Own::Open) => {
-                put_back(browse, trail);
-                send(Input::Open)
-            }
+            Some(Own::Enclosing) => send(Input::Enclosing),
+            Some(Own::Open) => send(Input::Open),
             Some(Own::ShowHidden) => send(Input::ToggleHidden),
             Some(Own::Rename) => send(Input::BeginRename),
             Some(Own::NewFolder) => send(Input::NewFolder),
@@ -237,6 +232,8 @@ fn act(
             Some(Own::GetInfo) => send(Input::GetInfo),
             Some(Own::GoToFolder) => send(Input::GoToFolder),
             Some(Own::CopyAsPathname) => send(Input::CopyAsPathname),
+            Some(Own::AsIcons) => send(Input::SetView(ViewMode::Icons)),
+            Some(Own::AsList) => send(Input::SetView(ViewMode::List)),
             Some(Own::NewTab) => send(Input::NewTab),
             Some(Own::NextTab) => send(Input::NextTab),
             Some(Own::PreviousTab) => send(Input::PreviousTab),
@@ -244,13 +241,6 @@ fn act(
         },
         // A standard action the window does not offer, or one chordkit adds later.
         Action::Standard(_) | _ => ActionTaken::No,
-    }
-}
-
-/// Undoes the cursor move the table made for this key, if it made one.
-fn put_back(browse: Browse, trail: Option<files_model::Browser>) {
-    if let Some(before) = trail {
-        browse.restore(before);
     }
 }
 

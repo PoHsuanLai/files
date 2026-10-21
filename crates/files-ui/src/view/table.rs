@@ -14,7 +14,7 @@ use super::rename::RenameCell;
 use super::row::{RowCell, Takes};
 use super::tags::marks;
 use crate::edge::Zone;
-use crate::rows::{Column, cursor_of, direction_of, modifier_of, order_of, selection_of};
+use crate::rows::{Column, click_of, cursor_of, direction_of, order_of, selection_of};
 use crate::state::Browse;
 use crate::words::{NONE, entry_size_words, kind_words};
 
@@ -36,7 +36,7 @@ fn column(id: Column, location: &Location) -> TableColumn<Column> {
 }
 
 /// The glyph before a name. quire has no per-type file glyphs yet, so a file is a file.
-fn icon_of(entry: &Entry) -> Icon {
+pub(super) fn icon_of(entry: &Entry) -> Icon {
     match opens(entry) {
         Opens::Folder => Icon::Folder,
         Opens::File | Opens::Nothing => Icon::File,
@@ -72,7 +72,7 @@ fn origin_words(entry: &Entry) -> String {
     }
 }
 
-/// `content` in the shell every cell of the row shares (double click, context menu, drops).
+/// `content` in the shell every cell of the row shares (context menu, drops).
 fn shell(
     browse: Browse,
     menu: Signal<Option<ContextAt>>,
@@ -157,16 +157,13 @@ pub(super) fn FolderTable(browse: Browse, menu: Signal<Option<ContextAt>>, zone:
             cursor,
             selection: Some(selection),
             onreach: move |pick: Pick| {
-                let name = browse
-                    .state
-                    .read()
-                    .rows()
-                    .get(pick.row)
-                    .map(|row| row.name.clone());
-                if let Some(name) = name {
-                    browse.send(Input::Click(name, modifier_of(pick.how)));
+                let click = click_of(&browse.state.read(), pick);
+                if let Some(click) = click {
+                    browse.send(click);
                 }
             },
+            // A double click, or Command+Down on the cursor row: Finder's Open.
+            onopen: move |_: usize| browse.send(Input::Open),
             pinned: 1,
             look: TableLook::Striped,
         }

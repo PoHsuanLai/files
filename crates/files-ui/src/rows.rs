@@ -3,10 +3,10 @@
 
 use std::collections::HashMap;
 
-use ds::base::selection::{PickHow, RowSelection};
+use ds::base::selection::{Pick, PickHow, RowSelection};
 use ds::components::lists::table::model::SortDirection;
 use files_core::{FileName, Location, SortKey, SortOrder};
-use files_model::{Browser, Modifier};
+use files_model::{Browser, Input, Modifier};
 
 /// The table's columns, left to right.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -112,6 +112,13 @@ pub fn modifier_of(how: PickHow) -> Modifier {
         PickHow::Toggle => Modifier::Toggle,
         PickHow::Extend => Modifier::Extend,
     }
+}
+
+/// The click a view's pick stands for: the row's name with how it was reached. `None` for a row
+/// the browser no longer lists.
+pub fn click_of(browser: &Browser, pick: Pick) -> Option<Input> {
+    let row = browser.rows().get(pick.row)?;
+    Some(Input::Click(row.name.clone(), modifier_of(pick.how)))
 }
 
 /// The index of each row's name, to look many up at once.

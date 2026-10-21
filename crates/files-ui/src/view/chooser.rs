@@ -4,7 +4,7 @@
 use dioxus::prelude::*;
 use ds::base::vocab::RowState;
 use ds::components::chrome::column::model::ColumnGap;
-use ds::components::controls::button_model::{Answers, ButtonFocus};
+use ds::components::controls::button_model::Answers;
 use ds::prelude::{
     Button, Column, ColumnAlign, Form, Icon, IconSize, List, ListItem, Row, RowLeading, Selection,
     Sheet,
@@ -88,12 +88,9 @@ fn ChooserSheet(browse: Browse) -> Element {
                     onpick: Some(pick),
                 }
                 Column { align: ColumnAlign::End, gap: ColumnGap::default(),
-                    // The sheet takes the keyboard as it opens (the menu that opened it is gone),
-                    // so Escape reaches it; quire's List has no focus on mount yet.
                     Button {
                         label: "Cancel",
                         answers: Answers::Escape,
-                        focus: ButtonFocus::OnMount,
                         onclick: move |_| cancel.call(()),
                     }
                 }

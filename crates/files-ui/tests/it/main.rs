@@ -8,6 +8,7 @@ mod edge_ops;
 mod edge_tabs;
 mod edge_views;
 mod go_to;
+mod icons;
 mod looks;
 mod menu;
 mod open_with;

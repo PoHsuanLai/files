@@ -4,7 +4,7 @@
 use dioxus::prelude::*;
 use ds::components::chrome::column::model::ColumnGap;
 use ds::components::content::label::LabelStyle;
-use ds::components::controls::button_model::{Answers, ButtonFocus};
+use ds::components::controls::button_model::Answers;
 use ds::prelude::{
     Button, Column, ColumnAlign, Fact, FactList, Form, FormSection, Icon, IconSize, IconSource,
     IconView, Label, Sheet,
@@ -102,7 +102,6 @@ pub(super) fn InfoSheet(browse: Browse, zone: Zone) -> Element {
                     Button {
                         label: "Done",
                         answers: Answers::Return,
-                        focus: ButtonFocus::OnMount,
                         onclick: move |_| close.call(()),
                     }
                 }

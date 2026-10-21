@@ -6,8 +6,8 @@
 //!    name being typed, with the context menu up (and its Open With submenu, and the sheet of
 //!    every app), with the erase question up, with Quick Look up, with Get Info up and with the
 //!    Go to Folder sheet up (and its words under the field), with two tabs (the tab bar), with
-//!    the tag menu up (its colours checked) and with a tag place listed (its rows, and the
-//!    sidebar's Tags section).
+//!    the tag menu up (its colours checked), with a tag place listed (its rows, and the
+//!    sidebar's Tags section) and with the icon view listed and with a name typed on a tile.
 //! 3. Rule 3 (a missing component is added to quire first) is a review discipline, not a check;
 //!    the gaps are listed in the lane's report.
 //! 4. Rule 4 (motion only through quire's timers): the window draws no motion of its own.
@@ -62,9 +62,13 @@ enum Pose {
     TagMenu,
     /// The Red tag place, listed.
     TagPlace,
+    /// The folder as icons.
+    Icons,
+    /// The folder as icons with a name being typed on a tile.
+    IconsRenaming,
 }
 
-const POSES: [Pose; 13] = [
+const POSES: [Pose; 15] = [
     Pose::Listed,
     Pose::Renaming,
     Pose::Menu,
@@ -78,6 +82,8 @@ const POSES: [Pose; 13] = [
     Pose::TwoTabs,
     Pose::TagMenu,
     Pose::TagPlace,
+    Pose::Icons,
+    Pose::IconsRenaming,
 ];
 
 /// The window in `pose`.
@@ -106,7 +112,9 @@ fn page(pose: Pose) -> String {
         | Pose::GoToWrong
         | Pose::TwoTabs
         | Pose::TagMenu
-        | Pose::TagPlace => super::support::at(dir.path()),
+        | Pose::TagPlace
+        | Pose::Icons
+        | Pose::IconsRenaming => super::support::at(dir.path()),
     };
     // The home folder is the scratch one, so the sidebar lists the tags; notes.txt carries two.
     let home = FolderPath::new(dir.path()).unwrap();
@@ -135,6 +143,17 @@ fn page(pose: Pose) -> String {
             window.advance(Duration::from_millis(50));
             window.send(Input::key(ShortcutKey::Enter));
             settle_until(&mut window, |h| h.count(".ds-text-field") > 0);
+        }
+        Pose::Icons | Pose::IconsRenaming => {
+            window.send(Input::chord(&[ShortcutKey::Super], ShortcutKey::Char('1')));
+            settle_until(&mut window, |h| h.count(".ds-cv-item") > 0);
+            if matches!(pose, Pose::IconsRenaming) {
+                let at = window.centre(".ds-cv-item[*|data-index=\"0\"]").unwrap();
+                window.send(Input::click(at));
+                window.advance(Duration::from_millis(50));
+                window.send(Input::key(ShortcutKey::Enter));
+                settle_until(&mut window, |h| h.count(".ds-text-field") > 0);
+            }
         }
         Pose::Menu => {
             let at = window.centre(".ds-vtable-item[*|data-row=\"0\"]").unwrap();
@@ -213,7 +232,10 @@ fn page(pose: Pose) -> String {
             settle_until(&mut window, |h| !h.html().contains("zebra.png"));
         }
         Pose::GoTo | Pose::GoToWrong => {
-            window.send(Input::chord(&[ShortcutKey::Super], ShortcutKey::Char('l')));
+            window.send(Input::chord(
+                &[ShortcutKey::Super, ShortcutKey::Shift],
+                ShortcutKey::Char('g'),
+            ));
             settle_until(&mut window, |h| h.count(".ds-text-field") > 0);
             if matches!(pose, Pose::GoToWrong) {
                 for key in [
@@ -244,11 +266,6 @@ fn our_stylesheet_lints_clean() {
     );
 }
 
-/// Classes quire v0.3.37 itself emits without a rule: `VirtualTable`'s split layout (its
-/// `split.rs`). Reported to quire; this list empties at the next re-pin. The window's own
-/// classes have no exceptions.
-const QUIRE_GAPS: [&str; 2] = [".ds-vtable-track", ".ds-vtable-rows"];
-
 /// Rule 2: every class the page carries is one quire's stylesheet or the window's styles.
 #[test]
 fn rendered_markup_uses_only_styled_classes() {
@@ -258,7 +275,6 @@ fn rendered_markup_uses_only_styled_classes() {
         let unstyled: Vec<_> = offences
             .iter()
             .filter(|offence| offence.rule == Rule::UnstyledClass)
-            .filter(|offence| !QUIRE_GAPS.iter().any(|gap| offence.selector.ends_with(gap)))
             .collect();
         assert!(unstyled.is_empty(), "{unstyled:#?}\nin:\n{html}");
     }

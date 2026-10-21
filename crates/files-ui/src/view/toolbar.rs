@@ -32,12 +32,11 @@ fn live(can: files_model::Availability) -> Availability {
     }
 }
 
-/// The view switcher's choices. Icons waits for quire's collection view, so it is shown and
-/// cannot be picked.
+/// The view switcher's choices.
 fn view_choices() -> Vec<Choice<ViewMode>> {
     vec![
         Choice::new(ViewMode::List, "List"),
-        Choice::new(ViewMode::Icons, "Icons").with_availability(Availability::Disabled),
+        Choice::new(ViewMode::Icons, "Icons"),
     ]
 }
 

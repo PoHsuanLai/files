@@ -36,10 +36,6 @@ pub(crate) struct Browse {
     window: CopyValue<Option<WindowHandle>>,
     edge: CopyValue<Rc<Edge>>,
     start: Instant,
-    /// The browser as it was just before the last click, for the length of one event: a key the
-    /// table reads as "move the cursor" (Command+Down) and the window reads as "open" arrive in
-    /// that order, and the open is of the row the cursor was on.
-    trail: Signal<Option<Browser>>,
     /// The preview Quick Look draws, once the peek worker has made it.
     pub(crate) looked: Signal<Looked>,
 }
@@ -65,14 +61,7 @@ impl Browse {
     pub(crate) fn send(&self, input: Input) {
         let mut tabs = self.tabs;
         let current = Tabs::clone(&tabs.peek());
-        let before = matches!(input, Input::Click(..)).then(|| current.front().clone());
         let (next, effects) = current.step(input, edge::now(self.start));
-        if let Some(before) = before {
-            let mut trail = self.trail;
-            trail.set(Some(before));
-            // Gone by the next turn of the loop, which is after every handler of this event.
-            spawn(async move { trail.set(None) });
-        }
         tabs.set(next);
         self.edge.read().run(effects);
     }
@@ -101,20 +90,6 @@ impl Browse {
         if let Some(window) = &*window {
             window.close();
         }
-    }
-
-    /// What the front browser was before this event's click, once; `None` if no click came first.
-    pub(crate) fn take_trail(&self) -> Option<Browser> {
-        let mut trail = self.trail;
-        std::mem::take(&mut *trail.write())
-    }
-
-    /// Puts the front browser back as it was, without asking for anything: a click this event
-    /// made is undone.
-    pub(crate) fn restore(&self, before: Browser) {
-        let mut tabs = self.tabs;
-        let current = Tabs::clone(&tabs.peek());
-        tabs.set(current.with_front(before));
     }
 
     /// The apps that open every selected item, for Open With.
@@ -154,7 +129,6 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
         }
     });
     let tabs = use_signal(|| setup.first.clone());
-    let trail = use_signal(|| None);
     let looked = use_signal(|| None);
     let window = use_window_handle();
     let browse = Browse {
@@ -163,7 +137,6 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
         window: use_hook(|| CopyValue::new(window.clone())),
         edge: use_hook(|| CopyValue::new(Rc::clone(&setup.edge))),
         start: setup.start,
-        trail,
         looked,
     };
     let toasts = use_toasts();

@@ -1,5 +1,5 @@
-//! What every cell of a row shares: a double click opens it, a right click asks for the context
-//! menu, and (for a folder) files dropped on it land inside it.
+//! What every cell of a row shares: a right click asks for the context menu, and (for a folder)
+//! files dropped on it land inside it.
 
 use dioxus::prelude::*;
 use ds::file_drop::drag::FileDrop;
@@ -82,7 +82,6 @@ fn PlainCell(
 ) -> Element {
     rsx! {
         div {
-            ondoubleclick: move |_| browse.send(Input::Open),
             oncontextmenu: move |event: MouseEvent| asked(browse, menu, &name, &event),
             {content}
         }
@@ -104,7 +103,6 @@ fn FolderCell(
         div {
             "data-drop": drop.drop_attr(),
             onmounted: move |event: MountedEvent| drop.mounted(event),
-            ondoubleclick: move |_| browse.send(Input::Open),
             oncontextmenu: move |event: MouseEvent| asked(browse, menu, &name, &event),
             {content}
         }
