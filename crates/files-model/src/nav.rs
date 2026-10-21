@@ -43,6 +43,7 @@ impl Browser {
             home: self.home,
             goto: GoTo::Closed,
             chooser: Chooser::Closed,
+            volumes: self.volumes,
         };
         (browser, effects)
     }

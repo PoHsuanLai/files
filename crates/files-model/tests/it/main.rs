@@ -1,6 +1,7 @@
 //! files-model's one test binary: every file below is a module of it.
 #![allow(clippy::unwrap_used, clippy::expect_used)] // tests may unwrap (CONVENTIONS)
 
+mod asked;
 mod changes;
 mod common;
 mod go_to;
@@ -16,3 +17,4 @@ mod reveal;
 mod selection;
 mod sorting;
 mod typeselect;
+mod volumes;

@@ -1,7 +1,7 @@
 //! One window's view of one location.
 
 use files_core::{
-    Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, ItemRef, Location, Summary,
+    Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, ItemRef, Location, Summary, Volume,
 };
 
 use crate::app::Chooser;
@@ -53,6 +53,8 @@ pub struct Browser {
     pub(crate) goto: GoTo,
     /// The sheet of every installed app.
     pub(crate) chooser: Chooser,
+    /// The disks the sidebar lists, as the caller last told.
+    pub(crate) volumes: Vec<Volume>,
 }
 
 impl Browser {
@@ -80,6 +82,7 @@ impl Browser {
             home: None,
             goto: GoTo::Closed,
             chooser: Chooser::Closed,
+            volumes: Vec::new(),
         };
         (browser, effects)
     }

@@ -15,7 +15,7 @@ use crate::selection::Selection;
 type Stepped = (Browser, Vec<Effect>);
 
 /// The name a new folder starts with.
-const NEW_FOLDER: &str = "untitled folder";
+pub(crate) const NEW_FOLDER: &str = "untitled folder";
 
 impl Browser {
     /// The selected items, in row order, when this is a folder.
@@ -42,7 +42,7 @@ impl Browser {
             .collect()
     }
 
-    fn run(self, plan: OpPlan) -> Stepped {
+    pub(crate) fn run(self, plan: OpPlan) -> Stepped {
         (self, vec![Effect::Run(plan)])
     }
 
@@ -102,7 +102,7 @@ impl Browser {
         self.asking(Question::EmptyTrash)
     }
 
-    fn asking(self, question: Question) -> Stepped {
+    pub(crate) fn asking(self, question: Question) -> Stepped {
         (Browser { question, ..self }, Vec::new())
     }
 

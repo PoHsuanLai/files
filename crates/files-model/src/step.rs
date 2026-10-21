@@ -97,6 +97,19 @@ impl Browser {
             Input::Undo => self.undo(),
             Input::CancelWork => self.cancel_work(),
             Input::Op(event) => self.heard(event),
+            Input::Volumes(volumes) => self.volumes_changed(volumes),
+            Input::OpenVolume(id) => self.open_volume(id),
+            Input::Mounted(id, result) => self.mounted(id, result),
+            Input::Eject(id) => self.eject(id),
+            Input::Ejected(id, result) => self.ejected(id, result),
+            Input::TrashItems(items) => self.trash_items(items),
+            Input::MakeFolder { parent, name } => self.make_folder(parent, name),
+            Input::Bring {
+                sources,
+                destination,
+                how,
+            } => self.bring(sources, destination, how),
+            Input::AskEmptyTrash => self.ask_empty_trash(),
         }
     }
 

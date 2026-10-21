@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use crate::app::AppPick;
 use files_core::{
     FileName, FolderPath, FolderPrefs, ItemRef, Location, OpFailure, OpPlan, Resolution, Summary,
+    VolumeId, VolumeName, VolumeTrouble,
 };
 
 /// One file to hand to an app: where it is, and what it is called.
@@ -85,4 +86,15 @@ pub enum Effect {
     Tell(OpFailure),
     /// Tell the person a change was made that they can undo (a move to the Trash).
     Announce(Summary),
+    /// Open (mount) this disk and answer with `Input::Mounted`.
+    MountVolume(VolumeId),
+    /// Eject this disk and answer with `Input::Ejected`.
+    EjectVolume(VolumeId),
+    /// Tell the person a disk could not be opened or ejected.
+    TellVolume {
+        /// The disk's name.
+        name: VolumeName,
+        /// What went wrong.
+        trouble: VolumeTrouble,
+    },
 }

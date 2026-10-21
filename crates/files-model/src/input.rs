@@ -3,10 +3,12 @@
 use std::time::Duration;
 
 use files_core::{
-    Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef, Location, Resolution, Sort, ViewMode,
+    EjectFailure, Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef, Location, MountFailure,
+    Resolution, Sort, ViewMode, Volume, VolumeId,
 };
 
 use crate::app::AppPick;
+use crate::asked::Bring;
 use crate::listing::ListFailure;
 use crate::ops::{DropHow, OpEvent};
 
@@ -185,4 +187,36 @@ pub enum Input {
     CancelWork,
     /// A worker's report on a change.
     Op(OpEvent),
+    /// The disks the sidebar lists changed (one came or went, one was opened or closed).
+    Volumes(Vec<Volume>),
+    /// Open a disk from the sidebar: go to it, mounting it first when it is not.
+    OpenVolume(VolumeId),
+    /// The answer to `Effect::MountVolume`.
+    Mounted(VolumeId, Result<FolderPath, MountFailure>),
+    /// Eject a disk (its button in the sidebar).
+    Eject(VolumeId),
+    /// The answer to `Effect::EjectVolume`.
+    Ejected(VolumeId, Result<(), EjectFailure>),
+    /// Move these items to the Trash, wherever they are (another program asked).
+    TrashItems(Vec<ItemRef>),
+    /// Make a folder in `parent`, called `name` or, when none is given, `untitled folder` (another
+    /// program asked). The window does not start renaming it.
+    MakeFolder {
+        /// The folder to make it in.
+        parent: FolderPath,
+        /// Its name, if the asker gave one.
+        name: Option<FileName>,
+    },
+    /// Copy or move these items to a folder, wherever they are (another program asked).
+    Bring {
+        /// What to bring.
+        sources: Vec<ItemRef>,
+        /// The folder to bring it to.
+        destination: FolderPath,
+        /// Copy or move.
+        how: Bring,
+    },
+    /// Ask whether to empty the Trash, from any place (another program asked; the person
+    /// answers).
+    AskEmptyTrash,
 }

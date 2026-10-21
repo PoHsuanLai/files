@@ -25,6 +25,7 @@
 
 mod app;
 mod arrange;
+mod asked;
 mod browser;
 mod changes;
 mod effect;
@@ -44,9 +45,11 @@ mod selection;
 mod sort;
 mod step;
 mod typeselect;
+mod volumes;
 
 pub use app::{AppPick, Chooser};
 pub use arrange::arrange;
+pub use asked::Bring;
 pub use browser::Browser;
 pub use effect::{Effect, OpenTarget};
 pub use goto::{GoTo, GoToProblem, expand};
