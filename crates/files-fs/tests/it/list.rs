@@ -53,7 +53,12 @@ fn lists_every_kind() {
     }
     let dot = listing.entries.iter().find(|e| e.name.display() == ".dot");
     assert_eq!(dot.unwrap().visibility(), Visibility::Hidden);
-    assert!(listing.entries.iter().all(|e| e.modified.is_some() && e.mime.is_none()));
+    assert!(
+        listing
+            .entries
+            .iter()
+            .all(|e| e.modified.is_some() && e.mime.is_none())
+    );
 }
 
 #[test]
@@ -100,5 +105,8 @@ fn no_permission() {
 
 #[test]
 fn error_words_are_plain() {
-    assert_eq!(ListError::NotFound.to_string(), "The folder can't be found.");
+    assert_eq!(
+        ListError::NotFound.to_string(),
+        "The folder can't be found."
+    );
 }

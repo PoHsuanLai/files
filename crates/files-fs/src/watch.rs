@@ -120,7 +120,11 @@ fn translate(folder: &Path, event: Event) -> Vec<FolderEvent> {
         }
         EventKind::Modify(ModifyKind::Name(RenameMode::Both)) => {
             let mut events = each(folder, paths.get(..1).unwrap_or(&[]), FolderEvent::Removed);
-            events.extend(each(folder, paths.get(1..).unwrap_or(&[]), FolderEvent::Added));
+            events.extend(each(
+                folder,
+                paths.get(1..).unwrap_or(&[]),
+                FolderEvent::Added,
+            ));
             events
         }
         EventKind::Modify(ModifyKind::Name(RenameMode::Any | RenameMode::Other)) => {

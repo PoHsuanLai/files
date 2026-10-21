@@ -27,5 +27,5 @@ mod watch;
 pub use error::{ListError, WatchError};
 #[cfg(any(test, feature = "testing"))]
 pub use fake::{FakeLister, FakeWatcher};
-pub use list::{DiskLister, Listing, Lister, Skipped};
+pub use list::{DiskLister, Lister, Listing, Skipped};
 pub use watch::{FolderEvent, NotifyWatcher, WatchHandle, Watcher};

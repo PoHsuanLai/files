@@ -114,6 +114,8 @@ struct Registration {
 
 impl Drop for Registration {
     fn drop(&mut self) {
-        locked(&self.registry).sinks.retain(|(id, _, _)| *id != self.id);
+        locked(&self.registry)
+            .sinks
+            .retain(|(id, _, _)| *id != self.id);
     }
 }

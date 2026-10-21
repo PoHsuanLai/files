@@ -59,7 +59,13 @@ fn rename_within() {
     fs::write(dir.path().join("a"), "x").unwrap();
     let (_handle, rx) = follow(dir.path());
     fs::rename(dir.path().join("a"), dir.path().join("b")).unwrap();
-    expect(&rx, &[FolderEvent::Removed(name("a")), FolderEvent::Added(name("b"))]);
+    expect(
+        &rx,
+        &[
+            FolderEvent::Removed(name("a")),
+            FolderEvent::Added(name("b")),
+        ],
+    );
 }
 
 #[test]
