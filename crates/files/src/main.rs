@@ -12,10 +12,12 @@ mod launcher;
 mod opener;
 mod places;
 mod session;
+mod state;
 
 use std::process::ExitCode;
 use std::sync::Arc;
 
+use ds_settings::ConfigRoot;
 use files_core::{FolderPath, Location};
 use files_ui::Launch;
 
@@ -64,6 +66,7 @@ fn main() -> ExitCode {
     let launcher = Arc::new(launcher::launcher(&launcher::xdg_dirs(), running.activate));
     let launch = Launch::new(start, Arc::new(DesktopOpener::new(launcher)))
         .with_places(places::found())
+        .with_prefs(state::prefs_store(&ConfigRoot::Xdg))
         .with_requests(running.requests)
         .with_runtime(runtime.handle().clone());
     match files_ui::run(launch) {

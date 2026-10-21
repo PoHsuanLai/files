@@ -2,9 +2,9 @@
 //!
 //! One window shows one folder, so a request that names several places is answered with the
 //! first, and one that names files in several folders with the files of the first file's folder.
-//! `ShowItemProperties` is `ShowItems` until Files has a Get Info panel.
+//! `ShowItemProperties` shows the items like `ShowItems` and opens Get Info on the first.
 
-use files_core::FolderPath;
+use files_core::{FileName, FolderPath};
 use files_desktop::{Reveal, Show, ShowRequest};
 use files_model::Input;
 use files_ui::{RaiseToken, Request};
@@ -13,26 +13,39 @@ use files_ui::{RaiseToken, Request};
 pub fn request_of(show: Show) -> Option<Request> {
     let input = match show.request {
         ShowRequest::Folders(places) => Input::Go(places.into_iter().next()?),
-        ShowRequest::Items(files) | ShowRequest::Properties(files) => reveal_input(files)?,
+        ShowRequest::Items(files) => reveal_input(files)?,
+        ShowRequest::Properties(files) => properties_input(files)?,
     };
     let raise = show.startup.map(|id| RaiseToken(id.as_str().to_owned()));
     Some(Request { input, raise })
 }
 
-/// Select the files that share the first file's folder.
-fn reveal_input(files: Vec<Reveal>) -> Option<Input> {
+/// The folder of the first file, and the names of the files that share it.
+fn first_folder(files: Vec<Reveal>) -> Option<(FolderPath, Vec<FileName>)> {
     let folder: FolderPath = files.first()?.folder.clone();
     let names = files
         .into_iter()
         .filter(|file| file.folder == folder)
         .map(|file| file.name)
         .collect();
+    Some((folder, names))
+}
+
+/// Select the files that share the first file's folder.
+fn reveal_input(files: Vec<Reveal>) -> Option<Input> {
+    let (folder, names) = first_folder(files)?;
     Some(Input::Reveal { folder, names })
+}
+
+/// Select the files that share the first file's folder and open Get Info on the first.
+fn properties_input(files: Vec<Reveal>) -> Option<Input> {
+    let (folder, names) = first_folder(files)?;
+    Some(Input::Properties { folder, names })
 }
 
 #[cfg(test)]
 mod tests {
-    use files_core::{FileName, Location};
+    use files_core::Location;
     use files_desktop::StartupId;
 
     use super::*;
@@ -81,11 +94,14 @@ mod tests {
                 }),
             ),
             (
-                "properties are items",
-                show(ShowRequest::Properties(vec![reveal("/a", "x")])),
-                Some(Input::Reveal {
+                "properties open Get Info on the first",
+                show(ShowRequest::Properties(vec![
+                    reveal("/a", "x"),
+                    reveal("/a", "z"),
+                ])),
+                Some(Input::Properties {
                     folder: folder("/a"),
-                    names: names(&["x"]),
+                    names: names(&["x", "z"]),
                 }),
             ),
             ("nothing named", show(ShowRequest::Items(Vec::new())), None),

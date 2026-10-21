@@ -10,8 +10,10 @@ publish.workspace = true
 
 [dependencies]
 dirs = { workspace = true }
+ds-settings = { workspace = true }
 files-core = { workspace = true }
 files-desktop = { workspace = true }
+files-fs = { workspace = true }
 files-mime = { workspace = true }
 files-model = { workspace = true }
 files-ui = { workspace = true }
