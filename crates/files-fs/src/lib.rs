@@ -38,6 +38,6 @@ pub use prefs::{KEPT, NoPrefs, PrefBook, PrefsStore, TomlPrefs};
 #[cfg(any(test, feature = "testing"))]
 pub use tag::FakeTagger;
 pub use tag::{
-    ATTRIBUTE, Flow, Found, NoTags, Tagged, Tagger, WALK_CAP, Walked, XattrTagger, find_tagged,
+    ATTRIBUTE, Flow, Found, NoTags, TagWalk, Tagged, Tagger, WALK_CAP, Walked, XattrTagger,
 };
 pub use watch::{FolderEvent, NotifyWatcher, WatchHandle, Watcher};

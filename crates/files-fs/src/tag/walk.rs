@@ -38,49 +38,69 @@ pub enum Walked {
     Stopped,
 }
 
-/// Looks through `root` and the folders under it for entries tagged `colour`, handing each
-/// folder's finds to `found` as they come; `found` answers [`Flow::Stop`] to stop the walk.
-///
-/// Links are not followed, a folder that can't be read is passed over, and a folder whose name
-/// starts with a dot is not entered (the walk would drown in caches). At most `cap` entries are
-/// looked at.
-pub fn find_tagged(
-    lister: &dyn Lister,
-    root: &FolderPath,
+/// A walk for one colour: where to start, which colour, and how many entries to look at.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TagWalk {
+    root: FolderPath,
     colour: TagColour,
     cap: usize,
-    found: &mut dyn FnMut(Vec<Found>) -> Flow,
-) -> Walked {
-    let mut pending = vec![root.clone()];
-    let mut seen = 0usize;
-    while let Some(folder) = pending.pop() {
-        let Ok(entries) = lister.list(&folder) else {
-            continue;
-        };
-        let mut finds = Vec::new();
-        let mut capped = false;
-        for entry in entries {
-            if seen >= cap {
-                capped = true;
-                break;
-            }
-            seen += 1;
-            if matches!(entry.kind, EntryKind::Folder)
-                && entry.visibility() == files_core::Visibility::Shown
-            {
-                pending.push(folder.join(&entry.name));
-            }
-            if entry.tags.has(colour) {
-                let item = ItemRef::new(folder.clone(), entry.name.clone());
-                finds.push(Found { item, entry });
-            }
-        }
-        if !finds.is_empty() && found(finds) == Flow::Stop {
-            return Walked::Stopped;
-        }
-        if capped {
-            return Walked::Capped;
+}
+
+impl TagWalk {
+    /// A walk of `root` and the folders under it for entries tagged `colour`, capped at
+    /// [`WALK_CAP`] entries.
+    pub fn new(root: FolderPath, colour: TagColour) -> TagWalk {
+        TagWalk {
+            root,
+            colour,
+            cap: WALK_CAP,
         }
     }
-    Walked::Finished
+
+    /// The same walk looking at no more than `cap` entries.
+    pub fn with_cap(mut self, cap: usize) -> TagWalk {
+        self.cap = cap;
+        self
+    }
+
+    /// Looks through the folders, handing each folder's finds to `found` as they come; `found`
+    /// answers [`Flow::Stop`] to stop the walk.
+    ///
+    /// Links are not followed, a folder that can't be read is passed over, and a folder whose
+    /// name starts with a dot is not entered (the walk would drown in caches).
+    pub fn run(&self, lister: &dyn Lister, found: &mut dyn FnMut(Vec<Found>) -> Flow) -> Walked {
+        let (colour, cap) = (self.colour, self.cap);
+        let mut pending = vec![self.root.clone()];
+        let mut seen = 0usize;
+        while let Some(folder) = pending.pop() {
+            let Ok(entries) = lister.list(&folder) else {
+                continue;
+            };
+            let mut finds = Vec::new();
+            let mut capped = false;
+            for entry in entries {
+                if seen >= cap {
+                    capped = true;
+                    break;
+                }
+                seen += 1;
+                if matches!(entry.kind, EntryKind::Folder)
+                    && entry.visibility() == files_core::Visibility::Shown
+                {
+                    pending.push(folder.join(&entry.name));
+                }
+                if entry.tags.has(colour) {
+                    let item = ItemRef::new(folder.clone(), entry.name.clone());
+                    finds.push(Found { item, entry });
+                }
+            }
+            if !finds.is_empty() && found(finds) == Flow::Stop {
+                return Walked::Stopped;
+            }
+            if capped {
+                return Walked::Capped;
+            }
+        }
+        Walked::Finished
+    }
 }

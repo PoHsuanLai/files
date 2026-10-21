@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use files_core::{ByteSize, Entry, EntryKind, FileName, FolderPath, ItemRef, Tag, TagColour, Tags};
 use files_fs::{
-    ATTRIBUTE, DiskLister, FakeLister, FakeTagger, Flow, Found, Lister, TagWriteError, Tagged,
-    Tagger, WALK_CAP, Walked, XattrTagger, find_tagged,
+    ATTRIBUTE, DiskLister, FakeLister, FakeTagger, Flow, Found, Lister, TagWalk, TagWriteError,
+    Tagged, Tagger, WALK_CAP, Walked, XattrTagger,
 };
 use tempfile::TempDir;
 
@@ -152,16 +152,12 @@ fn walk(cap: usize, flow: Flow) -> (Vec<String>, Walked) {
     let (lister, tagger) = tree();
     let tagged = Tagged::new(lister, tagger);
     let mut names = Vec::new();
-    let ended = find_tagged(
-        &tagged,
-        &folder("/r"),
-        TagColour::Red,
-        cap,
-        &mut |batch: Vec<Found>| {
+    let ended = TagWalk::new(folder("/r"), TagColour::Red)
+        .with_cap(cap)
+        .run(&tagged, &mut |batch: Vec<Found>| {
             names.extend(batch.iter().map(|f| f.item.path().display().to_string()));
             flow
-        },
-    );
+        });
     names.sort();
     (names, ended)
 }

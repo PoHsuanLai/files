@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use files_core::{FolderPath, Location, TagColour};
-use files_fs::{Flow, Found, WALK_CAP, Walked, find_tagged};
+use files_fs::{Flow, Found, TagWalk, Walked};
 use files_model::{Input, TabId};
 
 use super::{Edge, Heard};
@@ -51,9 +51,7 @@ impl Edge {
         let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
         let walking = place.clone();
         let started = Edge::work("files-find", move || {
-            let ended = find_tagged(&*lister, &within, colour, WALK_CAP, &mut |batch: Vec<
-                Found,
-            >| {
+            let ended = TagWalk::new(within, colour).run(&*lister, &mut |batch: Vec<Found>| {
                 if flag.load(Ordering::Relaxed) {
                     return Flow::Stop;
                 }

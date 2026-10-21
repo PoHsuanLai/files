@@ -3,7 +3,7 @@
 //! The real one, [`XattrTagger`], keeps a file's tags in the `user.xdg.tags` extended attribute as
 //! a comma-separated list, as GNOME and KDE do, so tags set here show in their file managers and
 //! the other way round. [`Tagged`] makes any [`Lister`](crate::Lister) fill in each entry's tags.
-//! [`find_tagged`] walks a folder looking for one colour.
+//! [`TagWalk`] walks a folder looking for one colour.
 
 mod disk;
 #[cfg(any(test, feature = "testing"))]
@@ -19,7 +19,7 @@ pub use disk::{ATTRIBUTE, XattrTagger};
 #[cfg(any(test, feature = "testing"))]
 pub use fake::FakeTagger;
 pub use tagged::Tagged;
-pub use walk::{Flow, Found, WALK_CAP, Walked, find_tagged};
+pub use walk::{Flow, Found, TagWalk, WALK_CAP, Walked};
 
 /// Reads and writes the tags of files. Real: [`XattrTagger`]; for tests: `FakeTagger` (feature
 /// `testing`).
