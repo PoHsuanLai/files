@@ -64,15 +64,7 @@ fn addresses_that_cannot_be_shown_are_refused() {
 }
 
 #[test]
-fn a_name_that_is_not_text_survives() {
-    let bytes = b"/tmp/\xff\xfe.bin".to_vec();
-    let path = PathBuf::from(OsString::from_vec(bytes));
-    assert_eq!(file_uri(&path), "file:///tmp/%FF%FE.bin");
-    assert_eq!(parse("file:///tmp/%FF%FE.bin"), Ok(Uri::File(path)));
-}
-
-#[test]
-fn writing_then_reading_gives_the_path_back() {
+fn writing_then_reading_gives_the_path_back_even_for_a_name_that_is_not_text() {
     let paths = [
         "/",
         "/tmp/a b/é#%.txt",
@@ -86,4 +78,9 @@ fn writing_then_reading_gives_the_path_back() {
         assert_eq!(parse(&written), file(path), "{path}");
     }
     assert_eq!(parse(TRASH_URI), Ok(Uri::Trash));
+
+    let bytes = b"/tmp/\xff\xfe.bin".to_vec();
+    let path = PathBuf::from(OsString::from_vec(bytes));
+    assert_eq!(file_uri(&path), "file:///tmp/%FF%FE.bin");
+    assert_eq!(parse("file:///tmp/%FF%FE.bin"), Ok(Uri::File(path)));
 }

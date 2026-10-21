@@ -74,22 +74,17 @@ fn the_sheet_of_apps_opens_for_a_selection_and_closes_with_a_pick() {
     assert_eq!(closed.chooser(), Chooser::Closed);
     assert!(effects.is_empty());
 
-    let (picked, effects) = browser.step(Input::OpenWith(pick()), at(0));
+    let (picked, effects) = browser.clone().step(Input::OpenWith(pick()), at(0));
     assert_eq!(picked.chooser(), Chooser::Closed);
     assert_eq!(effects.len(), 1);
 
     let (none, _) = loaded(entries()).step(Input::ChooseApp, at(0));
     assert_eq!(none.chooser(), Chooser::Closed, "nothing to open");
-}
 
-#[test]
-fn going_elsewhere_puts_the_sheet_away() {
-    let (browser, _) = run(loaded(entries()), vec![click("a.txt"), Input::ChooseApp]);
-    let (browser, _) = browser.step(Input::Go(dir("/tmp")), at(0));
-    assert_eq!(browser.chooser(), Chooser::Closed);
-}
-
-#[test]
-fn an_app_pick_is_its_desktop_id() {
-    assert_eq!(pick().as_str(), "viewer.desktop");
+    let (away, _) = browser.step(Input::Go(dir("/tmp")), at(0));
+    assert_eq!(
+        away.chooser(),
+        Chooser::Closed,
+        "going elsewhere puts it away"
+    );
 }

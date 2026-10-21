@@ -48,13 +48,8 @@ fn tagging_puts_the_tag_on_unless_every_selected_item_has_it() {
         assert_eq!((colour, got), (TagColour::Red, *how), "{names:?}");
         assert_eq!(items.len(), names.len());
     }
-}
-
-#[test]
-fn tagging_nothing_does_nothing() {
-    let browser = loaded(vec![file("a")]);
-    let (_, effects) = browser.step(Input::Tag(TagColour::Blue), at(0));
-    assert!(effects.is_empty());
+    let (_, effects) = select(browser, &[]).step(Input::Tag(TagColour::Blue), at(0));
+    assert!(effects.is_empty(), "nothing selected, nothing tagged");
 }
 
 fn homed() -> Browser {

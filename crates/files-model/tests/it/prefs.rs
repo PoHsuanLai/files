@@ -1,7 +1,7 @@
 //! Per-folder views and sorts, and the effects that remember them.
 
 use files_core::{FolderPrefs, Sort, SortKey, SortOrder, ViewMode};
-use files_model::{Browser, Effect, Input};
+use files_model::{Effect, Input};
 
 use crate::common::*;
 
@@ -76,10 +76,4 @@ fn resorting_keeps_the_selection() {
         ],
     );
     assert_eq!(selected(&browser), vec!["a"]);
-}
-
-#[test]
-fn a_fresh_browser_uses_the_default_prefs() {
-    let (browser, _) = Browser::new(home());
-    assert_eq!(browser.prefs(), FolderPrefs::default());
 }

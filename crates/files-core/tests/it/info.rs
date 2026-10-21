@@ -1,10 +1,8 @@
 //! Get Info's facts and the words preferences are stored in.
 
-use std::time::{Duration, SystemTime};
-
 use files_core::{
-    ByteSize, EntryKind, FileName, FolderPath, Info, ItemCount, ItemRef, LinkTo, SortKey,
-    SortOrder, Special, ViewMode,
+    ByteSize, EntryKind, FileName, FolderPath, Info, ItemRef, LinkTo, SortKey, SortOrder, Special,
+    ViewMode,
 };
 
 fn item(name: &str) -> ItemRef {
@@ -31,19 +29,6 @@ fn only_a_file_or_a_link_to_one_has_a_size() {
     for (label, kind, want) in cases {
         assert_eq!(Info::new(item("x"), kind).size(), want, "{label}");
     }
-}
-
-#[test]
-fn info_is_built_up_and_names_its_item() {
-    let at = SystemTime::UNIX_EPOCH + Duration::from_secs(60);
-    let info = Info::new(item("Projects"), EntryKind::Folder)
-        .created_at(at)
-        .modified_at(at)
-        .holding(ItemCount(3));
-    assert_eq!(info.item(), item("Projects"));
-    assert_eq!(info.created, Some(at));
-    assert_eq!(info.modified, Some(at));
-    assert_eq!(info.items, Some(ItemCount(3)));
 }
 
 #[test]

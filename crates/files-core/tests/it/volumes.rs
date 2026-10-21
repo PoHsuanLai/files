@@ -30,10 +30,9 @@ fn a_volume_holds_its_folder_and_what_is_inside() {
     for (label, path, want) in cases {
         assert_eq!(mounted.holds(&folder(path)), want, "{label}");
     }
-}
-
-#[test]
-fn an_unmounted_volume_holds_nothing() {
-    assert!(!stick().holds(&folder("/")));
+    assert!(
+        !stick().holds(&folder("/")),
+        "an unmounted volume holds nothing"
+    );
     assert_eq!(stick().folder(), None);
 }

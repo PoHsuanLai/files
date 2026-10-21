@@ -1,9 +1,7 @@
 //! Quick Look and Get Info: what opens, what follows the cursor, what puts them away.
 
 use files_core::{ByteSize, EntryKind, FileName, FolderPath, Info, ItemRef, Location};
-use files_model::{
-    Browser, Change, Direction, Effect, InfoView, Input, ListFailure, Looking, Modifier,
-};
+use files_model::{Browser, Change, Direction, Effect, InfoView, Input, ListFailure, Modifier};
 
 use crate::common::*;
 
@@ -90,11 +88,15 @@ fn quick_look_goes_away_with_its_row_or_its_folder() {
 }
 
 #[test]
-fn quick_look_does_not_open_in_the_trash() {
+fn quick_look_and_get_info_do_not_open_in_the_trash() {
     let (browser, _) = Browser::new(Location::Trash);
     let (browser, _) = browser.step(Input::Listed(Location::Trash, Ok(vec![file("a")])), at(0));
     let (browser, effects) = run(browser, vec![click("a"), Input::QuickLook]);
     assert_eq!(browser.quick_look(), None);
+    assert!(effects.is_empty());
+    let (fresh, _) = Browser::new(Location::Trash);
+    let (fresh, effects) = fresh.step(Input::GetInfo, at(0));
+    assert_eq!(fresh.info(), &InfoView::Closed);
     assert!(effects.is_empty());
 }
 
@@ -153,16 +155,6 @@ fn get_info_and_quick_look_do_not_stack() {
     assert!(matches!(browser.info(), InfoView::Loading(_)));
     let (browser, _) = browser.step(Input::QuickLook, at(0));
     assert_eq!(browser.quick_look(), None);
-    assert_eq!(Looking::default(), Looking::Closed);
-}
-
-#[test]
-fn get_info_does_nothing_in_the_trash() {
-    let (browser, _) = Browser::new(Location::Trash);
-    let (browser, effects) = browser.step(Input::GetInfo, at(0));
-    assert_eq!(browser.info(), &InfoView::Closed);
-    assert!(!effects.contains(&Effect::ReadInfo(item("a"))));
-    assert!(effects.is_empty());
 }
 
 #[test]

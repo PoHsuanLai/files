@@ -111,7 +111,7 @@ fn the_folders_name_is_the_toolbars_title() {
 }
 
 #[test]
-fn a_click_selects_a_row() {
+fn a_click_selects_a_row_and_select_all_selects_every_row() {
     let mut rig = open();
     rig.click_row(1);
     assert!(rig.selected(1), "row 1 is not selected");
@@ -119,6 +119,9 @@ fn a_click_selects_a_row() {
     rig.click_row(3);
     assert!(rig.selected(3));
     assert!(!rig.selected(1), "a plain click keeps the old row");
+    rig.command(ShortcutKey::Char('a'));
+    rig.harness.advance(Duration::from_millis(50));
+    assert!((0..4).all(|n| rig.selected(n)), "not every row is selected");
 }
 
 #[test]
@@ -198,15 +201,6 @@ fn command_shift_period_shows_hidden_files() {
         ShortcutKey::Char('.'),
     ));
     rig.shows(".secret");
-}
-
-#[test]
-fn select_all_selects_every_row() {
-    let mut rig = open();
-    rig.click_row(0);
-    rig.command(ShortcutKey::Char('a'));
-    rig.harness.advance(Duration::from_millis(50));
-    assert!((0..4).all(|n| rig.selected(n)), "not every row is selected");
 }
 
 #[test]

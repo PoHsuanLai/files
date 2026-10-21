@@ -97,14 +97,6 @@ fn a_row_goes_to_its_folder_and_the_computer_to_the_root() {
 }
 
 #[test]
-fn a_later_folder_replaces_an_earlier_one() {
-    let places = Places::default()
-        .with(PlaceKind::Home, folder("/a"))
-        .with(PlaceKind::Home, folder("/b"));
-    assert_eq!(places.location_of(PlaceKind::Home), Some(place("/b")));
-}
-
-#[test]
 fn the_cursor_is_on_the_place_the_window_is_in() {
     let places = person();
     let cases = [
@@ -140,7 +132,12 @@ fn the_cursor_is_on_the_place_the_window_is_in() {
 }
 
 #[test]
-fn two_places_in_one_folder_show_the_first() {
+fn a_later_folder_replaces_an_earlier_one_and_two_places_in_one_folder_show_the_first() {
+    let places = Places::default()
+        .with(PlaceKind::Home, folder("/a"))
+        .with(PlaceKind::Home, folder("/b"));
+    assert_eq!(places.location_of(PlaceKind::Home), Some(place("/b")));
+
     let places = Places::default()
         .with(PlaceKind::Desktop, folder("/home/p"))
         .with(PlaceKind::Home, folder("/home/p"));

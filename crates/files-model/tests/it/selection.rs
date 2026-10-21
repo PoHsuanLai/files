@@ -91,7 +91,8 @@ fn selection_follows_clicks_and_keys() {
         ),
     ];
     for (inputs, chosen, cursor) in table {
-        let (browser, _) = run(five(), inputs.clone());
+        let (browser, effects) = run(five(), inputs.clone());
+        assert!(effects.is_empty(), "selecting asks for nothing: {inputs:?}");
         assert_eq!(selected(&browser), chosen, "{inputs:?}");
         assert_eq!(
             browser.cursor().map(|n| n.display().into_owned()),
@@ -112,12 +113,6 @@ fn selecting_all_keeps_the_anchor_for_a_later_extend() {
         ],
     );
     assert_eq!(selected(&browser), vec!["b", "c", "d"]);
-}
-
-#[test]
-fn selection_has_no_effects() {
-    let (_, effects) = run(five(), vec![click("a", Modifier::None), Input::SelectAll]);
-    assert!(effects.is_empty());
 }
 
 #[test]

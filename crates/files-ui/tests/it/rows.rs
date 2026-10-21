@@ -84,7 +84,14 @@ fn a_reach_means_the_modifier_it_was_made_with() {
 }
 
 #[test]
-fn columns_and_sort_keys_round_trip() {
+fn columns_sort_keys_and_directions_round_trip() {
+    for order in [SortOrder::Ascending, SortOrder::Descending] {
+        assert_eq!(order_of(direction_of(order)), order);
+    }
+    assert_eq!(
+        direction_of(SortOrder::Descending),
+        SortDirection::Descending
+    );
     for column in Column::ALL {
         assert_eq!(Column::of_key(column.key()), column);
     }
@@ -97,17 +104,6 @@ fn columns_and_sort_keys_round_trip() {
     for key in keys {
         assert_eq!(Column::of_key(key).key(), key);
     }
-}
-
-#[test]
-fn the_directions_round_trip() {
-    for order in [SortOrder::Ascending, SortOrder::Descending] {
-        assert_eq!(order_of(direction_of(order)), order);
-    }
-    assert_eq!(
-        direction_of(SortOrder::Descending),
-        SortDirection::Descending
-    );
 }
 
 #[test]

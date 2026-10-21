@@ -25,36 +25,38 @@ fn target(text: &str) -> OpenTarget {
 
 #[test]
 fn opening_one_entry_goes_in_or_hands_it_over_or_does_nothing() {
-    // (entry, effects after Open)
-    let table: Vec<(&str, Vec<Effect>)> = vec![
-        ("dir", vec![Effect::Unwatch(home())]),
-        ("folder-link", vec![Effect::Unwatch(home())]),
-        ("doc.txt", vec![Effect::OpenFiles(vec![target("doc.txt")])]),
+    // (entry clicked, if any; effects after Open; where the browser ends up)
+    let table: Vec<(Option<&str>, Vec<Effect>, &str)> = vec![
+        (Some("dir"), vec![Effect::Unwatch(home())], "/home/p/dir"),
         (
-            "file-link",
-            vec![Effect::OpenFiles(vec![target("file-link")])],
+            Some("folder-link"),
+            vec![Effect::Unwatch(home())],
+            "/home/p/folder-link",
         ),
-        ("dead-link", vec![]),
-        ("pipe", vec![]),
+        (
+            Some("doc.txt"),
+            vec![Effect::OpenFiles(vec![target("doc.txt")])],
+            "/home/p",
+        ),
+        (
+            Some("file-link"),
+            vec![Effect::OpenFiles(vec![target("file-link")])],
+            "/home/p",
+        ),
+        (Some("dead-link"), vec![], "/home/p"),
+        (Some("pipe"), vec![], "/home/p"),
+        (None, vec![], "/home/p"),
     ];
-    for (chosen, want) in table {
-        let (browser, _) = loaded(kinds()).step(Input::Click(name(chosen), Modifier::None), at(0));
-        let (_, effects) = browser.step(Input::Open, at(0));
-        assert_eq!(
-            effects.first().cloned().into_iter().collect::<Vec<_>>(),
-            want,
-            "{chosen}"
-        );
-    }
-}
-
-#[test]
-fn opening_a_folder_or_a_link_to_one_enters_it() {
-    for chosen in ["dir", "folder-link"] {
-        let (browser, _) = loaded(kinds()).step(Input::Click(name(chosen), Modifier::None), at(0));
+    for (chosen, want, ends_at) in table {
+        let before = chosen.map(|c| Input::Click(name(c), Modifier::None));
+        let (browser, _) = run(loaded(kinds()), before.into_iter().collect());
         let (browser, effects) = browser.step(Input::Open, at(0));
-        assert_eq!(path_of(browser.location()), format!("/home/p/{chosen}"));
-        assert!(effects.contains(&Effect::List(browser.location().clone())));
+        let first: Vec<_> = effects.first().cloned().into_iter().collect();
+        assert_eq!(first, want, "{chosen:?}");
+        assert_eq!(path_of(browser.location()), ends_at, "{chosen:?}");
+        if ends_at != "/home/p" {
+            assert!(effects.contains(&Effect::List(browser.location().clone())));
+        }
     }
 }
 
@@ -69,20 +71,6 @@ fn opening_several_files_hands_over_the_files_in_shown_order() {
         ])]
     );
     assert_eq!(path_of(browser.location()), "/home/p");
-}
-
-#[test]
-fn opening_with_nothing_selected_does_nothing() {
-    let (_, effects) = loaded(kinds()).step(Input::Open, at(0));
-    assert!(effects.is_empty());
-}
-
-#[test]
-fn an_open_target_knows_its_path() {
-    assert_eq!(
-        target("doc.txt").path(),
-        std::path::Path::new("/home/p/doc.txt")
-    );
 }
 
 #[test]

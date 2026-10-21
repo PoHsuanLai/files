@@ -87,6 +87,11 @@ fn errors() {
         let got = DiskLister.list(&FolderPath::new(path.clone()).unwrap());
         assert_eq!(got, Err(want), "{}", path.display());
     }
+    assert_eq!(
+        ListError::NotFound.to_string(),
+        "The folder can't be found.",
+        "the words are plain"
+    );
 }
 
 #[test]
@@ -101,12 +106,4 @@ fn no_permission() {
     if !readable {
         assert_eq!(got, Err(ListError::NoPermission));
     }
-}
-
-#[test]
-fn error_words_are_plain() {
-    assert_eq!(
-        ListError::NotFound.to_string(),
-        "The folder can't be found."
-    );
 }

@@ -72,15 +72,10 @@ fn going_somewhere_new_forgets_what_lay_ahead() {
 }
 
 #[test]
-fn back_with_nowhere_behind_does_nothing() {
+fn back_and_enclosing_stop_at_their_ends() {
     let (browser, _) = Browser::new(home());
     let (after, effects) = browser.clone().step(Input::Back, at(0));
-    assert_eq!(after, browser);
-    assert!(effects.is_empty());
-}
-
-#[test]
-fn enclosing_stops_at_the_root() {
+    assert_eq!((after, effects), (browser, vec![]), "nowhere behind");
     let (browser, _) = Browser::new(dir("/"));
     assert_eq!(browser.can_go_enclosing(), Availability::Unavailable);
     let (after, effects) = browser.clone().step(Input::Enclosing, at(0));

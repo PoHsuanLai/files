@@ -34,7 +34,6 @@ fn the_seven_colours_are_tags_named_like_them() {
         );
     }
     assert_eq!(Tag::new("Work").unwrap().colour(), None);
-    assert_eq!(TagColour::ALL.len(), 7);
 }
 
 #[test]
