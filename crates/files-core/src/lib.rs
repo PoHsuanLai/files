@@ -15,6 +15,16 @@
 //! # Ok::<(), NameError>(())
 //! ```
 
+mod entry;
+mod location;
+mod mime;
 mod name;
+mod size;
+mod view;
 
+pub use entry::{Entry, EntryKind, LinkTo, Special, Visibility};
+pub use location::{FolderPath, Location, PathError};
+pub use mime::{MimeError, MimeType};
 pub use name::{FileName, NameError};
+pub use size::ByteSize;
+pub use view::{FolderPrefs, HiddenFiles, Sort, SortKey, SortOrder, ViewMode};

@@ -60,6 +60,14 @@ impl FileName {
         self.0.to_string_lossy()
     }
 
+    /// Hidden when it starts with a dot, as every Linux file manager reads it.
+    pub fn visibility(&self) -> crate::Visibility {
+        match self.0.as_bytes() {
+            [b'.', ..] => crate::Visibility::Hidden,
+            _ => crate::Visibility::Shown,
+        }
+    }
+
     /// The name without its extension: `Report.final` of `Report.final.pdf`. A name that starts
     /// with its only dot (`.bashrc`) has no extension, so its stem is the whole name.
     pub fn stem(&self) -> &OsStr {
