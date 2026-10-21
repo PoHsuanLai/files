@@ -7,6 +7,7 @@ mod navigation;
 mod open;
 mod prefs;
 mod rename;
+mod reveal;
 mod selection;
 mod sorting;
 mod typeselect;

@@ -30,6 +30,17 @@ impl Selection {
         }
     }
 
+    /// Exactly `names`; the first is the anchor and the cursor. Nothing is selected for none.
+    pub fn of(names: impl IntoIterator<Item = FileName>) -> Selection {
+        let names: Vec<FileName> = names.into_iter().collect();
+        let first = names.first().cloned();
+        Selection {
+            names: names.into_iter().collect(),
+            anchor: first.clone(),
+            cursor: first,
+        }
+    }
+
     /// Whether `name` is selected.
     pub fn contains(&self, name: &FileName) -> bool {
         self.names.contains(name)

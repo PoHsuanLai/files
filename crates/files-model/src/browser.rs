@@ -1,12 +1,13 @@
 //! One window's view of one location.
 
-use files_core::{Entry, FolderPath, FolderPrefs, HiddenFiles, Location};
+use files_core::{Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, Location};
 
 use crate::arrange::arrange;
 use crate::effect::Effect;
 use crate::history::{Availability, History};
 use crate::listing::Listing;
 use crate::rename::Rename;
+use crate::reveal;
 use crate::selection::Selection;
 use crate::typeselect::TypeSelect;
 
@@ -24,6 +25,8 @@ pub struct Browser {
     pub(crate) rename: Rename,
     pub(crate) prefs: FolderPrefs,
     pub(crate) hidden: HiddenFiles,
+    /// The names an `Input::Reveal` asked to select, until the person selects something.
+    pub(crate) reveal: Vec<FileName>,
 }
 
 impl Browser {
@@ -40,6 +43,7 @@ impl Browser {
             rename: Rename::Idle,
             prefs: FolderPrefs::default(),
             hidden: HiddenFiles::default(),
+            reveal: Vec::new(),
         };
         (browser, effects)
     }
@@ -145,6 +149,7 @@ impl Browser {
             .collect();
         let rename = self.rename.kept_in(entries);
         let selection = self.selection.kept_in(&rows);
+        let selection = reveal::applied(&self.listing, &rows, &self.reveal, selection);
         Browser {
             rows,
             selection,

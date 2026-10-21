@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use files_core::{Entry, FileName, FolderPrefs, Location, Sort, ViewMode};
+use files_core::{Entry, FileName, FolderPath, FolderPrefs, Location, Sort, ViewMode};
 
 use crate::listing::ListFailure;
 
@@ -60,6 +60,15 @@ pub enum Input {
     PrefsLoaded(Location, FolderPrefs),
     /// Go to a place.
     Go(Location),
+    /// Go to a folder and select these entries in it (another program asked to show them, as
+    /// "Show in Folder" does). Going there is a normal visit, so Back returns; names the listing
+    /// does not hold yet are selected when they arrive, until the person selects something.
+    Reveal {
+        /// The folder to show.
+        folder: FolderPath,
+        /// The entries to select; the first is the cursor, and so the one scrolled into view.
+        names: Vec<FileName>,
+    },
     /// Go back (⌘[).
     Back,
     /// Go forward (⌘]).

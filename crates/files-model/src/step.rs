@@ -31,6 +31,7 @@ impl Browser {
             Input::Changed(at, change) if at == self.location => self.changed(change),
             Input::PrefsLoaded(at, prefs) if at == self.location => self.with_prefs(prefs),
             Input::Listed(..) | Input::Changed(..) | Input::PrefsLoaded(..) => (self, Vec::new()),
+            Input::Reveal { folder, names } => self.revealing(folder, names),
             Input::Go(to) => self.go(to),
             Input::Back => self.go_back(),
             Input::Forward => self.go_forward(),
@@ -108,6 +109,7 @@ impl Browser {
         let browser = Browser {
             selection,
             typeselect: TypeSelect::default(),
+            reveal: Vec::new(),
             ..self
         };
         (browser, Vec::new())
@@ -127,6 +129,7 @@ impl Browser {
             Browser {
                 typeselect,
                 selection,
+                reveal: Vec::new(),
                 ..self
             },
             Vec::new(),

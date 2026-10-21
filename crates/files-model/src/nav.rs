@@ -29,6 +29,7 @@ impl Browser {
             rename: Rename::Idle,
             prefs: Default::default(),
             hidden: self.hidden,
+            reveal: Vec::new(),
         };
         (browser, effects)
     }

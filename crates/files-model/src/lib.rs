@@ -32,6 +32,7 @@ mod nav;
 mod open;
 mod rename;
 mod renaming;
+mod reveal;
 mod selection;
 mod sort;
 mod step;
