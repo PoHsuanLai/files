@@ -61,7 +61,8 @@ impl Said {
     pub(crate) fn from_error(error: &zbus::Error) -> Said {
         match error {
             zbus::Error::MethodError(name, _, _) => Said::of(Some(name.as_str())),
-            _ => Said::Other,
+            // Not an answer from the disk service: the bus itself failed.
+            zbus::Error::FDO(_) | zbus::Error::Failure(_) | _ => Said::Other,
         }
     }
 

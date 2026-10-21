@@ -22,7 +22,6 @@ use crate::error::Refusal;
 /// Answers the router's calls from the window.
 pub(super) struct Files<W> {
     pub(super) manifest: ValidManifest,
-    pub(super) app: AppName,
     pub(super) window: Arc<W>,
 }
 
@@ -43,10 +42,7 @@ impl<W: Window> IntentProvider for Files<W> {
     async fn perform(&self, call: Invocation) -> Result<Outcome, AppRefusal> {
         let ask = ask_of(&call)?;
         let reply = self.window.ask(ask.clone()).await.map_err(refusal)?;
-        let shape = Shape {
-            app: &self.app,
-            space: &call.space,
-        };
+        let shape = Shape { space: &call.space };
         shape.outcome(&ask, reply)
     }
 
@@ -120,7 +116,6 @@ impl SummonTarget for NoPrompt {
 
 /// Builds outcomes with the labels this call's answers carry.
 struct Shape<'a> {
-    app: &'a AppName,
     space: &'a SpaceId,
 }
 

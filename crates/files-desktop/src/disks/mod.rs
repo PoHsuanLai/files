@@ -121,7 +121,10 @@ impl Disks {
             .path(ROOT)?
             .build()
             .await?;
-        Ok(manager.get_managed_objects().await?)
+        Ok(manager
+            .get_managed_objects()
+            .await
+            .map_err(zbus::Error::from)?)
     }
 }
 

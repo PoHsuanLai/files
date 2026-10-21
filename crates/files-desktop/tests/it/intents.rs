@@ -47,7 +47,14 @@ impl Window for FakeWindow {
                 Some(place) => Reply::Place(place.clone()),
                 None => Reply::Done,
             },
-            _ => Reply::Done,
+            Ask::Open(_)
+            | Ask::Trash(_)
+            | Ask::NewFolder { .. }
+            | Ask::Copy { .. }
+            | Ask::Move { .. }
+            | Ask::EmptyTrash
+            | Ask::Undo(_)
+            | _ => Reply::Done,
         };
         self.asked
             .lock()

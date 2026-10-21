@@ -10,7 +10,7 @@ use ds::prelude::{Icon, ListItem, Row, RowAction, RowLeading, SectionHeader, Sel
 use files_core::{Eject, Volume, VolumeId, VolumeKind};
 use files_model::Input;
 
-use crate::places::{Heading, PlaceKey, PlaceKind, Places, VolumeSlot, groups, volume_key};
+use crate::places::{Heading, PlaceKey, PlaceKind, Places, groups, volume_key};
 use crate::state::Browse;
 
 /// The glyph of a place. quire has no Home, Desktop or Videos glyph yet, so the nearest stand in.
@@ -73,7 +73,7 @@ pub(super) fn sidebar_rows(
                 .into_iter()
                 .map(|kind| {
                     let key = PlaceKey::Place(kind);
-                    let selection = selection_of(key);
+                    let selection = selection_of(key.clone());
                     let onselect = hears.onselect;
                     ListItem::row(
                         key,
@@ -85,13 +85,13 @@ pub(super) fn sidebar_rows(
             if group.heading == Heading::Locations {
                 // The disks go before the last row, the Trash.
                 let at = rows.len().saturating_sub(1);
-                let disks = volumes.iter().enumerate().map(|(n, volume)| {
-                    let slot = VolumeSlot(n);
-                    let selection = selection_of(PlaceKey::Volume(slot));
+                let disks = volumes.iter().map(|volume| {
+                    let key = PlaceKey::Volume(volume.id.clone());
+                    let selection = selection_of(key.clone());
                     ListItem::row(
-                        PlaceKey::Volume(slot),
+                        key,
                         volume.name.as_str().to_owned(),
-                        rsx! { VolumeRow { volume: volume.clone(), slot, selection, hears } },
+                        rsx! { VolumeRow { volume: volume.clone(), selection, hears } },
                     )
                 });
                 let tail = rows.split_off(at);
@@ -122,14 +122,15 @@ fn PlaceRow(kind: PlaceKind, selection: Selection, onselect: EventHandler<PlaceK
 
 /// One disk's row: its name, and an eject button when it can be ejected.
 #[component]
-fn VolumeRow(volume: Volume, slot: VolumeSlot, selection: Selection, hears: Hears) -> Element {
+fn VolumeRow(volume: Volume, selection: Selection, hears: Hears) -> Element {
     let state = RowState {
         selection,
         ..RowState::default()
     };
     let leading = RowLeading::Icon(icon_of_volume(volume.kind));
     let title = volume.name.as_str().to_owned();
-    let onclick = EventHandler::new(move |_: Press| hears.onselect.call(PlaceKey::Volume(slot)));
+    let key = PlaceKey::Volume(volume.id.clone());
+    let onclick = EventHandler::new(move |_: Press| hears.onselect.call(key.clone()));
     match volume.eject {
         Eject::Allowed => {
             let id = volume.id.clone();
@@ -166,13 +167,7 @@ pub(super) fn PlacesPane(browse: Browse, places: Places) -> Element {
                     browse.send(Input::Go(location));
                 }
             }
-            PlaceKey::Volume(VolumeSlot(at)) => {
-                // Read first, send after: sending writes the signal the read holds.
-                let id = browse.state.read().volumes().get(at).map(|v| v.id.clone());
-                if let Some(id) = id {
-                    browse.send(Input::OpenVolume(id));
-                }
-            }
+            PlaceKey::Volume(id) => browse.send(Input::OpenVolume(id)),
             PlaceKey::Heading(Heading::Favorites | Heading::Locations) => {}
         }
     });
@@ -184,7 +179,7 @@ pub(super) fn PlacesPane(browse: Browse, places: Places) -> Element {
     rsx! {
         Sidebar::<PlaceKey> {
             label: "Sidebar",
-            sections: sidebar_rows(&places, &volumes, cursor, hears),
+            sections: sidebar_rows(&places, &volumes, cursor.clone(), hears),
             cursor,
             onselect: go,
         }

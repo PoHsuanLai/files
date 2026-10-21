@@ -39,7 +39,9 @@ impl Disks {
             Ok(path) => FolderPath::new(path).map_err(|_| MountFailure::Other),
             Err(error) => match Said::from_error(&error) {
                 Said::AlreadyMounted => self.mounted_at(id).await.ok_or(MountFailure::Other),
-                said => Err(said.mount_failure()),
+                said @ (Said::Busy | Said::NotAllowed | Said::NotMounted | Said::Other) => {
+                    Err(said.mount_failure())
+                }
             },
         }
     }
@@ -53,7 +55,9 @@ impl Disks {
             Ok(()) => {}
             Err(error) => match Said::from_error(&error) {
                 Said::NotMounted => {}
-                said => return Err(said.eject_failure(self.programs_using(mounts).await)),
+                said @ (Said::Busy | Said::NotAllowed | Said::AlreadyMounted | Said::Other) => {
+                    return Err(said.eject_failure(self.programs_using(mounts).await));
+                }
             },
         }
         self.take_away(id).await

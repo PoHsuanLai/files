@@ -21,12 +21,17 @@ use crate::error::VolumeError;
 pub type Changed = Box<dyn Fn() + Send + Sync>;
 
 /// What keeps a watch going: dropping it stops the watch.
-pub struct WatchGuard(Box<dyn Any + Send>);
+pub struct WatchGuard {
+    /// Held only to be dropped with the guard.
+    _held: Box<dyn Any + Send>,
+}
 
 impl WatchGuard {
     /// A guard that keeps `held` alive until it is dropped.
     pub fn new(held: impl Any + Send) -> WatchGuard {
-        WatchGuard(Box::new(held))
+        WatchGuard {
+            _held: Box::new(held),
+        }
     }
 }
 

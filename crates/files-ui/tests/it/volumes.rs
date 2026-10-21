@@ -37,7 +37,9 @@ fn names(heard: &Heard) -> Vec<String> {
         Heard::Input(Input::Volumes(list)) => {
             list.iter().map(|v| v.name.as_str().to_owned()).collect()
         }
-        other => panic!("not a list of disks: {other:?}"),
+        other @ (Heard::Input(_) | Heard::Told(_) | Heard::Announced(_) | Heard::Looked(..)) => {
+            panic!("not a list of disks: {other:?}")
+        }
     }
 }
 
