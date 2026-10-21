@@ -17,6 +17,23 @@ files-mime = { path = "crates/files-mime" }
 files-model = { path = "crates/files-model" }
 files-fs = { path = "crates/files-fs" }
 files-desktop = { path = "crates/files-desktop" }
+files-ui = { path = "crates/files-ui" }
+# quire, pinned the desktop-wide way (.git + full rev; the tag is a comment), as temor and anyview do.
+ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4aab5a5bb4636a4235d3d92c046a58e0" }  # 90e73d8d: v0.3.37
+ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4aab5a5bb4636a4235d3d92c046a58e0" }  # 90e73d8d: v0.3.37
+ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4aab5a5bb4636a4235d3d92c046a58e0" }  # 90e73d8d: v0.3.37
+ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4aab5a5bb4636a4235d3d92c046a58e0" }  # 90e73d8d: v0.3.37
+ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4aab5a5bb4636a4235d3d92c046a58e0" }  # 90e73d8d: v0.3.37
+# The desktop's portable keymap core (actions, chords, Primary per platform); files owns no keymap.
+chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "eb0deff12add543565ec41eecffda646ede43cf0" }
+# Copied from quire/docs/workspace-deps.toml at the rev above.
+dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
+# Dates in the list view, in the person's own time zone.
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+# The window hears its workers on a channel; `sync` needs no runtime of its own.
+tokio = { version = "1", default-features = false, features = ["sync"] }
+# The binary reads the XDG user folders (user-dirs.dirs) once.
+dirs = "6"
 notify = "8.2"
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "process"] }
 zbus = { version = "5.19", default-features = false, features = ["tokio"] }
@@ -47,3 +64,30 @@ debug = "line-tables-only"
 lto = "thin"
 codegen-units = 1
 strip = "debuginfo"
+
+# Patches apply only at a workspace root, so this root repeats quire's block verbatim.
+# vello and anyrender come from our forks (github.com/PoHsuanLai/vello and /anyrender, branch
+# quire-filters): the colour matrix filter, multi-threaded filter layers and CSS filter lists, so
+# every CSS `filter` function paints on both backends. Move back to crates.io once upstream has
+# them (blitz-kit docs/blitz-gaps.md tracks the PRs).
+[patch.crates-io]
+vello_common = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
+vello_cpu = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
+vello_hybrid = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
+vello_sparse_shaders = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
+glifo = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
+anyrender = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
+anyrender_vello_cpu = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
+anyrender_vello_hybrid = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
+wgpu_context = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
+pixels_window_renderer = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
+# dioxus-core 0.7.10 can spin forever in VirtualDom::wait_for_work: a task woken and then cancelled
+# before it is polled (a use_resource restart) leaves an empty entry in the dirty-task queue that
+# pop_task never removes. Fixed upstream in DioxusLabs/dioxus#5554 (0.8-alpha only); this fork
+# (github.com/PoHsuanLai/dioxus, branch quire-0.7) backports it onto 0.7.10. Remove when quire
+# moves to dioxus 0.8.
+dioxus-core = { git = "https://github.com/PoHsuanLai/dioxus", rev = "a615fd9f09e272c688a45e366161c576cecf0439" }
+dioxus-core-types = { git = "https://github.com/PoHsuanLai/dioxus", rev = "a615fd9f09e272c688a45e366161c576cecf0439" }
+generational-box = { git = "https://github.com/PoHsuanLai/dioxus", rev = "a615fd9f09e272c688a45e366161c576cecf0439" }
+subsecond = { git = "https://github.com/PoHsuanLai/dioxus", rev = "a615fd9f09e272c688a45e366161c576cecf0439" }
+subsecond-types = { git = "https://github.com/PoHsuanLai/dioxus", rev = "a615fd9f09e272c688a45e366161c576cecf0439" }

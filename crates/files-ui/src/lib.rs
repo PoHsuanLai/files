@@ -1,0 +1,38 @@
+//! The window of files: a Finder-like folder view drawn only with quire's components.
+//!
+//! The parts, top to bottom:
+//!
+//! - [`Launch`] is everything the window is given at start: the folder to open, the person's
+//!   favourite places, where the look comes from, and the seams to the outside ([`Seams`]).
+//!   The binary reads the environment once and builds it; the window reads nothing itself.
+//! - [`edge`] carries out what `files-model` asks for (list this folder, watch it, rename that file,
+//!   open these files) against the traits of `files-fs` and the seams of this crate, and feeds the
+//!   answers back as inputs.
+//! - [`words`] are the pure functions that say sizes, kinds and dates the way a person reads them.
+//! - [`places`] and [`rows`] are the pure mappings from the model to what quire draws: the
+//!   sidebar's sections, the table's selection and sort.
+//! - [`run`] opens the window; its `view` is `Ds`, `SplitView`, `Sidebar`, `Toolbar` and
+//!   `VirtualTable`, and nothing is drawn by hand.
+//!
+//! ```
+//! use files_ui::words::size_words;
+//! use files_core::ByteSize;
+//!
+//! assert_eq!(size_words(ByteSize(1_500_000)), "1.5 MB");
+//! ```
+
+pub mod edge;
+mod keys;
+mod launch;
+pub mod places;
+pub mod rows;
+mod run;
+mod state;
+mod view;
+pub mod words;
+
+pub use edge::{DiskRenamer, Opener, RenameError, Renamer, Seams, Zone};
+pub use launch::{AppearanceSource, Launch};
+pub use places::{Heading, PlaceKey, PlaceKind, Places};
+pub use run::{APP_ID, run};
+pub use view::{App, STYLE};

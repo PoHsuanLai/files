@@ -1,0 +1,8 @@
+/* files' own CSS: layout only, quire's tokens only (it passes ds_lint Strict with no exceptions;
+   tests/it/coherence.rs). The window's key handler needs one box of its own around the split view,
+   and that box is as tall as the window. */
+
+.files-app {
+  height: 100%;
+  outline: none;
+}

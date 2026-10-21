@@ -1,0 +1,17 @@
+[package]
+name = "files"
+description = "Files: the desktop's file manager. Arguments, the environment, and the window."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+dirs = { workspace = true }
+files-core = { workspace = true }
+files-ui = { workspace = true }
+
+[lints]
+workspace = true
