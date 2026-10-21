@@ -11,7 +11,11 @@ publish.workspace = true
 [dependencies]
 dirs = { workspace = true }
 files-core = { workspace = true }
+files-desktop = { workspace = true }
+files-mime = { workspace = true }
+files-model = { workspace = true }
 files-ui = { workspace = true }
+tokio = { workspace = true }
 
 [lints]
 workspace = true

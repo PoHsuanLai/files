@@ -1,7 +1,9 @@
-//! The command line: `files [FOLDER]`.
+//! The command line: `files [--dbus-activated] [FOLDER]`.
 //!
 //! `FOLDER` is a path or a `file://` address (the desktop launches `files %U`). More than one is
-//! allowed and only the first is opened: one window shows one folder.
+//! allowed and only the first is opened: one window shows one folder. `--dbus-activated` is what
+//! the session bus's service files pass: the bus started Files to answer a call, which then moves
+//! the window, so nothing else is asked of an app that is already running.
 
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -15,18 +17,34 @@ pub enum Start {
     Given(PathBuf),
 }
 
+/// Who started this launch.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Started {
+    /// The person (or a program acting for them) ran `files`.
+    ByPerson,
+    /// The session bus started it to answer a call.
+    ByBus,
+}
+
 /// What the command line asked for.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Args {
     /// Where to start.
     pub start: Start,
+    /// Who started it.
+    pub started: Started,
 }
 
 impl Args {
     /// Reads the arguments after the program's name; the error is a sentence for the person.
     pub fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Args, String> {
         let mut folders = Vec::new();
+        let mut started = Started::ByPerson;
         for arg in args {
+            if arg == "--dbus-activated" {
+                started = Started::ByBus;
+                continue;
+            }
             if arg.to_string_lossy().starts_with('-') && arg != "-" {
                 return Err(format!(
                     "I don't know the option {}.",
@@ -39,7 +57,7 @@ impl Args {
             Some(first) => Start::Given(path_of(&first)),
             None => Start::Home,
         };
-        Ok(Args { start })
+        Ok(Args { start, started })
     }
 }
 
@@ -93,13 +111,29 @@ mod tests {
     fn given(path: &str) -> Result<Args, String> {
         Ok(Args {
             start: Start::Given(PathBuf::from(path)),
+            started: Started::ByPerson,
         })
     }
 
     #[test]
     fn the_command_line_names_a_folder_or_nothing() {
         let cases = [
-            ("nothing", parse(&[]), Ok(Args { start: Start::Home })),
+            (
+                "nothing",
+                parse(&[]),
+                Ok(Args {
+                    start: Start::Home,
+                    started: Started::ByPerson,
+                }),
+            ),
+            (
+                "started by the bus",
+                parse(&["--dbus-activated"]),
+                Ok(Args {
+                    start: Start::Home,
+                    started: Started::ByBus,
+                }),
+            ),
             ("a path", parse(&["/tmp"]), given("/tmp")),
             ("a relative path", parse(&["notes"]), given("notes")),
             ("only the first", parse(&["/a", "/b"]), given("/a")),

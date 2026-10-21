@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.quire.Files
+Exec=/usr/bin/files --dbus-activated
