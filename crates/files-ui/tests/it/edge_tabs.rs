@@ -179,7 +179,12 @@ fn found(rig: &mut super::edge::Rig, tab: TabId, colour: TagColour) -> Vec<Strin
                 paths.sort();
                 return paths;
             }
-            other => panic!("not part of a search: {other:?}"),
+            other @ (Heard::Tab(..)
+            | Heard::All(_)
+            | Heard::CloseWindow
+            | Heard::Told(_)
+            | Heard::Announced(_)
+            | Heard::Looked(..)) => panic!("not part of a search: {other:?}"),
         }
     }
 }

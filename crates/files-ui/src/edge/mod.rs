@@ -322,7 +322,7 @@ impl Edge {
                     .map(|items| items.into_iter().filter_map(ops::row_of).collect())
                     .map_err(ops::failure_of),
                 // A search is asked for with `Effect::Find`, not listed.
-                _ => Err(ListFailure::Other),
+                Location::Tag(_) | _ => Err(ListFailure::Other),
             };
             let _ = heard.send(Heard::Tab(tab, Input::Listed(at, result)));
         });

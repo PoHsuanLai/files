@@ -1,5 +1,7 @@
 //! The window: the sidebar pane and the folder pane in a split view, with the keys.
 
+use std::rc::Rc;
+
 use dioxus::prelude::*;
 use ds::components::chrome::split_view::model::{Collapsing, PaneSize, PaneSpec, SplitPane};
 use ds::components::chrome::split_view::view::SplitView;
@@ -45,6 +47,17 @@ pub(super) fn Window() -> Element {
     let drop = use_file_drop(move |files: FileDrop| browse.send(dropped(files, None)));
     let title = title_words(browse.state.read().location());
     use_window_title(title);
+    // The key box, kept so the keyboard can be put back on it: a tab coming to the front draws
+    // its own table, and the control that had the keyboard (in the old tab, or a menu that just
+    // closed) is gone, which would leave no key a place to land.
+    let mut key_box = use_signal(|| None::<Rc<MountedData>>);
+    let front = browse.tabs.read().front_id();
+    use_effect(use_reactive!(|front| {
+        let _ = front;
+        if let Some(element) = key_box.peek().clone() {
+            focus_soon(element);
+        }
+    }));
     let shown = sidebar();
     let side_body = match shown {
         Shown::Visible => rsx! {
@@ -61,6 +74,7 @@ pub(super) fn Window() -> Element {
             "data-drop": drop.drop_attr(),
             onmounted: move |event: MountedEvent| {
                 drop.mounted(event.clone());
+                key_box.set(Some(event.data()));
                 focus_soon(event.data());
             },
             // A press on a row asks for its own menu and keeps the press from reaching here.

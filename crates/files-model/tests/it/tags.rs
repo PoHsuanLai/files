@@ -11,10 +11,6 @@ fn tagged(text: &str, colours: &str) -> Entry {
     file(text).with_tags(Tags::parse(colours))
 }
 
-fn item(text: &str) -> ItemRef {
-    ItemRef::new(FolderPath::new("/home/p").unwrap(), name(text))
-}
-
 fn select(browser: Browser, names: &[&str]) -> Browser {
     let mut inputs = vec![Input::SelectNone];
     for (i, n) in names.iter().enumerate() {

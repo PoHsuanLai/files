@@ -35,9 +35,9 @@ fn body_of(browse: Browse) -> Body {
     match state.listing() {
         Listing::Failed(failure) => Body::Failed(*failure),
         Listing::Loaded(_) if state.rows().is_empty() => Body::Empty,
-        Listing::Loaded(_) | Listing::Loading => Body::Table,
-        // A listing files-model adds later is drawn as a table until this names it.
-        _ => Body::Table,
+        // A search's rows stream into the table as they are found; a listing files-model adds
+        // later is drawn as a table until this names it.
+        Listing::Loaded(_) | Listing::Loading | Listing::Searching(_) | _ => Body::Table,
     }
 }
 

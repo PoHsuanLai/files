@@ -123,8 +123,10 @@ fn rows(id: &str, chords: &[&str]) -> Vec<(AppAction, DefaultChord)> {
 
 /// `groups` as one registration for `app`.
 fn registration(app: &AppId, groups: &[Vec<(AppAction, DefaultChord)>]) -> Registration {
-    // Files has no text styles, so Command+I is Get Info rather than Italic.
-    let start = Registration::new(app).forgo(StandardAction::Italic);
+    // Files has no text styles and no fonts, so Command+I is Get Info rather than Italic and
+    // Command+T is New Tab rather than Show Fonts, as in Finder.
+    let start =
+        Registration::new(app).forgo_all([StandardAction::Italic, StandardAction::ShowFonts]);
     groups
         .iter()
         .flatten()

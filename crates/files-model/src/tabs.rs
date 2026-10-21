@@ -199,7 +199,8 @@ impl Tabs {
             return self.show_at(to);
         }
         if let Input::ShowTab(id) = input {
-            return match self.iter().position(|tab| tab.id == id) {
+            let at = self.iter().position(|tab| tab.id == id);
+            return match at {
                 Some(to) => self.show_at(to),
                 None => (self, Vec::new()),
             };

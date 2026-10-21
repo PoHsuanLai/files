@@ -4,7 +4,6 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use files_core::{ItemRef, Location, Tag, TagColour};
-use files_fs::Tagger;
 use files_model::{Change, Input, Mark};
 
 use super::{Edge, Heard};

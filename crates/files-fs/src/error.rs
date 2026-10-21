@@ -94,7 +94,7 @@ impl TagWriteError {
             io::ErrorKind::Unsupported => TagWriteError::Unsupported,
             io::ErrorKind::NotFound => TagWriteError::NotFound,
             io::ErrorKind::PermissionDenied => TagWriteError::NoPermission,
-            kind => TagWriteError::Other(kind),
+            kind @ (io::ErrorKind::Other | _) => TagWriteError::Other(kind),
         }
     }
 }
