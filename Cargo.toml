@@ -30,8 +30,6 @@ chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "eb0deff1
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
 # Dates in the list view, in the person's own time zone.
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
-# The window hears its workers on a channel; `sync` needs no runtime of its own.
-tokio = { version = "1", default-features = false, features = ["sync"] }
 # The binary reads the XDG user folders (user-dirs.dirs) once.
 dirs = "6"
 notify = "8.2"

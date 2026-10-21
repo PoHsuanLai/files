@@ -65,7 +65,10 @@ fn the_order_is_the_sidebars_not_the_order_they_were_given_in() {
 #[test]
 fn a_row_goes_to_its_folder_and_the_computer_to_the_root() {
     let places = person();
-    assert_eq!(places.location_of(PlaceKind::Downloads), Some(place("/home/p/Downloads")));
+    assert_eq!(
+        places.location_of(PlaceKind::Downloads),
+        Some(place("/home/p/Downloads"))
+    );
     assert_eq!(places.location_of(PlaceKind::Pictures), None);
     assert_eq!(places.location_of(PlaceKind::Computer), Some(place("/")));
 }
@@ -82,10 +85,26 @@ fn a_later_folder_replaces_an_earlier_one() {
 fn the_cursor_is_on_the_place_the_window_is_in() {
     let places = person();
     let cases = [
-        ("home", place("/home/p"), Some(PlaceKey::Place(PlaceKind::Home))),
-        ("a favorite", place("/home/p/Music"), Some(PlaceKey::Place(PlaceKind::Music))),
-        ("the root", place("/"), Some(PlaceKey::Place(PlaceKind::Computer))),
-        ("a folder inside a place is none", place("/home/p/Music/Album"), None),
+        (
+            "home",
+            place("/home/p"),
+            Some(PlaceKey::Place(PlaceKind::Home)),
+        ),
+        (
+            "a favorite",
+            place("/home/p/Music"),
+            Some(PlaceKey::Place(PlaceKind::Music)),
+        ),
+        (
+            "the root",
+            place("/"),
+            Some(PlaceKey::Place(PlaceKind::Computer)),
+        ),
+        (
+            "a folder inside a place is none",
+            place("/home/p/Music/Album"),
+            None,
+        ),
         ("the trash is none", Location::Trash, None),
     ];
     for (name, location, want) in cases {

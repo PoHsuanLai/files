@@ -54,6 +54,11 @@ fn our_stylesheet_lints_clean() {
     );
 }
 
+/// Classes quire v0.3.37 itself emits without a rule: `VirtualTable`'s split layout (its
+/// `split.rs`). Reported to quire; this list empties at the next re-pin. The window's own
+/// classes have no exceptions.
+const QUIRE_GAPS: [&str; 2] = [".ds-vtable-track", ".ds-vtable-rows"];
+
 /// Rule 2: every class the page carries is one quire's stylesheet or the window's styles.
 #[test]
 fn rendered_markup_uses_only_styled_classes() {
@@ -63,6 +68,7 @@ fn rendered_markup_uses_only_styled_classes() {
         let unstyled: Vec<_> = offences
             .iter()
             .filter(|offence| offence.rule == Rule::UnstyledClass)
+            .filter(|offence| !QUIRE_GAPS.iter().any(|gap| offence.selector.ends_with(gap)))
             .collect();
         assert!(unstyled.is_empty(), "{unstyled:#?}\nin:\n{html}");
     }

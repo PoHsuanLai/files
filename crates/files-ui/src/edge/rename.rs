@@ -29,7 +29,7 @@ impl RenameError {
             io::ErrorKind::NotFound => RenameError::NotFound,
             io::ErrorKind::PermissionDenied => RenameError::NoPermission,
             io::ErrorKind::AlreadyExists => RenameError::Taken,
-            _ => RenameError::Other,
+            io::ErrorKind::Other | _ => RenameError::Other,
         }
     }
 }
@@ -37,8 +37,12 @@ impl RenameError {
 /// Renames files. Real: [`DiskRenamer`]; a test gives its own.
 pub trait Renamer: Send + Sync {
     /// Renames `from` to `to` inside `folder`, and never replaces an item that has the name.
-    fn rename(&self, folder: &FolderPath, from: &FileName, to: &FileName)
-    -> Result<(), RenameError>;
+    fn rename(
+        &self,
+        folder: &FolderPath,
+        from: &FileName,
+        to: &FileName,
+    ) -> Result<(), RenameError>;
 }
 
 /// The real disk.

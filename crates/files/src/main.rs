@@ -34,8 +34,8 @@ fn main() -> ExitCode {
         eprintln!("files: there is no folder to open; give one: files FOLDER");
         return ExitCode::FAILURE;
     };
-    let launch = Launch::new(Location::Folder(folder), std::sync::Arc::new(XdgOpen))
-        .with_places(places);
+    let launch =
+        Launch::new(Location::Folder(folder), std::sync::Arc::new(XdgOpen)).with_places(places);
     match files_ui::run(launch) {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
@@ -47,7 +47,10 @@ fn main() -> ExitCode {
 
 /// `path` made absolute against the working folder `cwd`; a relative path with no working folder
 /// stays relative, and the window then has no folder to open.
-fn absolute(path: std::path::PathBuf, cwd: Option<std::path::PathBuf>) -> Option<std::path::PathBuf> {
+fn absolute(
+    path: std::path::PathBuf,
+    cwd: Option<std::path::PathBuf>,
+) -> Option<std::path::PathBuf> {
     if path.is_absolute() {
         Some(path)
     } else {

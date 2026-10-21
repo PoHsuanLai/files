@@ -161,10 +161,10 @@ pub fn groups(places: &Places) -> Vec<Group> {
 /// filesystem's root), or `Trash`.
 pub fn title_words(location: &Location) -> String {
     match location {
-        Location::Folder(folder) => folder
-            .as_path()
-            .file_name()
-            .map_or_else(|| "/".to_owned(), |name| name.to_string_lossy().into_owned()),
+        Location::Folder(folder) => folder.as_path().file_name().map_or_else(
+            || "/".to_owned(),
+            |name| name.to_string_lossy().into_owned(),
+        ),
         Location::Trash => "Trash".to_owned(),
         // A place files-core adds later has no name until this gives it one.
         _ => "Files".to_owned(),

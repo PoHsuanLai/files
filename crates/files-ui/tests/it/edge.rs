@@ -56,7 +56,10 @@ fn next(inbox: &mut UnboundedReceiver<Heard>) -> Heard {
         if let Ok(heard) = inbox.try_recv() {
             return heard;
         }
-        assert!(started.elapsed() < Duration::from_secs(5), "nothing was said");
+        assert!(
+            started.elapsed() < Duration::from_secs(5),
+            "nothing was said"
+        );
         std::thread::sleep(Duration::from_millis(5));
     }
 }
@@ -82,8 +85,16 @@ fn listing_a_folder_answers_with_its_entries() {
 fn a_listing_that_fails_says_why_in_the_models_terms() {
     let cases = [
         ("gone", Err(ListError::NotFound), ListFailure::NotFound),
-        ("not allowed", Err(ListError::NoPermission), ListFailure::NoPermission),
-        ("a file", Err(ListError::NotAFolder), ListFailure::NotAFolder),
+        (
+            "not allowed",
+            Err(ListError::NoPermission),
+            ListFailure::NoPermission,
+        ),
+        (
+            "a file",
+            Err(ListError::NotAFolder),
+            ListFailure::NotAFolder,
+        ),
         (
             "anything else",
             Err(ListError::Other(std::io::ErrorKind::TimedOut)),
@@ -155,8 +166,16 @@ fn a_watch_event_becomes_the_change_it_stands_for() {
     let here = folder("/p");
     lister.set(here.clone(), Ok(vec![file("kept")]));
     let cases = [
-        ("added", FolderEvent::Added(name("kept")), Change::Added(file("kept"))),
-        ("changed", FolderEvent::Changed(name("kept")), Change::Updated(file("kept"))),
+        (
+            "added",
+            FolderEvent::Added(name("kept")),
+            Change::Added(file("kept")),
+        ),
+        (
+            "changed",
+            FolderEvent::Changed(name("kept")),
+            Change::Updated(file("kept")),
+        ),
         (
             "added and gone again",
             FolderEvent::Added(name("late")),
@@ -167,7 +186,11 @@ fn a_watch_event_becomes_the_change_it_stands_for() {
             FolderEvent::Changed(name("late")),
             Change::Removed(name("late")),
         ),
-        ("removed", FolderEvent::Removed(name("kept")), Change::Removed(name("kept"))),
+        (
+            "removed",
+            FolderEvent::Removed(name("kept")),
+            Change::Removed(name("kept")),
+        ),
         ("missed some", FolderEvent::Rescan, Change::Rescan),
         ("the folder went", FolderEvent::Gone, Change::Rescan),
     ];
@@ -226,7 +249,10 @@ fn renaming_onto_another_file_is_refused_in_plain_words() {
         next(&mut rig.inbox),
         Heard::Told("That name is taken.".to_owned())
     );
-    assert_eq!(std::fs::read_to_string(dir.path().join("report.pdf")).unwrap(), "%PDF");
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("report.pdf")).unwrap(),
+        "%PDF"
+    );
     assert!(dir.path().join("notes.txt").exists());
 }
 

@@ -18,5 +18,7 @@ pub fn found() -> Places {
         .into_iter()
         .filter_map(|(kind, path)| Some((kind, path.filter(|p| p.is_dir())?)))
         .filter_map(|(kind, path)| Some((kind, FolderPath::new(path).ok()?)))
-        .fold(Places::default(), |places, (kind, folder)| places.with(kind, folder))
+        .fold(Places::default(), |places, (kind, folder)| {
+            places.with(kind, folder)
+        })
 }

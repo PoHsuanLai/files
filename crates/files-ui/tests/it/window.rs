@@ -92,7 +92,13 @@ fn the_window_lists_the_folder_and_leaves_hidden_files_out() {
 #[test]
 fn the_folders_name_is_the_toolbars_title() {
     let rig = open();
-    let name = rig.dir.path().file_name().unwrap().to_string_lossy().into_owned();
+    let name = rig
+        .dir
+        .path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
     let title = rig.harness.text_of(".ds-label[*|data-style=\"headline\"]");
     assert_eq!(title.as_deref(), Some(name.as_str()));
 }

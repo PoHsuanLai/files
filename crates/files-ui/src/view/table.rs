@@ -78,7 +78,12 @@ pub(super) fn FolderTable(browse: Browse, zone: Zone) -> Element {
             column: Column::of_key(prefs.sort.key),
             direction: direction_of(prefs.sort.order),
         };
-        (state.rows().len(), sort, cursor_of(&state), selection_of(&state))
+        (
+            state.rows().len(),
+            sort,
+            cursor_of(&state),
+            selection_of(&state),
+        )
     };
     let cell = use_callback(move |(row, at): (usize, usize)| -> Element {
         let state = browse.state.read();

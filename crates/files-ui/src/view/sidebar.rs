@@ -4,9 +4,7 @@ use dioxus::prelude::*;
 use ds::base::vocab::RowState;
 use ds::components::chrome::sidebar::Sidebar;
 use ds::components::chrome::sidebar_model::SidebarSection;
-use ds::prelude::{
-    Icon, ListItem, Row, RowLeading, SectionHeader, Selection,
-};
+use ds::prelude::{Icon, ListItem, Row, RowLeading, SectionHeader, Selection};
 use files_model::Input;
 
 use crate::places::{Heading, PlaceKey, PlaceKind, Places, groups};

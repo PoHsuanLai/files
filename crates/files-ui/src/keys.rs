@@ -7,7 +7,9 @@
 //! offers. Standard actions are handled, never declared.
 
 use chordkit::{Action, AppAction, AppId, Context, DefaultChord, Registration, StandardAction};
-use dioxus::prelude::{Key, KeyboardEvent, ModifiersInteraction, Signal, use_hook};
+use dioxus::prelude::{
+    Key, KeyboardEvent, ModifiersInteraction, ReadableExt, Signal, WritableExt, use_hook,
+};
 use ds::base::command::types_text;
 use ds::prelude::{ActionTaken, Keys, Shown, use_keys};
 use files_model::Input;
@@ -70,10 +72,12 @@ fn rows(id: &str, chords: &[&str]) -> Vec<(AppAction, DefaultChord)> {
 
 /// `groups` as one registration for `app`.
 fn registration(app: &AppId, groups: &[Vec<(AppAction, DefaultChord)>]) -> Registration {
-    groups.iter().flatten().fold(
-        Registration::new(app),
-        |registration, (action, chord)| registration.action(action.clone(), *chord),
-    )
+    groups
+        .iter()
+        .flatten()
+        .fold(Registration::new(app), |registration, (action, chord)| {
+            registration.action(action.clone(), *chord)
+        })
 }
 
 /// Declares files' actions on `keys`. A registration is all or nothing, so each action is tried
@@ -158,7 +162,7 @@ fn act(
             None => ActionTaken::No,
         },
         // A standard action the window does not offer, or one chordkit adds later.
-        _ => ActionTaken::No,
+        Action::Standard(_) | _ => ActionTaken::No,
     }
 }
 

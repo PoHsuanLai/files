@@ -12,11 +12,7 @@ use crate::state::Browse;
 /// Return commits, Escape puts the name back, and leaving the field commits. A name the model
 /// refuses stays here with its reason under it.
 #[component]
-pub(super) fn RenameCell(
-    browse: Browse,
-    draft: String,
-    problem: Option<RenameProblem>,
-) -> Element {
+pub(super) fn RenameCell(browse: Browse, draft: String, problem: Option<RenameProblem>) -> Element {
     let validity = match problem {
         Some(problem) => Validity::Invalid(Invalid {
             message: TextLine::from(problem.to_string()),

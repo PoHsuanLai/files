@@ -67,7 +67,10 @@ fn select_all_picks_every_row() {
 
 #[test]
 fn the_cursor_follows_the_arrows() {
-    let browser = step(browser(), Input::MoveCursor(Direction::Down, Modifier::None));
+    let browser = step(
+        browser(),
+        Input::MoveCursor(Direction::Down, Modifier::None),
+    );
     assert_eq!(cursor_of(&browser), Some(0));
     let browser = step(browser, Input::MoveCursor(Direction::End, Modifier::None));
     assert_eq!(cursor_of(&browser), Some(3));
@@ -85,7 +88,12 @@ fn columns_and_sort_keys_round_trip() {
     for column in Column::ALL {
         assert_eq!(Column::of_key(column.key()), column);
     }
-    let keys = [SortKey::Name, SortKey::Modified, SortKey::Size, SortKey::Kind];
+    let keys = [
+        SortKey::Name,
+        SortKey::Modified,
+        SortKey::Size,
+        SortKey::Kind,
+    ];
     for key in keys {
         assert_eq!(Column::of_key(key).key(), key);
     }
@@ -96,7 +104,10 @@ fn the_directions_round_trip() {
     for order in [SortOrder::Ascending, SortOrder::Descending] {
         assert_eq!(order_of(direction_of(order)), order);
     }
-    assert_eq!(direction_of(SortOrder::Descending), SortDirection::Descending);
+    assert_eq!(
+        direction_of(SortOrder::Descending),
+        SortDirection::Descending
+    );
 }
 
 #[test]

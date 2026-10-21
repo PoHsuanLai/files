@@ -79,10 +79,7 @@ pub fn harness(launch: Launch) -> Harness {
         height: 600,
         scale_percent: 100,
     };
-    let mut harness = Harness::new(
-        files_ui::App,
-        HarnessConfig::new(view).with_context(launch),
-    );
+    let mut harness = Harness::new(files_ui::App, HarnessConfig::new(view).with_context(launch));
     harness.map();
     harness
 }

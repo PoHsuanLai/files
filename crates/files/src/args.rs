@@ -28,7 +28,10 @@ impl Args {
         let mut folders = Vec::new();
         for arg in args {
             if arg.to_string_lossy().starts_with('-') && arg != "-" {
-                return Err(format!("I don't know the option {}.", arg.to_string_lossy()));
+                return Err(format!(
+                    "I don't know the option {}.",
+                    arg.to_string_lossy()
+                ));
             }
             folders.push(arg);
         }
@@ -100,9 +103,21 @@ mod tests {
             ("a path", parse(&["/tmp"]), given("/tmp")),
             ("a relative path", parse(&["notes"]), given("notes")),
             ("only the first", parse(&["/a", "/b"]), given("/a")),
-            ("a file address", parse(&["file:///home/p/My%20Files"]), given("/home/p/My Files")),
-            ("a local address", parse(&["file://localhost/tmp"]), given("/tmp")),
-            ("a bad escape stays", parse(&["file:///a%zzb"]), given("/a%zzb")),
+            (
+                "a file address",
+                parse(&["file:///home/p/My%20Files"]),
+                given("/home/p/My Files"),
+            ),
+            (
+                "a local address",
+                parse(&["file://localhost/tmp"]),
+                given("/tmp"),
+            ),
+            (
+                "a bad escape stays",
+                parse(&["file:///a%zzb"]),
+                given("/a%zzb"),
+            ),
             ("a lone dash is a name", parse(&["-"]), given("-")),
         ];
         for (name, got, want) in cases {

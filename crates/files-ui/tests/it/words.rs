@@ -39,16 +39,32 @@ fn sizes_are_said_as_finder_says_them() {
 #[test]
 fn only_files_have_a_size_to_show() {
     let cases = [
-        ("a file", entry("a.txt", EntryKind::File(ByteSize(2_000))), "2 KB"),
+        (
+            "a file",
+            entry("a.txt", EntryKind::File(ByteSize(2_000))),
+            "2 KB",
+        ),
         ("a folder", entry("d", EntryKind::Folder), NONE),
         (
             "a link to a file",
             entry("l", EntryKind::Link(LinkTo::File(ByteSize(5)))),
             "5 bytes",
         ),
-        ("a link to a folder", entry("l", EntryKind::Link(LinkTo::Folder)), NONE),
-        ("a broken link", entry("l", EntryKind::Link(LinkTo::Broken)), NONE),
-        ("a pipe", entry("p", EntryKind::Special(Special::Fifo)), NONE),
+        (
+            "a link to a folder",
+            entry("l", EntryKind::Link(LinkTo::Folder)),
+            NONE,
+        ),
+        (
+            "a broken link",
+            entry("l", EntryKind::Link(LinkTo::Broken)),
+            NONE,
+        ),
+        (
+            "a pipe",
+            entry("p", EntryKind::Special(Special::Fifo)),
+            NONE,
+        ),
     ];
     for (name, entry, want) in cases {
         assert_eq!(entry_size_words(&entry), want, "{name}");
@@ -61,17 +77,45 @@ fn kinds_are_said_from_the_entry_and_its_extension() {
     let cases = [
         ("a folder", entry("d", EntryKind::Folder), "Folder"),
         ("a pdf", file("Report.pdf"), "PDF file"),
-        ("the last extension counts", file("archive.tar.gz"), "GZ file"),
+        (
+            "the last extension counts",
+            file("archive.tar.gz"),
+            "GZ file",
+        ),
         ("case is folded", file("PHOTO.JpG"), "JPG file"),
         ("no extension", file("Makefile"), "Document"),
         ("a dotfile has none", file(".bashrc"), "Document"),
         ("a trailing dot has none", file("odd."), "Document"),
-        ("a link to a file", entry("l", EntryKind::Link(LinkTo::File(ByteSize(1)))), "Alias"),
-        ("a link to a folder", entry("l", EntryKind::Link(LinkTo::Folder)), "Alias"),
-        ("a broken link", entry("l", EntryKind::Link(LinkTo::Broken)), "Broken alias"),
-        ("a pipe", entry("p", EntryKind::Special(Special::Fifo)), "Pipe"),
-        ("a socket", entry("s", EntryKind::Special(Special::Socket)), "Socket"),
-        ("a device", entry("v", EntryKind::Special(Special::Device)), "Device"),
+        (
+            "a link to a file",
+            entry("l", EntryKind::Link(LinkTo::File(ByteSize(1)))),
+            "Alias",
+        ),
+        (
+            "a link to a folder",
+            entry("l", EntryKind::Link(LinkTo::Folder)),
+            "Alias",
+        ),
+        (
+            "a broken link",
+            entry("l", EntryKind::Link(LinkTo::Broken)),
+            "Broken alias",
+        ),
+        (
+            "a pipe",
+            entry("p", EntryKind::Special(Special::Fifo)),
+            "Pipe",
+        ),
+        (
+            "a socket",
+            entry("s", EntryKind::Special(Special::Socket)),
+            "Socket",
+        ),
+        (
+            "a device",
+            entry("v", EntryKind::Special(Special::Device)),
+            "Device",
+        ),
     ];
     for (name, entry, want) in cases {
         assert_eq!(kind_words(&entry), want, "{name}");
