@@ -10,6 +10,8 @@ use ds::prelude::{ActionTaken, Px, Shown};
 use ds::window::host::use_window_title;
 
 use super::busy::Busy;
+use super::chooser::AppChooser;
+use super::goto::GoToSheet;
 use super::info::InfoSheet;
 use super::menu::{ContextAt, ContextMenu, point_of};
 use super::pane::FolderPane;
@@ -85,6 +87,8 @@ pub(super) fn Window() -> Element {
             Questions { browse }
             QuickLook { browse }
             InfoSheet { browse, zone: launch.zone }
+            GoToSheet { browse }
+            AppChooser { browse }
             Busy { browse }
         }
     }

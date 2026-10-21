@@ -7,20 +7,31 @@ use ds::prelude::SystemPrefs;
 use ds_harness::{Harness, HarnessConfig, Viewport};
 use files_core::{FolderPath, Location};
 use files_fs::{DiskLister, FakePrefs, FakeWatcher};
+use files_model::AppPick;
 use files_trash::FakeTrash;
 use files_ui::edge::Seams;
-use files_ui::{AppearanceSource, Launch, OpenFailure, Opener, Zone};
+use files_ui::{
+    AppChoiceView, AppRole, AppearanceSource, Apps, Launch, OpenAs, OpenFailure, Opener, Zone,
+};
 use tempfile::TempDir;
 
-/// An opener that remembers what it was asked to open.
+/// An opener that remembers what it was asked to open, and how.
 #[derive(Debug, Default)]
 pub struct RecordingOpener {
-    opened: Mutex<Vec<PathBuf>>,
+    opened: Mutex<Vec<(Vec<PathBuf>, OpenAs)>>,
 }
 
 impl RecordingOpener {
-    /// Everything opened so far.
+    /// Every path opened so far, in order, whichever app it went to.
     pub fn opened(&self) -> Vec<PathBuf> {
+        self.calls()
+            .into_iter()
+            .flat_map(|(paths, _)| paths)
+            .collect()
+    }
+
+    /// Every call so far: the paths and how they were to be opened.
+    pub fn calls(&self) -> Vec<(Vec<PathBuf>, OpenAs)> {
         self.opened
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
@@ -29,12 +40,43 @@ impl RecordingOpener {
 }
 
 impl Opener for RecordingOpener {
-    fn open(&self, targets: Vec<PathBuf>) -> Result<(), OpenFailure> {
+    fn open(&self, targets: Vec<PathBuf>, with: OpenAs) -> Result<(), OpenFailure> {
         self.opened
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
-            .extend(targets);
+            .push((targets, with));
         Ok(())
+    }
+}
+
+/// Apps that answer from a list. For any file `Viewer` is the default and `editor` and `Zed` open
+/// it too; every installed app is `Zed`, `Calculator` and `Viewer`.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct FakeApps;
+
+fn app(id: &str, name: &str, role: AppRole) -> AppChoiceView {
+    AppChoiceView {
+        pick: AppPick::new(id),
+        name: name.to_owned(),
+        role,
+    }
+}
+
+impl Apps for FakeApps {
+    fn apps_for(&self, _targets: &[PathBuf]) -> Vec<AppChoiceView> {
+        vec![
+            app("zed.desktop", "Zed", AppRole::Other),
+            app("viewer.desktop", "Viewer", AppRole::Default),
+            app("editor.desktop", "editor", AppRole::Other),
+        ]
+    }
+
+    fn all_apps(&self) -> Vec<AppChoiceView> {
+        vec![
+            app("zed.desktop", "Zed", AppRole::Other),
+            app("calc.desktop", "Calculator", AppRole::Other),
+            app("viewer.desktop", "Viewer", AppRole::Default),
+        ]
     }
 }
 
@@ -43,7 +85,7 @@ impl Opener for RecordingOpener {
 pub struct NoAppOpener;
 
 impl Opener for NoAppOpener {
-    fn open(&self, targets: Vec<PathBuf>) -> Result<(), OpenFailure> {
+    fn open(&self, targets: Vec<PathBuf>, _with: OpenAs) -> Result<(), OpenFailure> {
         let first = targets.first().and_then(|path| path.file_name());
         let shown = first.map(|name| name.to_string_lossy().into_owned());
         Err(OpenFailure(format!(
@@ -103,6 +145,7 @@ pub fn launch_remembering(
         opener: Arc::clone(opener) as Arc<dyn Opener>,
         trash,
         prefs,
+        apps: Arc::new(FakeApps),
     };
     Launch::new(start, Arc::clone(opener) as Arc<dyn Opener>)
         .with_seams(seams)

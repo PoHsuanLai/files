@@ -7,10 +7,10 @@ use tokio::runtime::Handle;
 
 use ds::prelude::SystemPrefs;
 use ds_settings::{AppName, ConfigRoot, Store, SystemPrefsSource};
-use files_core::Location;
+use files_core::{FolderPath, Location};
 use files_fs::PrefsStore;
 
-use crate::edge::{Opener, Seams, Zone};
+use crate::edge::{Apps, Opener, Seams, Zone};
 use crate::places::Places;
 use crate::requests::Requests;
 
@@ -50,6 +50,8 @@ impl AppearanceSource {
 pub struct Launch {
     /// The place the window opens on.
     pub start: Location,
+    /// The person's home folder, which `~` means in Go to Folder; `None` when there is none.
+    pub home: Option<FolderPath>,
     /// The sidebar's favourites.
     pub places: Places,
     /// Where the look comes from.
@@ -71,12 +73,21 @@ impl Launch {
     pub fn new(start: Location, opener: Arc<dyn Opener>) -> Launch {
         Launch {
             start,
+            home: None,
             places: Places::default(),
             appearance: AppearanceSource::desktop(),
             zone: Zone::Local,
             seams: Seams::disk(opener),
             requests: Requests::none(),
             runtime: None,
+        }
+    }
+
+    /// The same launch where `~` means `home`.
+    pub fn with_home(self, home: FolderPath) -> Launch {
+        Launch {
+            home: Some(home),
+            ..self
         }
     }
 
@@ -104,6 +115,14 @@ impl Launch {
     pub fn with_runtime(self, handle: Handle) -> Launch {
         Launch {
             runtime: Some(handle),
+            ..self
+        }
+    }
+
+    /// The same launch offering the apps `apps` knows in Open With.
+    pub fn with_apps(self, apps: Arc<dyn Apps>) -> Launch {
+        Launch {
+            seams: self.seams.with_apps(apps),
             ..self
         }
     }

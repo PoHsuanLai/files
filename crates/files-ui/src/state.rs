@@ -14,7 +14,7 @@ use files_core::ItemRef;
 use files_model::{Browser, Input, Rename};
 use tokio::sync::mpsc::UnboundedReceiver;
 
-use crate::edge::{self, Edge, Heard};
+use crate::edge::{self, AppChoiceView, Edge, Heard};
 use crate::launch::Launch;
 use crate::words::announce_words;
 
@@ -82,6 +82,17 @@ impl Browse {
         state.set(before);
     }
 
+    /// The apps that open every selected item, for Open With.
+    pub(crate) fn apps_for_selection(&self) -> Vec<AppChoiceView> {
+        let targets = self.state.read().selected_targets();
+        self.edge.read().apps_for(&targets)
+    }
+
+    /// Every installed app.
+    pub(crate) fn all_apps(&self) -> Vec<AppChoiceView> {
+        self.edge.read().all_apps()
+    }
+
     /// Whether a name is being typed in place.
     pub(crate) fn renaming(&self) -> bool {
         matches!(self.state.read().rename(), Rename::Editing { .. })
@@ -94,6 +105,10 @@ impl Browse {
 pub(crate) fn use_browse(launch: &Launch) -> Browse {
     let setup = use_hook(|| {
         let (first, effects) = Browser::new(launch.start.clone());
+        let first = match &launch.home {
+            Some(home) => first.with_home(home.clone()),
+            None => first,
+        };
         let (carrier, inbox) = Edge::new(launch.seams.clone());
         carrier.run(effects);
         Setup {

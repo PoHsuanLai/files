@@ -14,8 +14,8 @@ use files_fs::{
 };
 use files_model::{Change, Effect, End, Input, ListFailure, OpEvent, OpenTarget};
 use files_trash::{FakeTrash, Trash};
-use files_ui::Opener;
 use files_ui::edge::{Edge, Heard, Seams, change_of};
+use files_ui::{NoApps, Opener};
 use tempfile::TempDir;
 use tokio::sync::mpsc::UnboundedReceiver;
 
@@ -34,7 +34,7 @@ pub(super) struct Rig {
     pub(super) inbox: UnboundedReceiver<Heard>,
     pub(super) lister: Arc<FakeLister>,
     watcher: Arc<FakeWatcher>,
-    opener: Arc<RecordingOpener>,
+    pub(super) opener: Arc<RecordingOpener>,
     trash: Arc<FakeTrash>,
     pub(super) prefs: Arc<FakePrefs>,
     _bin: TempDir,
@@ -53,6 +53,7 @@ pub(super) fn rig() -> Rig {
         opener: Arc::clone(&opener) as Arc<dyn Opener>,
         trash: Arc::clone(&trash) as Arc<dyn Trash>,
         prefs: Arc::clone(&prefs) as Arc<dyn PrefsStore>,
+        apps: Arc::new(NoApps),
     };
     let (edge, inbox) = Edge::new(seams);
     Rig {
@@ -237,6 +238,7 @@ fn a_file_no_app_opens_is_told_in_words() {
         opener: Arc::new(NoAppOpener),
         trash: Arc::new(FakeTrash::new("/nonexistent/never-used")),
         prefs: Arc::new(NoPrefs),
+        apps: Arc::new(NoApps),
     };
     let (edge, mut inbox) = Edge::new(seams);
     let target = OpenTarget::new(folder("/p"), name("x.zzz"));

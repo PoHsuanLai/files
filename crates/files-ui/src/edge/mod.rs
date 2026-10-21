@@ -15,6 +15,7 @@
 //! [`Heard::Looked`], not as an input: a picture is not something the model holds. Get Info's facts
 //! are read by the [`Lister`] on a thread and come back as `Input::InfoRead`.
 
+mod apps;
 mod look;
 mod opener;
 mod ops;
@@ -29,6 +30,7 @@ use std::time::Instant;
 
 use anyview_peek::{AnyPeeked, PeekWorker};
 use ds::base::time::clock;
+use ds_blitz::clipboard;
 use files_core::{FileName, FolderPath, ItemRef, Location, OpFailure, OpPlan, Summary};
 use files_fs::{
     DiskLister, FolderEvent, ListError, Lister, NoPrefs, NotifyWatcher, PrefsStore, WatchHandle,
@@ -39,7 +41,8 @@ use files_ops::{Job, Worker};
 use files_trash::{SystemTrash, Trash};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
-pub use opener::Opener;
+pub use apps::{AppChoiceView, AppRole, Apps, NoApps};
+pub use opener::{OpenAs, Opener};
 pub use zone::Zone;
 
 /// The window's seams to the outside, each behind a trait so a test gives its own.
@@ -55,6 +58,8 @@ pub struct Seams {
     pub trash: Arc<dyn Trash>,
     /// Where each folder's view and sort are remembered.
     pub prefs: Arc<dyn PrefsStore>,
+    /// Which apps open what, for Open With.
+    pub apps: Arc<dyn Apps>,
 }
 
 impl Seams {
@@ -66,7 +71,13 @@ impl Seams {
             opener,
             trash: Arc::new(SystemTrash),
             prefs: Arc::new(NoPrefs),
+            apps: Arc::new(NoApps),
         }
+    }
+
+    /// The same seams offering the apps `apps` knows in Open With.
+    pub fn with_apps(self, apps: Arc<dyn Apps>) -> Seams {
+        Seams { apps, ..self }
     }
 
     /// The same seams remembering folder views in `prefs`.
@@ -80,6 +91,9 @@ impl fmt::Debug for Seams {
         f.write_str("Seams")
     }
 }
+
+/// What the person reads when the clipboard would not take the pathnames.
+const COPY_FAILED: &str = "The pathnames couldn\u{2019}t be copied.";
 
 /// What a worker tells the window.
 #[derive(Debug, Clone, PartialEq)]
@@ -147,9 +161,13 @@ impl Edge {
                 self.watches.borrow_mut().remove(&at);
             }
             Effect::OpenFiles(targets) => {
-                let paths = targets.iter().map(OpenTarget::path).collect();
-                if let Err(failure) = self.seams.opener.open(paths) {
-                    self.say(Heard::Told(failure.to_string()));
+                self.open(&targets, OpenAs::Default);
+            }
+            Effect::OpenFilesWith { targets, app } => self.open(&targets, OpenAs::App(app)),
+            Effect::CheckFolder(folder) => self.check(folder),
+            Effect::CopyText(text) => {
+                if clipboard::write_text(&text).is_err() {
+                    self.say(Heard::Told(COPY_FAILED.to_owned()));
                 }
             }
             Effect::Rename { folder, from, to } => self.rename(folder, from, to),
@@ -173,6 +191,42 @@ impl Edge {
             Effect::ReadInfo(item) => self.read_info(item),
             // An effect files-model adds later is dropped until this names it.
             _ => {}
+        }
+    }
+
+    /// Hands `targets` to the opener, and tells the person if it could not.
+    fn open(&self, targets: &[OpenTarget], with: OpenAs) {
+        let paths = targets.iter().map(OpenTarget::path).collect();
+        if let Err(failure) = self.seams.opener.open(paths, with) {
+            self.say(Heard::Told(failure.to_string()));
+        }
+    }
+
+    /// The apps that open every one of `targets`, for Open With.
+    pub fn apps_for(&self, targets: &[OpenTarget]) -> Vec<AppChoiceView> {
+        let paths: Vec<_> = targets.iter().map(OpenTarget::path).collect();
+        self.seams.apps.apps_for(&paths)
+    }
+
+    /// Every installed app.
+    pub fn all_apps(&self) -> Vec<AppChoiceView> {
+        self.seams.apps.all_apps()
+    }
+
+    /// Finds out off the window's thread whether `folder` can be listed, which is what makes it
+    /// somewhere to go.
+    fn check(&self, folder: FolderPath) {
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
+        let failed = folder.clone();
+        let started = Edge::work("files-check", move || {
+            let result = lister.list(&folder).map(|_| ()).map_err(failure_of);
+            let _ = heard.send(Heard::Input(Input::FolderChecked(folder, result)));
+        });
+        if started.is_err() {
+            self.say(Heard::Input(Input::FolderChecked(
+                failed,
+                Err(ListFailure::Other),
+            )));
         }
     }
 

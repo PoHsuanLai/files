@@ -1,13 +1,25 @@
 //! What the context menu offers: pure, so a table can say it.
 
 use files_core::Location;
-use files_model::{Availability, Browser, Input};
+use files_model::{AppPick, Availability, Browser, Input};
+
+use crate::edge::{AppChoiceView, AppRole};
 
 /// One command of the context menu.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Command {
     /// Open the selection.
     Open,
+    /// Open the selection with an app picked from a submenu. It is a parent, never picked itself.
+    OpenWith,
+    /// Open Quick Look on the selection.
+    QuickLook,
+    /// Show the properties of the selection.
+    GetInfo,
+    /// Show the properties of the folder shown.
+    GetInfoFolder,
+    /// Put the full paths of the selection on the clipboard.
+    CopyAsPathname,
     /// Move the selection to the Trash.
     MoveToTrash,
     /// Rename the selected item.
@@ -31,6 +43,10 @@ impl Command {
     pub fn title(self) -> &'static str {
         match self {
             Command::Open => "Open",
+            Command::OpenWith => "Open With",
+            Command::QuickLook => "Quick Look",
+            Command::GetInfo | Command::GetInfoFolder => "Get Info",
+            Command::CopyAsPathname => "Copy as Pathname",
             Command::MoveToTrash => "Move to Trash",
             Command::Rename => "Rename",
             Command::Copy => "Copy",
@@ -42,10 +58,15 @@ impl Command {
         }
     }
 
-    /// What picking it asks of the browser.
-    pub fn input(self) -> Input {
-        match self {
+    /// What picking it asks of the browser; `None` for a parent of a submenu, which is not picked.
+    pub fn input(self) -> Option<Input> {
+        Some(match self {
+            Command::OpenWith => return None,
             Command::Open => Input::Open,
+            Command::QuickLook => Input::QuickLook,
+            Command::GetInfo => Input::GetInfo,
+            Command::GetInfoFolder => Input::GetInfoFolder,
+            Command::CopyAsPathname => Input::CopyAsPathname,
             Command::MoveToTrash => Input::MoveToTrash,
             Command::Rename => Input::BeginRename,
             Command::Copy => Input::Copy,
@@ -54,8 +75,76 @@ impl Command {
             Command::PutBack => Input::PutBack,
             Command::DeleteImmediately => Input::DeleteImmediately,
             Command::EmptyTrash => Input::EmptyTrash,
+        })
+    }
+}
+
+/// What a menu line yields when picked: a command, an app of the Open With submenu, or "Other…".
+#[derive(Debug, Clone, PartialEq)]
+pub enum Pick {
+    /// A command of the menu.
+    Command(Command),
+    /// An app to open the selection with.
+    App(AppPick),
+    /// Choose from every installed app.
+    OtherApp,
+}
+
+impl Pick {
+    /// What picking it asks of the browser; `None` for a parent of a submenu.
+    pub fn input(&self) -> Option<Input> {
+        match self {
+            Pick::Command(command) => command.input(),
+            Pick::App(app) => Some(Input::OpenWith(app.clone())),
+            Pick::OtherApp => Some(Input::ChooseApp),
         }
     }
+}
+
+/// The words of the line that opens the sheet of every installed app.
+pub const OTHER_APP: &str = "Other\u{2026}";
+
+/// One app line of the Open With submenu.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppLine {
+    /// What it yields.
+    pub pick: AppPick,
+    /// Its words: the name, and "(default)" after the default's.
+    pub title: String,
+}
+
+/// The Open With lines for `apps`: the default first with "(default)" after its name, the others
+/// sorted by name (ignoring case).
+pub fn app_lines(apps: Vec<AppChoiceView>) -> Vec<AppLine> {
+    let (mut defaults, mut others): (Vec<_>, Vec<_>) = apps
+        .into_iter()
+        .partition(|app| app.role == AppRole::Default);
+    others.sort_by_cached_key(|app| (app.name.to_lowercase(), app.name.clone()));
+    defaults.truncate(1);
+    defaults
+        .into_iter()
+        .map(|app| AppLine {
+            title: format!("{} (default)", app.name),
+            pick: app.pick,
+        })
+        .chain(others.into_iter().map(|app| AppLine {
+            title: app.name,
+            pick: app.pick,
+        }))
+        .collect()
+}
+
+/// Every app for the sheet behind "Other…", sorted by name (ignoring case), with no default mark.
+pub fn app_names(apps: Vec<AppChoiceView>) -> Vec<AppLine> {
+    let mut lines: Vec<AppLine> = apps
+        .into_iter()
+        .map(|app| AppLine {
+            pick: app.pick,
+            title: app.name,
+        })
+        .collect();
+    lines.sort_by_cached_key(|line| (line.title.to_lowercase(), line.title.clone()));
+    lines
 }
 
 /// Where the press was made.
@@ -93,13 +182,19 @@ pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, Availabili
         ]],
         (Location::Trash, Over::Background) => vec![vec![(Command::EmptyTrash, rows)]],
         (_, Over::Row) => vec![
-            vec![(Command::Open, some)],
-            vec![(Command::MoveToTrash, some), (Command::Rename, one)],
-            vec![(Command::Copy, some), (Command::Paste, browser.can_paste())],
+            vec![(Command::Open, some), (Command::OpenWith, some)],
+            vec![(Command::MoveToTrash, some)],
+            vec![
+                (Command::GetInfo, some),
+                (Command::Rename, one),
+                (Command::QuickLook, some),
+            ],
+            vec![(Command::Copy, some), (Command::CopyAsPathname, some)],
             vec![(Command::NewFolder, Availability::Available)],
         ],
         (_, Over::Background) => vec![
             vec![(Command::NewFolder, Availability::Available)],
+            vec![(Command::GetInfoFolder, Availability::Available)],
             vec![(Command::Paste, browser.can_paste())],
         ],
     }

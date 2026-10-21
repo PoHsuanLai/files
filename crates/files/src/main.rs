@@ -6,6 +6,7 @@
 //! claims the running instance (or hands its request to it) and opens the window. See `args.rs`
 //! for the command line.
 
+mod apps;
 mod args;
 mod bridge;
 mod launcher;
@@ -21,6 +22,7 @@ use ds_settings::ConfigRoot;
 use files_core::{FolderPath, Location};
 use files_ui::Launch;
 
+use crate::apps::InstalledApps;
 use crate::args::{Args, Start};
 use crate::opener::DesktopOpener;
 use crate::session::{Role, join, launch_token};
@@ -64,11 +66,16 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     };
     let launcher = Arc::new(launcher::launcher(&launcher::xdg_dirs(), running.activate));
-    let launch = Launch::new(start, Arc::new(DesktopOpener::new(launcher)))
+    let launch = Launch::new(start, Arc::new(DesktopOpener::new(launcher.clone())))
+        .with_apps(Arc::new(InstalledApps::new(launcher)))
         .with_places(places::found())
         .with_prefs(state::prefs_store(&ConfigRoot::Xdg))
         .with_requests(running.requests)
         .with_runtime(runtime.handle().clone());
+    let launch = match dirs::home_dir().and_then(|home| FolderPath::new(home).ok()) {
+        Some(home) => launch.with_home(home),
+        None => launch,
+    };
     match files_ui::run(launch) {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {

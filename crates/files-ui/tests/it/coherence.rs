@@ -3,8 +3,9 @@
 //! 1. [`our_stylesheet_lints_clean`]: no literal design value in the window's own CSS.
 //! 2. [`rendered_markup_uses_only_styled_classes`] and [`no_raw_form_control_or_svg_is_rendered`]:
 //!    no raw markup, no class nothing styles, in the real window with a folder listed, with a
-//!    name being typed, with the context menu up, with the erase question up, with Quick Look up
-//!    and with Get Info up.
+//!    name being typed, with the context menu up (and its Open With submenu, and the sheet of
+//!    every app), with the erase question up, with Quick Look up, with Get Info up and with the
+//!    Go to Folder sheet up (and its words under the field).
 //! 3. Rule 3 (a missing component is added to quire first) is a review discipline, not a check;
 //!    the gaps are listed in the lane's report.
 //! 4. Rule 4 (motion only through quire's timers): the window draws no motion of its own.
@@ -44,15 +45,27 @@ enum Pose {
     QuickLook,
     /// Get Info up over a file, its facts read.
     Info,
+    /// The context menu with its Open With submenu open.
+    OpenWith,
+    /// The sheet of every installed app, behind Open With, Other.
+    OtherApps,
+    /// The Go to Folder sheet, its path in the field.
+    GoTo,
+    /// The Go to Folder sheet after a path that is not a folder, with its words under the field.
+    GoToWrong,
 }
 
-const POSES: [Pose; 6] = [
+const POSES: [Pose; 10] = [
     Pose::Listed,
     Pose::Renaming,
     Pose::Menu,
     Pose::Erasing,
     Pose::QuickLook,
     Pose::Info,
+    Pose::OpenWith,
+    Pose::OtherApps,
+    Pose::GoTo,
+    Pose::GoToWrong,
 ];
 
 /// The window in `pose`.
@@ -70,9 +83,15 @@ fn page(pose: Pose) -> String {
             trash.trash(&[item]).unwrap();
             Location::Trash
         }
-        Pose::Listed | Pose::Renaming | Pose::Menu | Pose::QuickLook | Pose::Info => {
-            super::support::at(dir.path())
-        }
+        Pose::Listed
+        | Pose::Renaming
+        | Pose::Menu
+        | Pose::QuickLook
+        | Pose::Info
+        | Pose::OpenWith
+        | Pose::OtherApps
+        | Pose::GoTo
+        | Pose::GoToWrong => super::support::at(dir.path()),
     };
     let mut window: Harness = harness(launch_with(start, config.path(), &opener, trash));
     settle_until(&mut window, |h| h.html().contains("notes.txt"));
@@ -112,6 +131,49 @@ fn page(pose: Pose) -> String {
             window.advance(Duration::from_millis(50));
             window.send(Input::chord(&[ShortcutKey::Super], ShortcutKey::Char('i')));
             settle_until(&mut window, |h| h.html().contains("Extension"));
+        }
+        Pose::OpenWith | Pose::OtherApps => {
+            let at = window.centre(".ds-vtable-item[*|data-row=\"2\"]").unwrap();
+            window.send(Input::press(at, PointerButton::Secondary));
+            settle_until(&mut window, |h| h.html().contains("Move to Trash"));
+            // Down to Open With, Right into its submenu.
+            for key in [ShortcutKey::Down, ShortcutKey::Down, ShortcutKey::Right] {
+                window.send(Input::key(key));
+                window.advance(Duration::from_millis(50));
+            }
+            settle_until(&mut window, |h| h.html().contains("Viewer (default)"));
+            if matches!(pose, Pose::OtherApps) {
+                // Past the three apps to Other, and pick it.
+                for key in [
+                    ShortcutKey::Down,
+                    ShortcutKey::Down,
+                    ShortcutKey::Down,
+                    ShortcutKey::Enter,
+                ] {
+                    window.send(Input::key(key));
+                    window.advance(Duration::from_millis(50));
+                }
+                settle_until(&mut window, |h| h.html().contains("Choose Application"));
+            }
+        }
+        Pose::GoTo | Pose::GoToWrong => {
+            window.send(Input::chord(
+                &[ShortcutKey::Super, ShortcutKey::Shift],
+                ShortcutKey::Char('g'),
+            ));
+            settle_until(&mut window, |h| h.count(".ds-text-field") > 0);
+            if matches!(pose, Pose::GoToWrong) {
+                for key in [
+                    ShortcutKey::End,
+                    ShortcutKey::Char('/'),
+                    ShortcutKey::Char('x'),
+                    ShortcutKey::Enter,
+                ] {
+                    window.send(Input::key(key));
+                    window.advance(Duration::from_millis(50));
+                }
+                settle_until(&mut window, |h| h.html().contains("be found"));
+            }
         }
     }
     window.html()

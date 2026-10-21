@@ -2,6 +2,8 @@
 //! components. The views read the browser and map it; nothing here decides anything.
 
 mod busy;
+mod chooser;
+mod goto;
 mod info;
 mod menu;
 mod pane;

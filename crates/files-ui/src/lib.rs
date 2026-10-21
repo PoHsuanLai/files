@@ -36,7 +36,7 @@ mod state;
 mod view;
 pub mod words;
 
-pub use edge::{Opener, Seams, Zone};
+pub use edge::{AppChoiceView, AppRole, Apps, NoApps, OpenAs, Opener, Seams, Zone};
 pub use error::OpenFailure;
 pub use launch::{AppearanceSource, Launch};
 pub use places::{Heading, PlaceKey, PlaceKind, Places};

@@ -3,9 +3,12 @@
 
 mod coherence;
 mod edge;
+mod edge_apps;
 mod edge_views;
+mod go_to;
 mod looks;
 mod menu;
+mod open_with;
 mod places;
 mod requests;
 mod rows;

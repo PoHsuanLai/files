@@ -5,7 +5,7 @@ use ds::host::measure::Anchor;
 use ds::prelude::{Availability, Menu, MenuItem, MenuPlacement, Point, Px};
 use files_model::Availability as Can;
 
-use crate::menu::{Command, Over, groups_for};
+use crate::menu::{Command, OTHER_APP, Over, Pick, app_lines, groups_for};
 use crate::state::Browse;
 
 /// Where a context menu was asked for, and over what.
@@ -33,8 +33,22 @@ fn availability(can: Can) -> Availability {
     }
 }
 
-/// The menu's lines: each group's commands, a rule between groups.
-fn items(browse: Browse, over: Over) -> Vec<MenuItem<Command>> {
+/// The Open With submenu: the apps that open the selection, the default first, then a rule and
+/// "Other\u{2026}", which lists every installed app.
+fn open_with(browse: Browse) -> Vec<MenuItem<Pick>> {
+    let mut lines: Vec<MenuItem<Pick>> = app_lines(browse.apps_for_selection())
+        .into_iter()
+        .map(|line| MenuItem::new(Pick::App(line.pick), line.title))
+        .collect();
+    if !lines.is_empty() {
+        lines.push(MenuItem::Separator);
+    }
+    lines.push(MenuItem::new(Pick::OtherApp, OTHER_APP));
+    lines
+}
+
+/// The menu's lines: each group's commands, a rule between groups, Open With as a submenu.
+fn items(browse: Browse, over: Over) -> Vec<MenuItem<Pick>> {
     let groups = groups_for(&browse.state.read(), over);
     let mut lines = Vec::new();
     for group in groups {
@@ -42,8 +56,18 @@ fn items(browse: Browse, over: Over) -> Vec<MenuItem<Command>> {
             lines.push(MenuItem::Separator);
         }
         for (command, can) in group {
-            lines
-                .push(MenuItem::new(command, command.title()).with_availability(availability(can)));
+            let line = if command == Command::OpenWith {
+                MenuItem::Submenu {
+                    title: command.title().to_owned(),
+                    image: None,
+                    availability: availability(can),
+                    children: open_with(browse),
+                }
+            } else {
+                MenuItem::new(Pick::Command(command), command.title())
+                    .with_availability(availability(can))
+            };
+            lines.push(line);
         }
     }
     lines
@@ -57,11 +81,15 @@ pub(super) fn ContextMenu(browse: Browse, menu: Signal<Option<ContextAt>>) -> El
         return rsx! {};
     };
     rsx! {
-        Menu::<Command> {
+        Menu::<Pick> {
             placement: MenuPlacement::Context,
             anchor: Anchor::Point(at),
             items: items(browse, over),
-            onpick: move |command: Command| browse.send(command.input()),
+            onpick: move |pick: Pick| {
+                if let Some(input) = pick.input() {
+                    browse.send(input);
+                }
+            },
             onclose: move |()| menu.set(None),
         }
     }

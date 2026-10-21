@@ -12,7 +12,7 @@ use dioxus::prelude::{
 };
 use ds::base::command::types_text;
 use ds::prelude::{ActionTaken, Keys, Shown, use_keys};
-use files_model::{InfoView, Input};
+use files_model::{Browser, Chooser, GoTo, InfoView, Input};
 
 use crate::state::Browse;
 
@@ -44,6 +44,10 @@ enum Own {
     EmptyTrash,
     /// Show the properties of the selection (Command+I).
     GetInfo,
+    /// Go to a folder typed by path (Command+Shift+G).
+    GoToFolder,
+    /// Put the paths of the selection on the clipboard (Command+Option+C).
+    CopyAsPathname,
 }
 
 /// Each action with its id and its default chords. `Primary` is Command or Ctrl. A symbol typed
@@ -72,6 +76,12 @@ const OWN: &[(Own, &str, &[&str])] = &[
         &["Primary+Shift+Backspace"],
     ),
     (Own::GetInfo, "files.get-info", &["Primary+I"]),
+    (Own::GoToFolder, "files.go-to-folder", &["Primary+Shift+G"]),
+    (
+        Own::CopyAsPathname,
+        "files.copy-pathname",
+        &["Primary+Alt+C"],
+    ),
 ];
 
 /// The action an id names.
@@ -145,8 +155,9 @@ pub(crate) fn pressed(
     if event.key() == Key::Escape {
         return escape(browse);
     }
-    // Get Info is a sheet over the window: the keys behind it wait.
-    if !matches!(browse.state.read().info(), InfoView::Closed) {
+    // Get Info, Go to Folder and the sheet of apps are sheets over the window: the keys behind
+    // them wait.
+    if sheet_up(&browse.state.read()) {
         return ActionTaken::No;
     }
     match keys.action_of(event, Context::Normal) {
@@ -202,6 +213,8 @@ fn act(
             Some(Own::PasteMove) => send(Input::PasteMove),
             Some(Own::EmptyTrash) => send(Input::EmptyTrash),
             Some(Own::GetInfo) => send(Input::GetInfo),
+            Some(Own::GoToFolder) => send(Input::GoToFolder),
+            Some(Own::CopyAsPathname) => send(Input::CopyAsPathname),
             None => ActionTaken::No,
         },
         // A standard action the window does not offer, or one chordkit adds later.
@@ -237,16 +250,29 @@ fn type_ahead(browse: Browse, event: &KeyboardEvent) -> ActionTaken {
     ActionTaken::Yes
 }
 
-/// Escape puts away what is up over the folder: Get Info, else Quick Look. With nothing up the
-/// key goes on to whoever has it.
+/// Whether a sheet is up over the folder: Get Info, Go to Folder or the apps of Open With.
+fn sheet_up(state: &Browser) -> bool {
+    !matches!(state.info(), InfoView::Closed)
+        || !matches!(state.go_to(), GoTo::Closed)
+        || state.chooser() == Chooser::Open
+}
+
+/// Escape puts away what is up over the folder: a sheet of Go to Folder or of apps, Get Info,
+/// else Quick Look. With nothing up the key goes on to whoever has it.
 fn escape(browse: Browse) -> ActionTaken {
     let input = {
         let state = browse.state.read();
-        match (state.info(), state.quick_look()) {
-            (InfoView::Closed, None) => None,
-            (InfoView::Closed, Some(_)) => Some(Input::CloseQuickLook),
-            (InfoView::Loading(_) | InfoView::Shown(_) | InfoView::Failed(..) | _, _) => {
-                Some(Input::CloseInfo)
+        if !matches!(state.go_to(), GoTo::Closed) {
+            Some(Input::GoToCancel)
+        } else if state.chooser() == Chooser::Open {
+            Some(Input::CloseChooseApp)
+        } else {
+            match (state.info(), state.quick_look()) {
+                (InfoView::Closed, None) => None,
+                (InfoView::Closed, Some(_)) => Some(Input::CloseQuickLook),
+                (InfoView::Loading(_) | InfoView::Shown(_) | InfoView::Failed(..) | _, _) => {
+                    Some(Input::CloseInfo)
+                }
             }
         }
     };
