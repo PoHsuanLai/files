@@ -278,3 +278,46 @@ fn get_info_rows_follow_the_kind_of_item() {
     );
     assert_eq!(names(&folder), [("Name", "Projects".to_owned())]);
 }
+
+#[test]
+fn a_disk_that_would_not_eject_or_open_says_so_as_finder_does() {
+    use files_core::{EjectFailure, MountFailure, ProgramName, VolumeName, VolumeTrouble};
+    use files_ui::words::volume_trouble_words;
+
+    let name = VolumeName::new("STICK");
+    let busy_by = |names: &[&str]| {
+        VolumeTrouble::NotEjected(EjectFailure::InUse(
+            names.iter().map(|n| ProgramName::new(*n)).collect(),
+        ))
+    };
+    let cases = [
+        (
+            "busy, programs unknown",
+            busy_by(&[]),
+            "The disk \u{201c}STICK\u{201d} wasn\u{2019}t ejected because one or more programs may be using it.",
+        ),
+        (
+            "busy, programs known",
+            busy_by(&["vlc", "Files"]),
+            "The disk \u{201c}STICK\u{201d} wasn\u{2019}t ejected because one or more programs may be using it: vlc, Files.",
+        ),
+        (
+            "not allowed to eject",
+            VolumeTrouble::NotEjected(EjectFailure::NotAllowed),
+            "The disk \u{201c}STICK\u{201d} wasn\u{2019}t ejected because you don\u{2019}t have permission.",
+        ),
+        (
+            "ejected badly",
+            VolumeTrouble::NotEjected(EjectFailure::Other),
+            "The disk \u{201c}STICK\u{201d} wasn\u{2019}t ejected.",
+        ),
+        (
+            "not opened",
+            VolumeTrouble::NotOpened(MountFailure::Other),
+            "The disk \u{201c}STICK\u{201d} couldn\u{2019}t be opened.",
+        ),
+    ];
+    for (label, trouble, want) in cases {
+        assert_eq!(volume_trouble_words(&name, &trouble), want, "{label}");
+    }
+}

@@ -10,7 +10,7 @@ use ds_settings::{AppName, ConfigRoot, Store, SystemPrefsSource};
 use files_core::{FolderPath, Location};
 use files_fs::PrefsStore;
 
-use crate::edge::{Apps, Opener, Seams, Zone};
+use crate::edge::{Apps, Opener, Seams, Volumes, Zone};
 use crate::places::Places;
 use crate::requests::Requests;
 
@@ -123,6 +123,14 @@ impl Launch {
     pub fn with_apps(self, apps: Arc<dyn Apps>) -> Launch {
         Launch {
             seams: self.seams.with_apps(apps),
+            ..self
+        }
+    }
+
+    /// The same launch listing, opening and ejecting the disks `volumes` knows.
+    pub fn with_volumes(self, volumes: Arc<dyn Volumes>) -> Launch {
+        Launch {
+            seams: self.seams.with_volumes(volumes),
             ..self
         }
     }

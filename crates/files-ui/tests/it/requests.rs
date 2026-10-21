@@ -1,13 +1,14 @@
 //! Another program's asks reach the window as model inputs: a fake source sends, the window
 //! follows.
 
+use std::cell::RefCell;
 use std::time::Duration;
 
 use ds_harness::Harness;
 use ds_harness::harness::settle_until;
 use files_core::{FileName, FolderPath};
 use files_model::Input;
-use files_ui::{Request, RequestSender, channel};
+use files_ui::{Query, Reading, Request, RequestSender, channel};
 use tempfile::TempDir;
 
 use super::support::{RecordingOpener, harness, launch, scratch_folder};
@@ -62,4 +63,51 @@ fn a_reveal_in_another_folder_goes_there_and_selects_the_row() {
     });
     harness.advance(Duration::from_millis(50));
     assert!(selected(&harness, 0), "{}", harness.html());
+}
+
+/// The window's reading of `query`, waiting for it while the window runs.
+fn read(harness: &mut Harness, sender: &RequestSender, query: Query) -> Reading {
+    let answer = RefCell::new(sender.ask(query).unwrap());
+    let got = RefCell::new(None);
+    settle_until(harness, |_| {
+        if got.borrow().is_none() {
+            *got.borrow_mut() = answer.borrow_mut().try_now();
+        }
+        got.borrow().is_some()
+    });
+    got.into_inner().unwrap()
+}
+
+#[test]
+fn a_quiet_input_selects_and_the_window_reads_the_selection_and_the_folder_back() {
+    let (mut harness, sender, dir, _config) = open();
+    assert_eq!(
+        read(&mut harness, &sender, Query::Selection),
+        Reading::Selection(Vec::new())
+    );
+
+    sender.send_quietly(Input::Reveal {
+        folder: FolderPath::new(dir.path()).unwrap(),
+        names: vec![FileName::new("report.pdf").unwrap()],
+    });
+    settle_until(&mut harness, |h| selected(h, 2));
+    let folder = FolderPath::new(dir.path()).unwrap();
+    assert_eq!(
+        read(&mut harness, &sender, Query::Selection),
+        Reading::Selection(vec![files_core::ItemRef::new(
+            folder.clone(),
+            FileName::new("report.pdf").unwrap()
+        )])
+    );
+    assert_eq!(
+        read(&mut harness, &sender, Query::CurrentFolder),
+        Reading::Place(files_core::Location::Folder(folder))
+    );
+}
+
+#[test]
+fn a_question_to_a_closed_window_is_an_error() {
+    let (sender, requests) = channel();
+    drop(requests);
+    assert!(sender.ask(Query::Selection).is_err());
 }

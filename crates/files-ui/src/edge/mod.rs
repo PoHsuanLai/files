@@ -16,10 +16,13 @@
 //! are read by the [`Lister`] on a thread and come back as `Input::InfoRead`.
 
 mod apps;
+#[cfg(feature = "testing")]
+mod fake_volumes;
 mod look;
 mod opener;
 mod ops;
 mod prefs;
+mod volumes;
 mod zone;
 
 use std::cell::RefCell;
@@ -28,6 +31,7 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Instant;
 
+use crate::words::volume_trouble_words;
 use anyview_peek::{AnyPeeked, PeekWorker};
 use ds::base::time::clock;
 use ds_blitz::clipboard;
@@ -42,7 +46,10 @@ use files_trash::{SystemTrash, Trash};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
 pub use apps::{AppChoiceView, AppRole, Apps, NoApps};
+#[cfg(feature = "testing")]
+pub use fake_volumes::{FakeVolumes, VolumeCall};
 pub use opener::{OpenAs, Opener};
+pub use volumes::{Changed, NoVolumes, Volumes, WatchGuard};
 pub use zone::Zone;
 
 /// The window's seams to the outside, each behind a trait so a test gives its own.
@@ -60,6 +67,8 @@ pub struct Seams {
     pub prefs: Arc<dyn PrefsStore>,
     /// Which apps open what, for Open With.
     pub apps: Arc<dyn Apps>,
+    /// The computer's disks: listing, opening and ejecting them.
+    pub volumes: Arc<dyn Volumes>,
 }
 
 impl Seams {
@@ -72,12 +81,18 @@ impl Seams {
             trash: Arc::new(SystemTrash),
             prefs: Arc::new(NoPrefs),
             apps: Arc::new(NoApps),
+            volumes: Arc::new(NoVolumes),
         }
     }
 
     /// The same seams offering the apps `apps` knows in Open With.
     pub fn with_apps(self, apps: Arc<dyn Apps>) -> Seams {
         Seams { apps, ..self }
+    }
+
+    /// The same seams over the disks `volumes` knows.
+    pub fn with_volumes(self, volumes: Arc<dyn Volumes>) -> Seams {
+        Seams { volumes, ..self }
     }
 
     /// The same seams remembering folder views in `prefs`.
@@ -119,6 +134,8 @@ pub struct Edge {
     prefs: prefs::Prefs,
     /// Makes Quick Look's previews.
     peek: PeekWorker,
+    /// Lists, opens and ejects the disks.
+    disks: volumes::Disks,
 }
 
 impl fmt::Debug for Edge {
@@ -135,6 +152,7 @@ impl Edge {
         let (heard, inbox) = unbounded_channel();
         let ops = Worker::start(Arc::clone(&seams.trash), ops::sink(heard.clone())).ok();
         let prefs = prefs::Prefs::start(Arc::clone(&seams.prefs), heard.clone());
+        let disks = volumes::Disks::start(Arc::clone(&seams.volumes), heard.clone());
         let edge = Edge {
             seams,
             heard,
@@ -142,6 +160,7 @@ impl Edge {
             ops,
             prefs,
             peek: look::worker(),
+            disks,
         };
         (edge, inbox)
     }
@@ -189,6 +208,11 @@ impl Edge {
             Effect::SavePrefs(at, prefs) => self.prefs.save(at, prefs),
             Effect::Look(item) => look::ask(&self.peek, item, self.heard.clone()),
             Effect::ReadInfo(item) => self.read_info(item),
+            Effect::MountVolume(id) => self.disks.mount(id),
+            Effect::EjectVolume(id) => self.disks.eject(id),
+            Effect::TellVolume { name, trouble } => {
+                self.say(Heard::Told(volume_trouble_words(&name, &trouble)));
+            }
             // An effect files-model adds later is dropped until this names it.
             _ => {}
         }

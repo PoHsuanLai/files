@@ -15,7 +15,7 @@ use files_fs::{
 use files_model::{Change, Effect, End, Input, ListFailure, OpEvent, OpenTarget};
 use files_trash::{FakeTrash, Trash};
 use files_ui::edge::{Edge, Heard, Seams, change_of};
-use files_ui::{NoApps, Opener};
+use files_ui::{NoApps, NoVolumes, Opener, Volumes};
 use tempfile::TempDir;
 use tokio::sync::mpsc::UnboundedReceiver;
 
@@ -41,6 +41,11 @@ pub(super) struct Rig {
 }
 
 pub(super) fn rig() -> Rig {
+    rig_over(Arc::new(NoVolumes))
+}
+
+/// A rig whose computer has the disks `volumes` holds.
+pub(super) fn rig_over(volumes: Arc<dyn Volumes>) -> Rig {
     let lister = Arc::new(FakeLister::new());
     let watcher = Arc::new(FakeWatcher::new());
     let opener = Arc::new(RecordingOpener::default());
@@ -54,6 +59,7 @@ pub(super) fn rig() -> Rig {
         trash: Arc::clone(&trash) as Arc<dyn Trash>,
         prefs: Arc::clone(&prefs) as Arc<dyn PrefsStore>,
         apps: Arc::new(NoApps),
+        volumes,
     };
     let (edge, inbox) = Edge::new(seams);
     Rig {
@@ -239,6 +245,7 @@ fn a_file_no_app_opens_is_told_in_words() {
         trash: Arc::new(FakeTrash::new("/nonexistent/never-used")),
         prefs: Arc::new(NoPrefs),
         apps: Arc::new(NoApps),
+        volumes: Arc::new(NoVolumes),
     };
     let (edge, mut inbox) = Edge::new(seams);
     let target = OpenTarget::new(folder("/p"), name("x.zzz"));

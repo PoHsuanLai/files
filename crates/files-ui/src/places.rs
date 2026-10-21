@@ -3,7 +3,7 @@
 //! Pure data and mappings. The binary finds the folders (the XDG user directories that exist) and
 //! passes them in as [`Places`]; [`groups`] says what the sidebar lists; `view` draws it.
 
-use files_core::{FolderPath, Location};
+use files_core::{FolderPath, Location, Volume};
 
 /// A place the sidebar can list.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -75,13 +75,31 @@ impl Heading {
     }
 }
 
-/// What one sidebar item stands for: a heading, or a place.
+/// A disk's row in the sidebar, by its position among the disks shown. The key of a row is
+/// read at the moment of a press, against the list the window holds then.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct VolumeSlot(pub usize);
+
+/// What one sidebar item stands for: a heading, a place, or a disk.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PlaceKey {
     /// A group's heading, which the keys pass over.
     Heading(Heading),
     /// A place the person can go to.
     Place(PlaceKind),
+    /// A disk under Locations.
+    Volume(VolumeSlot),
+}
+
+/// The row of the disk mounted exactly at `location`, for the sidebar's cursor.
+pub fn volume_key(volumes: &[Volume], location: &Location) -> Option<PlaceKey> {
+    let Location::Folder(folder) = location else {
+        return None;
+    };
+    volumes
+        .iter()
+        .position(|volume| volume.folder() == Some(folder))
+        .map(|at| PlaceKey::Volume(VolumeSlot(at)))
 }
 
 /// The folders behind the favourites, as the binary found them. A favourite with no folder (the

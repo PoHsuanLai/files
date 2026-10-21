@@ -8,6 +8,10 @@ rust-version.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[features]
+# `FakeVolumes`, for tests of this crate and of the binary around it.
+testing = []
+
 [dependencies]
 anyview-core = { workspace = true }
 anyview-fs = { workspace = true }
@@ -28,6 +32,7 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
+files-ui = { path = ".", features = ["testing"] }
 ds-harness = { workspace = true }
 ds-lint = { workspace = true }
 files-fs = { workspace = true, features = ["testing"] }

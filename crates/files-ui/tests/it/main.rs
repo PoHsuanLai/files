@@ -13,5 +13,6 @@ mod places;
 mod requests;
 mod rows;
 mod support;
+mod volumes;
 mod window;
 mod words;

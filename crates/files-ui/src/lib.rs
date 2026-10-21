@@ -36,10 +36,15 @@ mod state;
 mod view;
 pub mod words;
 
-pub use edge::{AppChoiceView, AppRole, Apps, NoApps, OpenAs, Opener, Seams, Zone};
-pub use error::OpenFailure;
+pub use edge::{
+    AppChoiceView, AppRole, Apps, Changed, NoApps, NoVolumes, OpenAs, Opener, Seams, Volumes,
+    WatchGuard, Zone,
+};
+#[cfg(feature = "testing")]
+pub use edge::{FakeVolumes, VolumeCall};
+pub use error::{OpenFailure, ReadError, VolumeError};
 pub use launch::{AppearanceSource, Launch};
-pub use places::{Heading, PlaceKey, PlaceKind, Places};
-pub use requests::{RaiseToken, Request, RequestSender, Requests, channel};
+pub use places::{Heading, PlaceKey, PlaceKind, Places, VolumeSlot, volume_key};
+pub use requests::{Answer, Query, RaiseToken, Reading, Request, RequestSender, Requests, channel};
 pub use run::{APP_ID, run};
 pub use view::{App, STYLE};

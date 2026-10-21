@@ -16,6 +16,7 @@ use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::edge::{self, AppChoiceView, Edge, Heard};
 use crate::launch::Launch;
+use crate::requests::Asked;
 use crate::words::announce_words;
 
 /// The newest preview Quick Look was given, and the item it is of.
@@ -133,13 +134,19 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
     let requests = launch.requests.clone();
     use_hook(move || {
         spawn(async move {
-            let Some(mut asked) = requests.take() else {
+            let Some(mut inbox) = requests.take() else {
                 return;
             };
-            while let Some(request) = asked.recv().await {
-                browse.send(request.input);
-                if let Some(window) = &window {
-                    window.focus_with_token(request.raise.map(|token| token.0));
+            while let Some(asked) = inbox.recv().await {
+                match asked {
+                    Asked::Do(request) => {
+                        browse.send(request.input);
+                        if let Some(window) = &window {
+                            window.focus_with_token(request.raise.map(|token| token.0));
+                        }
+                    }
+                    Asked::Quietly(input) => browse.send(input),
+                    Asked::Read(read) => read.answer(&browse.state.peek()),
                 }
             }
         })

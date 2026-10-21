@@ -11,7 +11,8 @@ use files_model::AppPick;
 use files_trash::FakeTrash;
 use files_ui::edge::Seams;
 use files_ui::{
-    AppChoiceView, AppRole, AppearanceSource, Apps, Launch, OpenAs, OpenFailure, Opener, Zone,
+    AppChoiceView, AppRole, AppearanceSource, Apps, Launch, NoVolumes, OpenAs, OpenFailure, Opener,
+    Zone,
 };
 use tempfile::TempDir;
 
@@ -146,6 +147,7 @@ pub fn launch_remembering(
         trash,
         prefs,
         apps: Arc::new(FakeApps),
+        volumes: Arc::new(NoVolumes),
     };
     Launch::new(start, Arc::clone(opener) as Arc<dyn Opener>)
         .with_seams(seams)
