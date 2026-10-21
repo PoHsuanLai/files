@@ -27,6 +27,9 @@ pub enum OpFailure {
     /// Something is in the place an item is to be put back to.
     #[error("Something is already in the place it came from.")]
     Occupied,
+    /// A folder to be put away has things in it that were not there when it was made.
+    #[error("The folder has things in it now, so it was left alone.")]
+    NotEmpty,
     /// The Trash can't be used.
     #[error("The Trash can't be used right now.")]
     TrashUnavailable,

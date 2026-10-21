@@ -1,0 +1,24 @@
+[package]
+name = "files-ops"
+description = "Copy, move, trash and rename for files as a queue with progress, cancel, conflict questions and an undo journal."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+files-core = { workspace = true }
+files-trash = { workspace = true }
+
+[dev-dependencies]
+files-trash = { workspace = true, features = ["testing"] }
+tempfile = { workspace = true }
+
+[lints]
+workspace = true
+
+[[test]]
+name = "it"
+path = "tests/it/main.rs"
