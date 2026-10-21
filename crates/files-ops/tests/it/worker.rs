@@ -10,22 +10,29 @@ use files_trash::FakeTrash;
 
 use super::support::{name, rig};
 
-fn start(rig: &super::support::Rig) -> (Worker, Receiver<Event>) {
+/// Who asked for a job: stands in for the caller's tag.
+type Asker = u8;
+
+fn start(rig: &super::support::Rig) -> (Worker<Asker>, Receiver<(Asker, Event)>) {
     let (sender, events) = channel();
     let sender = std::sync::Mutex::new(sender);
-    let sink = move |event: Event| {
-        let _ = sender.lock().unwrap().send(event);
+    let sink = move |asker: &Asker, event: Event| {
+        let _ = sender.lock().unwrap().send((*asker, event));
     };
     let trash = Arc::new(FakeTrash::new(rig.path("queue-bin")));
     (Worker::start(trash, Arc::new(sink)).unwrap(), events)
 }
 
-fn next(events: &Receiver<Event>) -> Event {
+fn next_tagged(events: &Receiver<(Asker, Event)>) -> (Asker, Event) {
     events.recv_timeout(Duration::from_secs(5)).unwrap()
 }
 
+fn next(events: &Receiver<(Asker, Event)>) -> Event {
+    next_tagged(events).1
+}
+
 /// The next `Finished`, skipping progress.
-fn finished(events: &Receiver<Event>) -> files_ops::Finished {
+fn finished(events: &Receiver<(Asker, Event)>) -> files_ops::Finished {
     loop {
         if let Event::Finished(done) = next(events) {
             return done;
@@ -41,7 +48,7 @@ fn work_is_reported_started_then_finished_and_can_be_undone() {
         parent: rig.folder("home"),
         name: name("untitled folder"),
     };
-    worker.submit(Job::Run(plan));
+    worker.submit(Job::Run(plan), 1);
 
     let Event::Started(summary) = next(&events) else {
         panic!("not started first");
@@ -52,7 +59,7 @@ fn work_is_reported_started_then_finished_and_can_be_undone() {
     assert_eq!(done.undo.map(|s| s.kind), Some(OpKind::NewFolder));
     assert!(rig.path("home/untitled folder").is_dir());
 
-    worker.submit(Job::Undo);
+    worker.submit(Job::Undo, 1);
     let undone = finished(&events);
     assert_eq!(undone.finish, Finish::Done);
     assert_eq!(undone.undo, None, "nothing left to undo");
@@ -65,7 +72,7 @@ fn a_conflict_waits_for_the_answer_and_the_work_goes_on() {
     rig.write("home/a.txt", "new");
     rig.write("dest/a.txt", "old");
     let (worker, events) = start(&rig);
-    worker.submit(Job::Run(OpPlan::Copy(rig.transfer(&["home/a.txt"]))));
+    worker.submit(Job::Run(OpPlan::Copy(rig.transfer(&["home/a.txt"]))), 1);
 
     let conflict = loop {
         if let Event::Asking(conflict) = next(&events) {
@@ -90,7 +97,7 @@ fn cancel_answers_a_waiting_conflict_with_stop() {
     rig.write("home/a.txt", "new");
     rig.write("dest/a.txt", "old");
     let (worker, events) = start(&rig);
-    worker.submit(Job::Run(OpPlan::Copy(rig.transfer(&["home/a.txt"]))));
+    worker.submit(Job::Run(OpPlan::Copy(rig.transfer(&["home/a.txt"]))), 1);
     loop {
         if let Event::Asking(_) = next(&events) {
             break;
@@ -107,12 +114,36 @@ fn work_queued_behind_runs_after_and_a_stale_answer_is_ignored() {
     rig.write("home/a.txt", "a");
     let (worker, events) = start(&rig);
     worker.answer(Resolution::once(Answer::Replace)); // nobody asked
-    worker.submit(Job::Run(OpPlan::Move(rig.transfer(&["home/a.txt"]))));
-    worker.submit(Job::Run(OpPlan::Rename {
-        item: rig.item("dest/a.txt"),
-        to: name("b.txt"),
-    }));
-    assert_eq!(finished(&events).summary.kind, OpKind::Move);
-    assert_eq!(finished(&events).summary.kind, OpKind::Rename);
+    worker.submit(Job::Run(OpPlan::Move(rig.transfer(&["home/a.txt"]))), 1);
+    worker.submit(
+        Job::Run(OpPlan::Rename {
+            item: rig.item("dest/a.txt"),
+            to: name("b.txt"),
+        }),
+        2,
+    );
+    // Every event of a job carries the tag it was submitted with, whatever else is queued.
+    let mut kinds = Vec::new();
+    while kinds.len() < 2 {
+        let (asker, event) = next_tagged(&events);
+        match event {
+            Event::Started(summary) => {
+                assert_eq!(asker, if summary.kind == OpKind::Move { 1 } else { 2 })
+            }
+            Event::Finished(done) => {
+                assert_eq!(
+                    asker,
+                    if done.summary.kind == OpKind::Move {
+                        1
+                    } else {
+                        2
+                    }
+                );
+                kinds.push(done.summary.kind);
+            }
+            _ => {}
+        }
+    }
+    assert_eq!(kinds, [OpKind::Move, OpKind::Rename]);
     assert_eq!(rig.names("dest"), ["b.txt"]);
 }

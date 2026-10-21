@@ -8,14 +8,17 @@
 //! Every effect arrives tagged with the tab that asked for it ([`Tabbed`]), and every answer goes
 //! back tagged with that tab ([`Heard::Tab`]), so a listing asked for by a tab in the background
 //! lands in that tab; what is no tab's (the disks changing, a folder rescanned after a change) is
-//! [`Heard::All`].
+//! [`Heard::All`]. Reading the disk (`read`), the queue (`ops`), tags (`tagging`), searches
+//! (`search`), the disks (`volumes`) and the seams themselves (`seams`) each have a module; this one
+//! dispatches.
 //!
 //! Changes to the files (`Effect::Run`, `Undo`, `Answer`, `Cancel`) go to a [`files_ops::Worker`],
-//! one queue on a thread of its own; its events come back as `Input::Op`, and each finished
-//! change is followed by a rescan of the places it touched. The Trash is listed from
+//! one queue on a thread of its own (`ops`). Each job is tagged with the tab that asked for it, and
+//! all its events (started, progress, a question, finished) come back to that tab as `Input::Op`;
+//! each finished change is followed by a rescan of the places it touched, told to every tab. The Trash is listed from
 //! [`files_trash::Trash`].
 //!
-//! A folder's view and sort are remembered through [`PrefsStore`] on a thread of their own
+//! A folder's view and sort are remembered through [`files_fs::PrefsStore`] on a thread of their own
 //! (`prefs`); Quick Look's previews come from anyview's peek worker (`look`) and arrive as
 //! [`Heard::Looked`], not as an input: a picture is not something the model holds. Get Info's facts
 //! are read by the [`Lister`] on a thread and come back as `Input::InfoRead`.
@@ -27,6 +30,8 @@ mod look;
 mod opener;
 mod ops;
 mod prefs;
+mod read;
+mod seams;
 mod search;
 mod tagging;
 mod volumes;
@@ -35,92 +40,27 @@ mod zone;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::Arc;
 use std::time::Instant;
 
 use crate::words::volume_trouble_words;
 use anyview_peek::{AnyPeeked, PeekWorker};
 use ds::base::time::clock;
 use ds_blitz::clipboard;
-use files_core::{FileName, FolderPath, ItemRef, Location, OpFailure, OpPlan, Summary};
-use files_fs::{
-    DiskLister, FolderEvent, ListError, Lister, NoPrefs, NotifyWatcher, PrefsStore, Tagged, Tagger,
-    WatchHandle, Watcher, XattrTagger,
-};
-use files_model::{Change, Effect, Input, ListFailure, Now, OpenTarget, TabId, Tabbed};
+use files_core::{ItemRef, Location, Summary};
+use files_fs::{Lister, Tagged, WatchHandle};
+use files_model::{Effect, Input, Now, OpenTarget, TabId, Tabbed};
 use files_ops::{Job, Worker};
-use files_trash::{SystemTrash, Trash};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
 pub use apps::{AppChoiceView, AppRole, Apps, NoApps};
 #[cfg(feature = "testing")]
 pub use fake_volumes::{FakeVolumes, VolumeCall};
 pub use opener::{OpenAs, Opener};
+pub use read::change_of;
+pub use seams::Seams;
 pub use volumes::{Changed, NoVolumes, Volumes, WatchGuard};
 pub use zone::Zone;
-
-/// The window's seams to the outside, each behind a trait so a test gives its own.
-#[derive(Clone)]
-pub struct Seams {
-    /// Reads folders.
-    pub lister: Arc<dyn Lister>,
-    /// Follows folders.
-    pub watcher: Arc<dyn Watcher + Send + Sync>,
-    /// Hands files to the apps that open them.
-    pub opener: Arc<dyn Opener>,
-    /// The Trash: moving to it, listing it, putting back, erasing.
-    pub trash: Arc<dyn Trash>,
-    /// Where each folder's view and sort are remembered.
-    pub prefs: Arc<dyn PrefsStore>,
-    /// The tags of files: read with every listing, written by the tag menu.
-    pub tagger: Arc<dyn Tagger>,
-    /// Which apps open what, for Open With.
-    pub apps: Arc<dyn Apps>,
-    /// The computer's disks: listing, opening and ejecting them.
-    pub volumes: Arc<dyn Volumes>,
-}
-
-impl Seams {
-    /// The real disk and Trash, with `opener` to open files.
-    pub fn disk(opener: Arc<dyn Opener>) -> Seams {
-        Seams {
-            lister: Arc::new(DiskLister),
-            watcher: Arc::new(NotifyWatcher),
-            opener,
-            trash: Arc::new(SystemTrash),
-            prefs: Arc::new(NoPrefs),
-            tagger: Arc::new(XattrTagger),
-            apps: Arc::new(NoApps),
-            volumes: Arc::new(NoVolumes),
-        }
-    }
-
-    /// The same seams offering the apps `apps` knows in Open With.
-    pub fn with_apps(self, apps: Arc<dyn Apps>) -> Seams {
-        Seams { apps, ..self }
-    }
-
-    /// The same seams over the disks `volumes` knows.
-    pub fn with_volumes(self, volumes: Arc<dyn Volumes>) -> Seams {
-        Seams { volumes, ..self }
-    }
-
-    /// The same seams keeping tags with `tagger`.
-    pub fn with_tagger(self, tagger: Arc<dyn Tagger>) -> Seams {
-        Seams { tagger, ..self }
-    }
-
-    /// The same seams remembering folder views in `prefs`.
-    pub fn with_prefs(self, prefs: Arc<dyn PrefsStore>) -> Seams {
-        Seams { prefs, ..self }
-    }
-}
-
-impl fmt::Debug for Seams {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("Seams")
-    }
-}
 
 /// What the person reads when the clipboard would not take the pathnames.
 const COPY_FAILED: &str = "The pathnames couldn\u{2019}t be copied.";
@@ -151,10 +91,9 @@ pub struct Edge {
     watches: RefCell<HashMap<(TabId, Location), WatchHandle>>,
     /// The searches under way, to stop the one a tab leaves.
     searches: search::Searches,
-    /// The queue of changes; `None` when the system would not start its thread.
-    ops: Option<Worker>,
-    /// The tab that put work on the queue last, which hears its reports.
-    ops_tab: Arc<Mutex<TabId>>,
+    /// The queue of changes, each job tagged with the tab that asked for it; `None` when the
+    /// system would not start its thread.
+    ops: Option<Worker<TabId>>,
     /// Remembers how each folder is shown.
     prefs: prefs::Prefs,
     /// Makes Quick Look's previews.
@@ -175,8 +114,7 @@ impl Edge {
     /// An edge over `seams`, and the end where its answers arrive.
     pub fn new(seams: Seams) -> (Edge, UnboundedReceiver<Heard>) {
         let (heard, inbox) = unbounded_channel();
-        let ops_tab = Arc::new(Mutex::new(TabId::FIRST));
-        let sink = ops::sink(heard.clone(), Arc::clone(&ops_tab));
+        let sink = ops::sink(heard.clone());
         let ops = Worker::start(Arc::clone(&seams.trash), sink).ok();
         let lister: Arc<dyn Lister> = Arc::new(Tagged::new(
             Arc::clone(&seams.lister),
@@ -191,7 +129,6 @@ impl Edge {
             watches: RefCell::new(HashMap::new()),
             searches: search::Searches::default(),
             ops,
-            ops_tab,
             prefs,
             peek: look::worker(),
             disks,
@@ -280,23 +217,6 @@ impl Edge {
         self.seams.apps.all_apps()
     }
 
-    /// Finds out off the window's thread whether `folder` can be listed, which is what makes it
-    /// somewhere to go.
-    fn check(&self, tab: TabId, folder: FolderPath) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
-        let failed = folder.clone();
-        let started = Edge::work("files-check", move || {
-            let result = lister.list(&folder).map(|_| ()).map_err(failure_of);
-            let _ = heard.send(Heard::Tab(tab, Input::FolderChecked(folder, result)));
-        });
-        if started.is_err() {
-            self.say(Heard::Tab(
-                tab,
-                Input::FolderChecked(failed, Err(ListFailure::Other)),
-            ));
-        }
-    }
-
     fn say(&self, heard: Heard) {
         // A closed channel means the window is gone.
         let _ = self.heard.send(heard);
@@ -308,124 +228,6 @@ impl Edge {
             .name(name.to_owned())
             .spawn(job)
             .map(|_| ())
-    }
-
-    fn list(&self, tab: TabId, at: Location) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
-        let trash = Arc::clone(&self.seams.trash);
-        let failed = at.clone();
-        let started = Edge::work("files-list", move || {
-            let result = match &at {
-                Location::Folder(folder) => lister.list(folder).map_err(failure_of),
-                Location::Trash => trash
-                    .list()
-                    .map(|items| items.into_iter().filter_map(ops::row_of).collect())
-                    .map_err(ops::failure_of),
-                // A search is asked for with `Effect::Find`, not listed.
-                Location::Tag(_) | _ => Err(ListFailure::Other),
-            };
-            let _ = heard.send(Heard::Tab(tab, Input::Listed(at, result)));
-        });
-        if started.is_err() {
-            self.say(Heard::Tab(
-                tab,
-                Input::Listed(failed, Err(ListFailure::Other)),
-            ));
-        }
-    }
-
-    /// Reads the facts of `item` for Get Info, off the window's thread.
-    fn read_info(&self, tab: TabId, item: ItemRef) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
-        let failed = item.clone();
-        let started = Edge::work("files-info", move || {
-            let result = lister.info(&item).map_err(failure_of);
-            let _ = heard.send(Heard::Tab(tab, Input::InfoRead(item, result)));
-        });
-        if started.is_err() {
-            self.say(Heard::Tab(
-                tab,
-                Input::InfoRead(failed, Err(ListFailure::Other)),
-            ));
-        }
-    }
-
-    fn watch(&self, tab: TabId, at: Location) {
-        let Location::Folder(folder) = &at else {
-            return;
-        };
-        let sink = {
-            let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
-            let (place, folder) = (at.clone(), folder.clone());
-            move |event: FolderEvent| {
-                let change = change_of(&*lister, &folder, event);
-                let _ = heard.send(Heard::Tab(tab, Input::Changed(place.clone(), change)));
-            }
-        };
-        match self.seams.watcher.watch(folder, Box::new(sink)) {
-            Ok(handle) => {
-                self.watches.borrow_mut().insert((tab, at), handle);
-            }
-            Err(err) => self.say(Heard::Told(err.to_string())),
-        }
-    }
-
-    /// A rename is a change like any other, so it can be undone.
-    fn rename(&self, tab: TabId, folder: FolderPath, from: FileName, to: FileName) {
-        let item = ItemRef::new(folder, from);
-        self.submit(tab, Job::Run(OpPlan::Rename { item, to }));
-    }
-
-    /// Puts `job` on the queue of changes for `tab`, which then hears its reports, or says the
-    /// queue could not be started.
-    fn submit(&self, tab: TabId, job: Job) {
-        match &self.ops {
-            Some(queue) => {
-                *self.ops_tab.lock().unwrap_or_else(PoisonError::into_inner) = tab;
-                queue.submit(job);
-            }
-            None => self.say(Heard::Told(OpFailure::Other.to_string())),
-        }
-    }
-}
-
-/// The failure a listing error is to the browser.
-fn failure_of(err: ListError) -> ListFailure {
-    match err {
-        ListError::NotFound => ListFailure::NotFound,
-        ListError::NoPermission => ListFailure::NoPermission,
-        ListError::NotAFolder => ListFailure::NotAFolder,
-        ListError::Other(_) => ListFailure::Other,
-        // An error files-fs adds later is an ordinary failure until this names it.
-        _ => ListFailure::Other,
-    }
-}
-
-/// The change a watcher's `event` is to the listing of `folder`. A new or changed name is looked
-/// up again; one that is gone by then is a removal.
-pub fn change_of(lister: &dyn Lister, folder: &FolderPath, event: FolderEvent) -> Change {
-    match event {
-        FolderEvent::Added(name) => seen(lister, folder, name, Change::Added),
-        FolderEvent::Changed(name) => seen(lister, folder, name, Change::Updated),
-        FolderEvent::Removed(name) => Change::Removed(name),
-        FolderEvent::Rescan | FolderEvent::Gone => Change::Rescan,
-        // An event files-fs adds later means the listing may be stale.
-        _ => Change::Rescan,
-    }
-}
-
-/// `name` as the lister sees it now, as `make` says it; a removal if it is gone, a rescan if it
-/// can't be read.
-fn seen(
-    lister: &dyn Lister,
-    folder: &FolderPath,
-    name: FileName,
-    make: fn(files_core::Entry) -> Change,
-) -> Change {
-    match lister.entry(folder, &name) {
-        Ok(entry) => make(entry),
-        Err(ListError::NotFound) => Change::Removed(name),
-        Err(_) => Change::Rescan,
     }
 }
 

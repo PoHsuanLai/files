@@ -4,6 +4,7 @@
 mod coherence;
 mod edge;
 mod edge_apps;
+mod edge_ops;
 mod edge_tabs;
 mod edge_views;
 mod go_to;

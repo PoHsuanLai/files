@@ -8,72 +8,22 @@
 //! The caller carries the tag through: when the answer to an effect arrives it goes back with
 //! [`Tabs::heard`] and the tag, so a listing that was asked for by a tab in the background lands
 //! in that tab, whichever is in front by then. An answer for a tab that has since been closed is
-//! dropped. What is not any one tab's (the disks changing) goes to every tab with
+//! dropped, except that a change it was making still ends well: a question it was asked is
+//! answered Stop, and a failure is told in the front tab. What is not any one tab's (the disks changing) goes to every tab with
 //! [`Tabs::broadcast`].
 
-use files_core::{FolderPath, ItemRef, Location};
+mod closed;
+mod id;
+mod shared;
+
+use files_core::{FolderPath, Location};
 
 use crate::browser::Browser;
 use crate::effect::Effect;
 use crate::input::{Input, Now};
 
-/// Names one tab for as long as the window lives; an id is never used for another tab.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct TabId(u64);
-
-impl TabId {
-    /// The first tab of a window.
-    pub const FIRST: TabId = TabId(0);
-
-    /// The id as a number, for a caller that needs a key.
-    pub fn number(self) -> u64 {
-        self.0
-    }
-}
-
-/// An effect and the tab that asked for it.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[non_exhaustive]
-pub struct Tabbed {
-    /// The tab to send the answer back to.
-    pub tab: TabId,
-    /// What to carry out.
-    pub effect: Effect,
-}
-
-impl Tabbed {
-    /// `effect`, asked for by `tab`.
-    pub fn new(tab: TabId, effect: Effect) -> Tabbed {
-        Tabbed { tab, effect }
-    }
-
-    /// Each of `effects`, asked for by `tab`.
-    pub fn all(tab: TabId, effects: Vec<Effect>) -> Vec<Tabbed> {
-        effects
-            .into_iter()
-            .map(|effect| Tabbed::new(tab, effect))
-            .collect()
-    }
-}
-
-/// One tab: its id and its browser.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Tab {
-    id: TabId,
-    browser: Browser,
-}
-
-impl Tab {
-    /// The tab's id.
-    pub fn id(&self) -> TabId {
-        self.id
-    }
-
-    /// The tab's browser.
-    pub fn browser(&self) -> &Browser {
-        &self.browser
-    }
-}
+pub use id::{Tab, TabId, Tabbed};
+use shared::{Shared, looking, vacated};
 
 /// The browsers of a window and which one is in front. There is always at least one.
 ///
@@ -224,15 +174,13 @@ impl Tabs {
             others.iter_mut().find(|other| other.id == tab)
         };
         let Some(slot) = slot else {
-            return (
-                Tabs {
-                    front,
-                    others,
-                    at,
-                    next,
-                },
-                Vec::new(),
-            );
+            let tabs = Tabs {
+                front,
+                others,
+                at,
+                next,
+            };
+            return tabs.closed(tab, input);
         };
         let shared = Shared::of(&slot.browser);
         let (browser, effects) = vacated(&mut slot.browser).step(input, now);
@@ -369,41 +317,4 @@ impl Tabs {
         }
         self
     }
-}
-
-/// What is the window's, not one tab's: what was copied and what Undo would take back.
-#[derive(Debug, Clone, PartialEq)]
-struct Shared {
-    clipboard: Vec<ItemRef>,
-    undo: Option<files_core::Summary>,
-}
-
-impl Shared {
-    fn of(browser: &Browser) -> Shared {
-        Shared {
-            clipboard: browser.clipboard.clone(),
-            undo: browser.undo.clone(),
-        }
-    }
-
-    fn put(&self, browser: &mut Browser) {
-        browser.clipboard = self.clipboard.clone();
-        browser.undo = self.undo.clone();
-    }
-}
-
-/// Quick Look's ask for a tab that has just come to the front with it up: the preview shown is
-/// the last one asked for, which may be of another tab's item.
-fn looking(tab: &Tab) -> Vec<Tabbed> {
-    tab.browser
-        .quick_item()
-        .map(|item| Tabbed::new(tab.id, Effect::Look(item)))
-        .into_iter()
-        .collect()
-}
-
-/// Takes the browser out of `slot` to be stepped, leaving an empty one that is put over at once.
-fn vacated(slot: &mut Browser) -> Browser {
-    let (empty, _) = Browser::new(Location::Trash);
-    std::mem::replace(slot, empty)
 }

@@ -16,6 +16,7 @@ mod rename;
 mod reveal;
 mod selection;
 mod sorting;
+mod tab_ops;
 mod tabs;
 mod tags;
 mod typeselect;

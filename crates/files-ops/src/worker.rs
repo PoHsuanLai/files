@@ -70,30 +70,32 @@ impl Finished {
     }
 }
 
-/// Where the queue sends its events. Any `Fn(Event)` that can be shared between threads is one.
-pub trait Sink: Send + Sync {
-    /// Takes one event; called from the queue's thread.
-    fn send(&self, event: Event);
+/// Where the queue sends its events, each with the tag its job was submitted with. Any
+/// `Fn(&T, Event)` that can be shared between threads is one.
+pub trait Sink<T>: Send + Sync {
+    /// Takes one event of the job tagged `tag`; called from the queue's thread.
+    fn send(&self, tag: &T, event: Event);
 }
 
-impl<F: Fn(Event) + Send + Sync> Sink for F {
-    fn send(&self, event: Event) {
-        self(event);
+impl<T, F: Fn(&T, Event) + Send + Sync> Sink<T> for F {
+    fn send(&self, tag: &T, event: Event) {
+        self(tag, event);
     }
 }
 
-/// A queue of work on a thread of its own. Dropping it lets the thread finish what it is doing
-/// and end.
+/// A queue of work on a thread of its own. Every job carries a tag of the caller's choosing (the
+/// tab that asked, say), and every event of that job is sent to the [`Sink`] with it. Dropping the
+/// queue lets the thread finish what it is doing and end.
 #[derive(Debug)]
-pub struct Worker {
-    jobs: Sender<Job>,
+pub struct Worker<T> {
+    jobs: Sender<(Job, T)>,
     answers: Sender<Resolution>,
     cancel: CancelToken,
 }
 
-impl Worker {
+impl<T: Send + 'static> Worker<T> {
     /// Starts the queue's thread. Work uses `trash` for the Trash; events go to `sink`.
-    pub fn start(trash: Arc<dyn Trash>, sink: Arc<dyn Sink>) -> io::Result<Worker> {
+    pub fn start(trash: Arc<dyn Trash>, sink: Arc<dyn Sink<T>>) -> io::Result<Worker<T>> {
         let (jobs, job_inbox) = channel();
         let (answers, answer_inbox) = channel();
         let cancel = CancelToken::new();
@@ -115,12 +117,14 @@ impl Worker {
         })
     }
 
-    /// Puts `job` at the end of the queue.
-    pub fn submit(&self, job: Job) {
+    /// Puts `job` at the end of the queue; its events carry `tag`.
+    pub fn submit(&self, job: Job, tag: T) {
         // A gone thread means the app is closing.
-        let _ = self.jobs.send(job);
+        let _ = self.jobs.send((job, tag));
     }
+}
 
+impl<T> Worker<T> {
     /// Answers the conflict the work is waiting on.
     pub fn answer(&self, resolution: Resolution) {
         let _ = self.answers.send(resolution);
@@ -134,42 +138,43 @@ impl Worker {
 }
 
 /// Everything the thread owns.
-struct Queue {
+struct Queue<T> {
     exec: Executor,
     journal: Journal,
-    sink: Arc<dyn Sink>,
-    jobs: Receiver<Job>,
+    sink: Arc<dyn Sink<T>>,
+    jobs: Receiver<(Job, T)>,
     answers: Receiver<Resolution>,
     cancel: CancelToken,
 }
 
-impl Queue {
+impl<T> Queue<T> {
     fn work(mut self) {
-        while let Ok(job) = self.jobs.recv() {
+        while let Ok((job, tag)) = self.jobs.recv() {
             self.cancel.clear();
             // An answer nobody asked for is stale.
             while self.answers.try_recv().is_ok() {}
-            self.one(job);
+            self.one(job, &tag);
         }
     }
 
-    fn one(&mut self, job: Job) {
+    fn one(&mut self, job: Job, tag: &T) {
         let mut host = QueueHost {
             sink: &*self.sink,
+            tag,
             answers: &self.answers,
             cancel: &self.cancel,
             last: None,
         };
         let ran = match job {
             Job::Run(plan) => {
-                host.sink.send(Event::Started(plan.summary()));
+                host.sink.send(tag, Event::Started(plan.summary()));
                 let ran = self.exec.run(&plan, &mut host);
                 self.journal.record(&ran);
                 ran
             }
             Job::Undo => {
                 if let Some(summary) = self.journal.last() {
-                    host.sink.send(Event::Started(summary.clone()));
+                    host.sink.send(tag, Event::Started(summary.clone()));
                 }
                 match self.journal.undo(&self.exec, &mut host) {
                     Some(ran) => ran,
@@ -178,29 +183,31 @@ impl Queue {
             }
         };
         let undo = self.journal.last().cloned();
-        self.sink.send(Event::Finished(Finished::of(ran, undo)));
+        self.sink
+            .send(tag, Event::Finished(Finished::of(ran, undo)));
     }
 }
 
 /// The host of a piece of work on the queue's thread.
-struct QueueHost<'a> {
-    sink: &'a dyn Sink,
+struct QueueHost<'a, T> {
+    sink: &'a dyn Sink<T>,
+    tag: &'a T,
     answers: &'a Receiver<Resolution>,
     cancel: &'a CancelToken,
     last: Option<Instant>,
 }
 
-impl Host for QueueHost<'_> {
+impl<T> Host for QueueHost<'_, T> {
     fn progress(&mut self, progress: Progress) {
         let due = self.last.is_none_or(|at| at.elapsed() >= PROGRESS_EVERY);
         if due || progress.permille() >= 1000 {
             self.last = Some(Instant::now());
-            self.sink.send(Event::Progress(progress));
+            self.sink.send(self.tag, Event::Progress(progress));
         }
     }
 
     fn ask(&mut self, conflict: &Conflict) -> Resolution {
-        self.sink.send(Event::Asking(conflict.clone()));
+        self.sink.send(self.tag, Event::Asking(conflict.clone()));
         loop {
             match self.answers.recv_timeout(LOOK_EVERY) {
                 Ok(resolution) => return resolution,

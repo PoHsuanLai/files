@@ -1,22 +1,21 @@
 //! Changes to the files: the queue's events as the browser's inputs, and what the Trash lists as
 //! rows.
 
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::Arc;
 
-use files_core::{Entry, Location, OpFailure, TrashedItem};
+use files_core::{Entry, FileName, FolderPath, ItemRef, Location, OpFailure, OpPlan, TrashedItem};
 use files_model::{Change, End, Input, ListFailure, OpEvent, Outcome, TabId};
-use files_ops::{Event, Finish, Finished, Sink};
+use files_ops::{Event, Finish, Finished, Job, Sink};
 use files_trash::TrashError;
 use tokio::sync::mpsc::UnboundedSender;
 
-use super::Heard;
+use super::{Edge, Heard};
 
-/// A sink that turns the queue's events into what the window hears. The reports go to the tab
-/// that put work on the queue last; the rescans of the places it touched go to every tab.
-pub(super) fn sink(heard: UnboundedSender<Heard>, tab: Arc<Mutex<TabId>>) -> Arc<dyn Sink> {
-    Arc::new(move |event: Event| {
-        let asked = *tab.lock().unwrap_or_else(PoisonError::into_inner);
-        for said in heard_of(event, asked) {
+/// A sink that turns the queue's events into what the window hears. Every report goes to the tab
+/// that asked for the job it belongs to; the rescans of the places it touched go to every tab.
+pub(super) fn sink(heard: UnboundedSender<Heard>) -> Arc<dyn Sink<TabId>> {
+    Arc::new(move |asked: &TabId, event: Event| {
+        for said in heard_of(event, *asked) {
             // A closed channel means the window is gone.
             let _ = heard.send(said);
         }
@@ -80,5 +79,24 @@ pub(super) fn failure_of(err: TrashError) -> ListFailure {
         TrashError::Occupied | TrashError::Other => ListFailure::Other,
         // An error files-trash adds later is an ordinary failure until this names it.
         _ => ListFailure::Other,
+    }
+}
+
+impl Edge {
+    /// A rename is a change like any other, so it can be undone.
+    pub(super) fn rename(&self, tab: TabId, folder: FolderPath, from: FileName, to: FileName) {
+        let item = ItemRef::new(folder, from);
+        self.submit(tab, Job::Run(OpPlan::Rename { item, to }));
+    }
+
+    /// Puts `job` on the queue of changes for `tab`, which then hears every report of it, or says the
+    /// queue could not be started.
+    pub(super) fn submit(&self, tab: TabId, job: Job) {
+        match &self.ops {
+            Some(queue) => {
+                queue.submit(job, tab);
+            }
+            None => self.say(Heard::Told(OpFailure::Other.to_string())),
+        }
     }
 }

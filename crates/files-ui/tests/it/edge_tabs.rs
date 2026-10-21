@@ -3,13 +3,17 @@
 
 use std::sync::Arc;
 
-use files_core::{Entry, ItemRef, Location, TagColour, Tags};
+use files_core::{
+    Answer, Entry, FolderPath, ItemRef, Location, OpPlan, Resolution, TagColour, Tags, Transfer,
+};
 use files_fs::{FolderEvent, ListError, TagWriteError, Tagger};
-use files_model::{Change, Effect, Input, Mark, TabId, Tabbed};
+use files_model::{Change, Effect, Input, Mark, OpEvent, TabId, Tabbed};
 use files_ui::NoVolumes;
 use files_ui::edge::Heard;
 
 use super::edge::{file, folder, name, next, rig, rig_with};
+use super::edge_ops::until;
+use super::support::scratch_folder;
 
 /// The tab ids a window hands out: the first, and the ones a New Tab opens after it.
 fn tabs() -> (TabId, TabId) {
@@ -216,4 +220,96 @@ fn a_tag_search_of_a_folder_that_cannot_be_read_ends_empty() {
         }],
     );
     assert!(found(&mut rig, TabId::FIRST, TagColour::Green).is_empty());
+}
+
+/// A rename of `from` to `to` in `dir`, asked for by `tab`.
+fn rename(tab: TabId, dir: &std::path::Path, from: &str, to: &str) -> Tabbed {
+    let effect = Effect::Rename {
+        folder: FolderPath::new(dir).unwrap(),
+        from: name(from),
+        to: name(to),
+    };
+    Tabbed::new(tab, effect)
+}
+
+/// What a tab heard of its jobs, as short words, until `ends` jobs have finished.
+fn reports(rig: &mut super::edge::Rig, ends: usize) -> Vec<(TabId, String)> {
+    let mut said = Vec::new();
+    let mut finished = 0;
+    while finished < ends {
+        match until(&mut rig.inbox, |h| matches!(h, Heard::Tab(_, Input::Op(_)))) {
+            Heard::Tab(tab, Input::Op(OpEvent::Started(_))) => {
+                said.push((tab, "started".to_owned()))
+            }
+            Heard::Tab(tab, Input::Op(OpEvent::Asking(conflict))) => {
+                said.push((tab, format!("asks about {}", conflict.item.display())));
+            }
+            Heard::Tab(tab, Input::Op(OpEvent::Finished(outcome))) => {
+                finished += 1;
+                said.push((tab, format!("{:?}", outcome.end)));
+            }
+            _ => {}
+        }
+    }
+    said
+}
+
+#[test]
+fn each_report_of_a_job_goes_to_the_tab_that_asked_even_when_jobs_overlap() {
+    let (first, second) = tabs();
+    let mut rig = rig();
+    let dir = scratch_folder();
+    // Both tabs queue before either job is done: the first's succeeds, the second's fails.
+    rig.edge.run(vec![
+        rename(first, dir.path(), "notes.txt", "ideas.txt"),
+        rename(second, dir.path(), "nope.txt", "other.txt"),
+    ]);
+    let want = [
+        (first, "started"),
+        (first, "Done"),
+        (second, "started"),
+        (second, "Failed(NotFound)"),
+    ];
+    let want: Vec<(TabId, String)> = want.into_iter().map(|(t, w)| (t, w.to_owned())).collect();
+    assert_eq!(reports(&mut rig, 2), want);
+}
+
+#[test]
+fn a_question_is_asked_of_the_tab_whose_job_it_belongs_to() {
+    let (first, second) = tabs();
+    let mut rig = rig();
+    let dir = scratch_folder();
+    std::fs::write(dir.path().join("Projects").join("notes.txt"), "other").unwrap();
+    let copy = OpPlan::Copy(Transfer::new(
+        vec![ItemRef::new(
+            FolderPath::new(dir.path().join("Projects")).unwrap(),
+            name("notes.txt"),
+        )],
+        FolderPath::new(dir.path()).unwrap(),
+    ));
+    // The second tab's copy meets a taken name while the first tab's rename waits behind it.
+    rig.edge.run(vec![
+        Tabbed::new(second, Effect::Run(copy)),
+        rename(first, dir.path(), "report.pdf", "final.pdf"),
+    ]);
+    let asked = until(&mut rig.inbox, |h| {
+        matches!(h, Heard::Tab(_, Input::Op(OpEvent::Asking(_))))
+    });
+    let Heard::Tab(asker, Input::Op(OpEvent::Asking(conflict))) = asked else {
+        panic!("not asked");
+    };
+    assert_eq!((asker, conflict.item), (second, name("notes.txt")));
+    rig.edge.run(vec![Tabbed::new(
+        second,
+        Effect::Answer(Resolution::once(Answer::KeepBoth)),
+    )]);
+    let said = reports(&mut rig, 2);
+    let said: Vec<_> = said
+        .iter()
+        .map(|(tab, what)| (*tab, what.as_str()))
+        .collect();
+    assert_eq!(
+        said,
+        [(second, "Done"), (first, "started"), (first, "Done")]
+    );
 }
