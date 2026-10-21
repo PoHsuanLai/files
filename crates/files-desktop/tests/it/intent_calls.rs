@@ -191,7 +191,7 @@ async fn nobody_but_the_router_is_answered() {
     let Some(s) = served(FakeWindow::default()).await else {
         return;
     };
-    let intruder = s._bus.connect().await;
+    let intruder = s.bus.connect().await;
     let options: HashMap<String, BusValue<'_>> = HashMap::new();
     let refused = call(
         &intruder,

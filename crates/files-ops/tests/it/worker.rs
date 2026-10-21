@@ -141,7 +141,7 @@ fn work_queued_behind_runs_after_and_a_stale_answer_is_ignored() {
                 );
                 kinds.push(done.summary.kind);
             }
-            _ => {}
+            Event::Progress(_) | Event::Asking(_) | _ => {}
         }
     }
     assert_eq!(kinds, [OpKind::Move, OpKind::Rename]);

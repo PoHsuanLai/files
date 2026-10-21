@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::{FileName, FolderPath, NameError, PathError};
+use crate::{FileName, FolderPath, ItemError};
 
 /// An item (file, folder or link) by the folder it is in and its name there.
 ///

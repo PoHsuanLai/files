@@ -32,15 +32,21 @@ fn finished(kind: OpKind, end: End, undo: Option<OpKind>) -> OpEvent {
 }
 
 /// What a tab shows of the change under way: its kind, and the name it is asking about.
+type Shown = (Option<OpKind>, Option<FileName>);
+
+/// One report as the queue sends it, tagged with its job's tab, and what both tabs show after.
+type Report<'a> = (&'a str, TabId, OpEvent, Shown, Shown);
+
+/// What a tab shows of the change under way: its kind, and the name it is asking about.
 fn shown(tabs: &Tabs, tab: TabId) -> (Option<OpKind>, Option<FileName>) {
     let browser = tabs.get(tab).unwrap().browser();
     let kind = match browser.work() {
         Work::Running { summary, .. } => Some(summary.kind),
-        _ => None,
+        Work::Idle | _ => None,
     };
     let asking = match browser.question() {
         Question::Conflict(conflict) => Some(conflict.item.clone()),
-        _ => None,
+        Question::None | Question::EmptyTrash | Question::DeleteForGood(_) | _ => None,
     };
     (kind, asking)
 }
@@ -52,13 +58,7 @@ fn overlapping_jobs_of_two_tabs_each_report_to_their_own_tab() {
     let progress = Progress::start(2, ByteSize(10)).wrote(5);
     // The queue runs A's job, then B's; B asked for its job while A's was running. Each row is one
     // report as the queue sends it, tagged with the tab of its job, and what both tabs show after.
-    let rows: Vec<(
-        &str,
-        TabId,
-        OpEvent,
-        (Option<OpKind>, Option<FileName>),
-        (Option<OpKind>, Option<FileName>),
-    )> = vec![
+    let rows: Vec<Report> = vec![
         (
             "A starts",
             a,

@@ -106,7 +106,7 @@ pub(super) fn file(path: &str) -> Value {
 }
 
 pub(super) struct Served {
-    _bus: PrivateBus,
+    pub(super) bus: PrivateBus,
     pub(super) window: Arc<FakeWindow>,
     pub(super) router: zbus::Connection,
     _server: zbus::Connection,
@@ -121,7 +121,7 @@ pub(super) async fn served(window: FakeWindow) -> Option<Served> {
         .await
         .unwrap();
     Some(Served {
-        _bus: bus,
+        bus,
         window,
         router,
         _server: server,

@@ -248,7 +248,12 @@ fn reports(rig: &mut super::edge::Rig, ends: usize) -> Vec<(TabId, String)> {
                 finished += 1;
                 said.push((tab, format!("{:?}", outcome.end)));
             }
-            _ => {}
+            Heard::Tab(..)
+            | Heard::All(_)
+            | Heard::CloseWindow
+            | Heard::Told(_)
+            | Heard::Announced(_)
+            | Heard::Looked(..) => {}
         }
     }
     said
