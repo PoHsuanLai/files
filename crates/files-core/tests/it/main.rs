@@ -2,4 +2,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)] // tests may unwrap (CONVENTIONS)
 
 mod name;
+mod plans;
 mod vocab;

@@ -1,4 +1,5 @@
-//! The vocabulary of files: what a folder holds and how it is shown, as plain data.
+//! The vocabulary of files: what a folder holds, how it is shown and what can be done to it, as
+//! plain data.
 //!
 //! Nothing here reads the disk, the clock or the environment, and nothing names a runtime, a bus
 //! or a UI. Every other crate of the app speaks these types: `files-fs` fills them from the disk,
@@ -15,16 +16,30 @@
 //! # Ok::<(), NameError>(())
 //! ```
 
+mod conflict;
 mod entry;
+mod failure;
+mod item;
+mod keep_both;
 mod location;
 mod mime;
 mod name;
+mod plan;
+mod progress;
 mod size;
+mod trashed;
 mod view;
 
+pub use conflict::{Answer, Conflict, ConflictKind, Reach, Resolution};
 pub use entry::{Entry, EntryKind, LinkTo, Special, Visibility};
+pub use failure::OpFailure;
+pub use item::{ItemError, ItemRef};
+pub use keep_both::{Split, keep_both};
 pub use location::{FolderPath, Location, PathError};
 pub use mime::{MimeError, MimeType};
 pub use name::{FileName, NameError};
+pub use plan::{OpKind, OpPlan, Summary, Transfer};
+pub use progress::Progress;
 pub use size::ByteSize;
+pub use trashed::{TrashId, TrashedItem};
 pub use view::{FolderPrefs, HiddenFiles, Sort, SortKey, SortOrder, ViewMode};

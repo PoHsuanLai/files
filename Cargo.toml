@@ -16,6 +16,8 @@ files-core = { path = "crates/files-core" }
 files-mime = { path = "crates/files-mime" }
 files-model = { path = "crates/files-model" }
 files-fs = { path = "crates/files-fs" }
+files-trash = { path = "crates/files-trash" }
+files-ops = { path = "crates/files-ops" }
 files-desktop = { path = "crates/files-desktop" }
 files-ui = { path = "crates/files-ui" }
 # quire, pinned the desktop-wide way (.git + full rev; the tag is a comment), as temor and anyview do.
@@ -39,6 +41,8 @@ zbus = { version = "5.19", default-features = false, features = ["tokio"] }
 ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4aab5a5bb4636a4235d3d92c046a58e0", default-features = false }  # 90e73d8d (v0.3.37)
 tempfile = "3"
 thiserror = "2"
+# The freedesktop.org Trash (files-trash only): MIT, pure Rust on Linux.
+trash = "5"
 
 [workspace.lints.rust]
 unsafe_code = "deny"

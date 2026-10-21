@@ -2,7 +2,7 @@
 
 use std::time::SystemTime;
 
-use crate::{ByteSize, FileName, MimeType};
+use crate::{ByteSize, FileName, MimeType, TrashedItem};
 
 /// One entry of a folder: its name, what it is, and what the listing knew about it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -16,6 +16,9 @@ pub struct Entry {
     pub modified: Option<SystemTime>,
     /// Its type, when it has been found (the listing may leave it for later).
     pub mime: Option<MimeType>,
+    /// For a row of the Trash: the trashed item it stands for. Its `name` is then the name the
+    /// item has inside the Trash (unique there); [`Entry::shown_name`] is the one a person reads.
+    pub trashed: Option<TrashedItem>,
 }
 
 impl Entry {
@@ -26,6 +29,23 @@ impl Entry {
             kind,
             modified: None,
             mime: None,
+            trashed: None,
+        }
+    }
+
+    /// The same entry, standing for the trashed `item`.
+    pub fn in_trash(self, item: TrashedItem) -> Entry {
+        Entry {
+            trashed: Some(item),
+            ..self
+        }
+    }
+
+    /// The name a person reads: the original name of a trashed item, else the entry's own.
+    pub fn shown_name(&self) -> &FileName {
+        match &self.trashed {
+            Some(item) => &item.original.name,
+            None => &self.name,
         }
     }
 

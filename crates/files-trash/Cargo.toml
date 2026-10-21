@@ -1,0 +1,29 @@
+[package]
+name = "files-trash"
+description = "The freedesktop.org Trash behind a trait for files: move to the Trash, list it, put back, erase, with a fake for tests."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+# `FakeTrash`, a Trash kept in a scratch folder, for tests of the crates above.
+testing = []
+
+[dependencies]
+files-core = { workspace = true }
+thiserror = { workspace = true }
+trash = { workspace = true }
+
+[dev-dependencies]
+files-trash = { path = ".", features = ["testing"] }
+tempfile = { workspace = true }
+
+[lints]
+workspace = true
+
+[[test]]
+name = "it"
+path = "tests/it/main.rs"
