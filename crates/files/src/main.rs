@@ -12,20 +12,24 @@ mod bridge;
 mod launcher;
 mod opener;
 mod places;
+mod port;
 mod session;
 mod state;
+mod volumes;
 
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use ds_settings::ConfigRoot;
 use files_core::{FolderPath, Location};
+use files_desktop::{Disks, ProcUsers};
 use files_ui::Launch;
 
 use crate::apps::InstalledApps;
 use crate::args::{Args, Start};
 use crate::opener::DesktopOpener;
 use crate::session::{Role, join, launch_token};
+use crate::volumes::DesktopVolumes;
 
 fn main() -> ExitCode {
     let args = match Args::parse(std::env::args_os().skip(1)) {
@@ -72,6 +76,14 @@ fn main() -> ExitCode {
         .with_prefs(state::prefs_store(&ConfigRoot::Xdg))
         .with_requests(running.requests)
         .with_runtime(runtime.handle().clone());
+    // Without the system bus the window has no disks to list.
+    let launch = match runtime.block_on(Disks::system(Arc::new(ProcUsers::new("/proc")))) {
+        Ok(disks) => launch.with_volumes(Arc::new(DesktopVolumes::new(
+            disks,
+            runtime.handle().clone(),
+        ))),
+        Err(_) => launch,
+    };
     let launch = match dirs::home_dir().and_then(|home| FolderPath::new(home).ok()) {
         Some(home) => launch.with_home(home),
         None => launch,

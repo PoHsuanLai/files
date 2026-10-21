@@ -2,16 +2,20 @@
 //! instance, and opening files with apps. This is the only crate of the app that names the session
 //! bus.
 //!
-//! Three parts, each usable on its own:
+//! Five parts, each usable on its own:
 //!
 //! - [`file_manager`]: `org.freedesktop.FileManager1`, parsed into typed [`Show`] requests that go
 //!   to a sink the app gives;
 //! - [`instance`]: [`claim`] the names, or [`forward`] a request to the app that has them;
 //! - [`launch`]: open files with the default app or a chosen one, per the Desktop Entry
-//!   Specification, behind the [`Launcher`] trait.
+//!   Specification, behind the [`Launcher`] trait;
+//! - [`intents`]: the app's actions for the assistant and the command line (docket's
+//!   `IntentProvider1`), answered through the [`Window`] trait the caller implements;
+//! - [`disks`]: the computer's disks from UDisks2 on the system bus ([`Disks`]): list, open, eject
+//!   and a stream of changes, with the programs holding a disk open found by [`DiskUsers`].
 //!
-//! No part reads the environment: the caller passes the bus connection, the folders and the
-//! tokens in.
+//! No part reads the environment: the caller passes the bus connection, the folders, the process
+//! folder and the tokens in.
 //!
 //! ```
 //! use files_desktop::{ExecLine, Expand, Takes};

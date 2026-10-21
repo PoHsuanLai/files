@@ -12,7 +12,7 @@
 
 use std::sync::{Arc, Mutex, PoisonError};
 
-use files_core::{ItemRef, Location};
+use files_core::{ItemRef, Location, Summary};
 use files_model::{Browser, Input};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tokio::sync::oneshot;
@@ -41,6 +41,8 @@ pub enum Query {
     Selection,
     /// Where the window is.
     CurrentFolder,
+    /// What Undo would take back now.
+    NextUndo,
 }
 
 /// What the window answers to a [`Query`].
@@ -51,6 +53,8 @@ pub enum Reading {
     Selection(Vec<ItemRef>),
     /// The place the window shows.
     Place(Location),
+    /// What Undo would take back now; `None` when there is nothing to undo.
+    Undo(Option<Summary>),
 }
 
 impl Reading {
@@ -65,6 +69,7 @@ impl Reading {
                     .collect(),
             ),
             Query::CurrentFolder => Reading::Place(browser.location().clone()),
+            Query::NextUndo => Reading::Undo(browser.undo_summary().cloned()),
         }
     }
 }

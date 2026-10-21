@@ -4,7 +4,8 @@
 #   - every files* crate is in the table below (a new crate must be placed in a layer);
 #   - a crate names only workspace crates of its own layer or below, and files-core names none;
 #   - the pure crates (files-core, files-model) name no I/O crate;
-#   - only files-desktop names zbus or docket; only files-ui and the binary name dioxus or quire's
+#   - only files-desktop names zbus, docket, porter (and its `prov`) or peephole;
+#   - only files-ui and the binary name dioxus or quire's
 #     UI crates (ds, ds-blitz, ds-settings, ...); ds-helpers and ds-peer are UI-free and allowed lower.
 # Prints each violation as `crate -> dep (rule)` and exits 1 when there is any.
 set -euo pipefail
@@ -37,7 +38,7 @@ for line in sys.stdin.read().split("\n"):
 
 PURE = {"files-core", "files-model"}
 io = re.compile(r"^(tokio.*|async-.*|futures.*|notify.*|trash|rustix|nix|libc|xattr|zbus.*|docket.*|dioxus.*|ds-.*|ds)$")
-bus = re.compile(r"^(zbus.*|docket.*|porter.*|peephole)$")
+bus = re.compile(r"^(zbus.*|docket.*|porter.*|peephole.*|prov)$")
 ui = re.compile(r"^(dioxus.*|blitz.*|ds|ds-(?!helpers$|peer$).*)$")
 meta = json.loads(sys.argv[1])
 bad = []

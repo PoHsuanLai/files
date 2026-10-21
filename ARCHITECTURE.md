@@ -14,7 +14,7 @@ below and fails on any edge it does not allow, or on a crate it does not list.
 | 0, library | `files-trash` | The freedesktop.org Trash behind a trait: move to it, list it, put back, delete now, empty, the per-volume `.Trash-$uid` folders. A fake keeps a Trash in a scratch folder. |
 | 0, library | `files-ops` | Copy, move, trash and rename as a queue: progress, cancel, conflict questions (keep both, replace, skip, stop), an undo journal. Plain threads and channels; links are copied as links. |
 | 1, logic | `files-model` | Pure state machines, `step(state, input, now) -> (state, effects)`: the browser (history, selection, rename, views per folder), tabs, the sidebar, the queue as shown, Quick Look and Get Info. No I/O. |
-| 2, desktop | `files-desktop` | The only crate that names the session bus or docket: `org.freedesktop.FileManager1`, the app's intents, UDisks2, launching apps with an activation token, one instance. |
+| 2, desktop | `files-desktop` | The only crate that names a bus, docket or porter: `org.freedesktop.FileManager1`, the app's intents (`IntentProvider1`), UDisks2 on the system bus, launching apps with an activation token, one instance. |
 | 3, UI | `files-ui` | The window, drawn only with quire's components. `edge/` carries out the model's effects against the layer 0 traits, and runs anyview's peek worker for Quick Look (its `Card` is drawn inside quire's `Peek`). |
 | 4, binary | `files` | `main`: arguments, the runtime, `ds_blitz::launch`. Nothing else. |
 
@@ -56,3 +56,29 @@ an `OpenAs` to the `Opener` seam. Go to Folder is browser state (`GoTo`): the ty
 against the home folder the binary passed in (`~`), `Effect::CheckFolder` asks the lister whether it
 is a folder, and `Input::FolderChecked` either visits it or leaves the sheet up with its words.
 Copy as Pathname is `Effect::CopyText`, written to quire's clipboard by the edge.
+
+## 6. Disks
+
+Mounted and attached disks are the sidebar's Locations after the computer. `files-core` holds the
+vocabulary (`Volume`: id, name, kind, mount, eject; `EjectFailure`, `MountFailure`). The model keeps
+the list the caller last told (`Input::Volumes`), and `OpenVolume`, `Eject` and their answers
+(`Mounted`, `Ejected`) are inputs whose effects (`MountVolume`, `EjectVolume`, `TellVolume`) the edge
+carries out. `files-ui` owns the seam (`Volumes`, with `FakeVolumes` behind `testing`); one thread of
+the edge lists the disks, lists them again whenever the seam says they changed, and mounts and
+ejects in order. `files-desktop::Disks` is the real one: UDisks2 on the system bus (one
+`GetManagedObjects` read, a signal stream for hot-plug, `Filesystem.Mount` and `Unmount`, then
+`Drive.PowerOff` or `Eject`), with polkit asking the person when the system's rules say so. A busy
+disk is told in Finder's words, with the programs found in `/proc` (`DiskUsers`) when there are any.
+The binary adapts `Disks` to `Volumes` and runs it on the bus runtime.
+
+## 7. Asks from outside: intents
+
+`dist/intents/org.quire.Files.toml` declares the app's actions (`files.open`, `files.trash`,
+`files.new_folder`, `files.copy`, `files.move`, `files.empty_trash`, `files.selection`,
+`files.current_folder`); docket generates the command line from it, and `files-desktop::intents`
+serves `IntentProvider1` on the name the app already owns. The window is behind `Window`: the binary
+turns each `Ask` into a model input sent through `files-ui`'s request channel
+(`RequestSender::send`, `send_quietly`), so a change is queued, shown and undone like the person's
+own. The two reads and the undo are questions (`RequestSender::ask`) the window answers with a
+`Reading`. An undo token names the change (`undo:trash:3`); the window takes back the newest change
+only if it is that one. Emptying the Trash only puts up the window's own question.

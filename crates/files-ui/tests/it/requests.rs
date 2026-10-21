@@ -106,6 +106,15 @@ fn a_quiet_input_selects_and_the_window_reads_the_selection_and_the_folder_back(
 }
 
 #[test]
+fn the_window_says_there_is_nothing_to_undo_before_it_has_changed_anything() {
+    let (mut harness, sender, _dir, _config) = open();
+    assert_eq!(
+        read(&mut harness, &sender, Query::NextUndo),
+        Reading::Undo(None)
+    );
+}
+
+#[test]
 fn a_question_to_a_closed_window_is_an_error() {
     let (sender, requests) = channel();
     drop(requests);

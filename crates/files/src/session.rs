@@ -5,7 +5,7 @@ use std::sync::Arc;
 use files_core::Location;
 use files_desktop::{
     Activate, ActivationToken, BusActivate, Claim, InstanceError, Served, Show, ShowRequest, Sink,
-    StartupId, claim, forward, session,
+    StartupId, claim, forward, intents, session,
 };
 use files_ui::{Requests, channel};
 use tokio::runtime::Handle;
@@ -13,6 +13,7 @@ use tokio::runtime::Handle;
 use crate::args::Started;
 use crate::bridge::request_of;
 use crate::launcher::NoBus;
+use crate::port::Port;
 
 /// This launch is the app: what it asks of its window and how it starts apps over the bus.
 pub struct Running {
@@ -61,6 +62,7 @@ pub async fn join(
         Ok(connection) => connection,
         Err(said) => return offline(requests, said),
     };
+    let port = Port::new(sender.clone());
     let sink: Sink = Arc::new(move |show: Show| {
         if let Some(request) = request_of(show) {
             sender.send(request);
@@ -68,11 +70,18 @@ pub async fn join(
     });
     let activate = Arc::new(BusActivate::new(connection.clone(), runtime));
     match claim(&connection, sink).await {
-        Ok(Claim::First(served)) => Role::App(Running {
-            requests,
-            activate,
-            _served: Some(served),
-        }),
+        Ok(Claim::First(served)) => {
+            // The actions for agents live on the connection that owns the name; without them the
+            // window still works, so a failure is only said.
+            if let Err(said) = intents::offer(&connection, Arc::new(port)).await {
+                eprintln!("files: {said}");
+            }
+            Role::App(Running {
+                requests,
+                activate,
+                _served: Some(served),
+            })
+        }
         Ok(Claim::Running) => match hand_over(&connection, started, place, token).await {
             Ok(()) => Role::Handed,
             Err(said) => {
