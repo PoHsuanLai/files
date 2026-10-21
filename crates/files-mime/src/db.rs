@@ -111,12 +111,12 @@ impl MimeDb {
                 }
             }
         }
-        if start.major() != "inode" && start.as_str() != OCTET_STREAM {
-            if let Some(octet) = known(OCTET_STREAM) {
-                if !found.contains(&octet) {
-                    found.push(octet);
-                }
-            }
+        if start.major() != "inode"
+            && start.as_str() != OCTET_STREAM
+            && let Some(octet) = known(OCTET_STREAM)
+            && !found.contains(&octet)
+        {
+            found.push(octet);
         }
         found
     }
@@ -128,12 +128,12 @@ impl MimeDb {
             .iter()
             .map(|parent| self.canonical(parent))
             .collect();
-        if mime.major() == "text" && mime.as_str() != PLAIN_TEXT {
-            if let Some(plain) = known(PLAIN_TEXT) {
-                if !parents.contains(&plain) {
-                    parents.push(plain);
-                }
-            }
+        if mime.major() == "text"
+            && mime.as_str() != PLAIN_TEXT
+            && let Some(plain) = known(PLAIN_TEXT)
+            && !parents.contains(&plain)
+        {
+            parents.push(plain);
         }
         parents
     }

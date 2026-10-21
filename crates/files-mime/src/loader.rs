@@ -113,13 +113,22 @@ impl MimeDb {
     /// skipped and counted.
     pub fn load(dirs: &XdgDirs) -> Result<Loaded<MimeDb>, LoadError> {
         let mut skipped = 0;
-        let texts: Vec<LayerText> =
-            dirs.data_search().into_iter().map(|dir| LayerText::read(dir, &mut skipped)).collect();
-        if texts.iter().all(|text| data_lines(&text.globs2).next().is_none()) {
+        let texts: Vec<LayerText> = dirs
+            .data_search()
+            .into_iter()
+            .map(|dir| LayerText::read(dir, &mut skipped))
+            .collect();
+        if texts
+            .iter()
+            .all(|text| data_lines(&text.globs2).next().is_none())
+        {
             return Err(LoadError::NoDatabase);
         }
         let layers: Vec<MimeLayer<'_>> = texts.iter().map(LayerText::layer).collect();
-        Ok(Loaded { value: MimeDb::from_layers(&layers), skipped })
+        Ok(Loaded {
+            value: MimeDb::from_layers(&layers),
+            skipped,
+        })
     }
 }
 
@@ -127,7 +136,9 @@ impl MimeDb {
 /// config folder, then the `applications` folder of the data home and each data folder, the
 /// `<desktop>-mimeapps.list` of each current desktop (lower-cased) and then `mimeapps.list`.
 pub fn mimeapps_paths(dirs: &XdgDirs) -> Vec<PathBuf> {
-    let config = std::iter::once(&dirs.config_home).chain(dirs.config_dirs.iter()).cloned();
+    let config = std::iter::once(&dirs.config_home)
+        .chain(dirs.config_dirs.iter())
+        .cloned();
     let data = std::iter::once(&dirs.data_home)
         .chain(dirs.data_dirs.iter())
         .map(|dir| dir.join("applications"));
@@ -158,10 +169,12 @@ impl Associations {
         let caches = dirs
             .data_search()
             .into_iter()
-            .filter_map(|dir| match read_capped(&dir.join("applications").join("mimeinfo.cache")) {
-                Read::Text(text) => Some(MimeCache::parse(&text)),
-                Read::Missing | Read::Skipped => None,
-            })
+            .filter_map(
+                |dir| match read_capped(&dir.join("applications").join("mimeinfo.cache")) {
+                    Read::Text(text) => Some(MimeCache::parse(&text)),
+                    Read::Missing | Read::Skipped => None,
+                },
+            )
             .collect();
         Associations::new(files, caches, installed)
     }

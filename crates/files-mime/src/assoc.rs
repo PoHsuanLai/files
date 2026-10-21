@@ -43,12 +43,19 @@ impl Associations {
         caches: Vec<MimeCache>,
         installed: impl Fn(&DesktopId) -> Installed + Send + Sync + 'static,
     ) -> Associations {
-        Associations { files, caches, installed: Box::new(installed) }
+        Associations {
+            files,
+            caches,
+            installed: Box::new(installed),
+        }
     }
 
     /// Whether `id` is removed for `mime` by any of the first `levels` files.
     fn removed_within(&self, levels: usize, mime: &MimeType, id: &DesktopId) -> bool {
-        self.files.iter().take(levels).any(|file| file.removed_for(mime).contains(id))
+        self.files
+            .iter()
+            .take(levels)
+            .any(|file| file.removed_for(mime).contains(id))
     }
 
     /// The installed apps for exactly `mime`: defaults (not removed in their own file), then each
@@ -57,7 +64,12 @@ impl Associations {
         let mut found: Vec<DesktopId> = Vec::new();
         for file in &self.files {
             let removed = file.removed_for(mime);
-            found.extend(file.defaults_for(mime).iter().filter(|id| !removed.contains(id)).cloned());
+            found.extend(
+                file.defaults_for(mime)
+                    .iter()
+                    .filter(|id| !removed.contains(id))
+                    .cloned(),
+            );
         }
         for (level, file) in self.files.iter().enumerate() {
             found.extend(
@@ -95,7 +107,9 @@ impl Associations {
     /// The app that opens `mime` by default: the first installed default in precedence order,
     /// else the first installed added or cached app; the same again for each parent type.
     pub fn default_for(&self, mime: &MimeType, db: &MimeDb) -> Option<DesktopId> {
-        Self::chain(mime, db).iter().find_map(|kind| self.direct_apps(kind).into_iter().next())
+        Self::chain(mime, db)
+            .iter()
+            .find_map(|kind| self.direct_apps(kind).into_iter().next())
     }
 
     /// The apps that open `mime`, default first, with no repeats; the parent types' apps follow.

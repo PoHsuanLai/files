@@ -66,7 +66,13 @@ impl GlobEntry {
             Case::Insensitive => pattern.to_lowercase(),
         };
         let shape = shape_of(&pattern);
-        GlobEntry { weight, mime, pattern, case, shape }
+        GlobEntry {
+            weight,
+            mime,
+            pattern,
+            case,
+            shape,
+        }
     }
 
     /// The type the pattern names.
@@ -127,18 +133,24 @@ impl Globs {
                 continue;
             };
             let flags = fields.next().unwrap_or_default();
-            let Ok(mime) = MimeType::new(mime) else { continue };
+            let Ok(mime) = MimeType::new(mime) else {
+                continue;
+            };
             if pattern == NO_GLOBS {
                 globs.cleared.insert(mime);
                 continue;
             }
-            let Ok(weight) = weight.parse::<u32>() else { continue };
+            let Ok(weight) = weight.parse::<u32>() else {
+                continue;
+            };
             let case = if flags.split(',').any(|flag| flag == "cs") {
                 Case::Sensitive
             } else {
                 Case::Insensitive
             };
-            globs.entries.push(GlobEntry::new(Weight(weight), mime, pattern, case));
+            globs
+                .entries
+                .push(GlobEntry::new(Weight(weight), mime, pattern, case));
         }
         globs
     }
@@ -152,7 +164,10 @@ impl Globs {
             entries.retain(|entry| !layer.cleared.contains(&entry.mime));
             entries.extend(layer.entries);
         }
-        Globs { entries, cleared: HashSet::new() }
+        Globs {
+            entries,
+            cleared: HashSet::new(),
+        }
     }
 
     /// How many patterns there are.
@@ -185,7 +200,10 @@ impl Globs {
 
 fn best(hits: &[&GlobEntry]) -> NameGuess {
     let longest = hits.iter().map(|entry| entry.length()).max().unwrap_or(0);
-    let long: Vec<&&GlobEntry> = hits.iter().filter(|entry| entry.length() == longest).collect();
+    let long: Vec<&&GlobEntry> = hits
+        .iter()
+        .filter(|entry| entry.length() == longest)
+        .collect();
     let top = long.iter().map(|entry| entry.weight).max();
     let mut types: Vec<MimeType> = long
         .iter()

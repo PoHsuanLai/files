@@ -55,7 +55,9 @@ impl Subclasses {
         let mut parents: HashMap<MimeType, Vec<MimeType>> = HashMap::new();
         for line in data_lines(text) {
             let mut words = line.split_whitespace();
-            let (Some(sub), Some(parent)) = (words.next(), words.next()) else { continue };
+            let (Some(sub), Some(parent)) = (words.next(), words.next()) else {
+                continue;
+            };
             let (Ok(sub), Ok(parent)) = (MimeType::new(sub), MimeType::new(parent)) else {
                 continue;
             };
@@ -83,7 +85,10 @@ impl Subclasses {
 
     /// The types `mime` is directly a special case of, as written (aliases not resolved).
     pub fn parents_of(&self, mime: &MimeType) -> &[MimeType] {
-        self.parents.get(mime).map(Vec::as_slice).unwrap_or_default()
+        self.parents
+            .get(mime)
+            .map(Vec::as_slice)
+            .unwrap_or_default()
     }
 }
 

@@ -10,7 +10,10 @@ use crate::text::key_lines;
 type Table = HashMap<MimeType, Vec<DesktopId>>;
 
 fn desktop_ids(value: &str) -> Vec<DesktopId> {
-    value.split(';').filter_map(|id| DesktopId::new(id.trim()).ok()).collect()
+    value
+        .split(';')
+        .filter_map(|id| DesktopId::new(id.trim()).ok())
+        .collect()
 }
 
 fn lookup<'a>(table: &'a Table, mime: &MimeType) -> &'a [DesktopId] {
@@ -36,8 +39,13 @@ impl MimeApps {
                 "Removed Associations" => &mut apps.removed,
                 _ => continue,
             };
-            let Ok(mime) = MimeType::new(line.key) else { continue };
-            table.entry(mime).or_default().extend(desktop_ids(line.value));
+            let Ok(mime) = MimeType::new(line.key) else {
+                continue;
+            };
+            table
+                .entry(mime)
+                .or_default()
+                .extend(desktop_ids(line.value));
         }
         apps
     }
@@ -68,9 +76,16 @@ impl MimeCache {
     /// The `[MIME Cache]` group of one file's text.
     pub fn parse(text: &str) -> MimeCache {
         let mut apps = Table::new();
-        for line in key_lines(text).into_iter().filter(|line| line.group == "MIME Cache") {
-            let Ok(mime) = MimeType::new(line.key) else { continue };
-            apps.entry(mime).or_default().extend(desktop_ids(line.value));
+        for line in key_lines(text)
+            .into_iter()
+            .filter(|line| line.group == "MIME Cache")
+        {
+            let Ok(mime) = MimeType::new(line.key) else {
+                continue;
+            };
+            apps.entry(mime)
+                .or_default()
+                .extend(desktop_ids(line.value));
         }
         MimeCache { apps }
     }

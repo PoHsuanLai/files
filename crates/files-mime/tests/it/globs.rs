@@ -28,8 +28,13 @@ x:text/x-bad:*.bad
 ";
 
 fn db(layers: &[&str]) -> MimeDb {
-    let layers: Vec<MimeLayer<'_>> =
-        layers.iter().map(|g| MimeLayer { globs2: g, ..MimeLayer::default() }).collect();
+    let layers: Vec<MimeLayer<'_>> = layers
+        .iter()
+        .map(|g| MimeLayer {
+            globs2: g,
+            ..MimeLayer::default()
+        })
+        .collect();
     MimeDb::from_layers(&layers)
 }
 
@@ -69,7 +74,10 @@ fn names_map_to_types() {
 #[test]
 fn equal_patterns_with_equal_weight_are_ambiguous() {
     let guess = db(&[GLOBS]).by_name(&name("x.amb"));
-    assert_eq!(guess, NameGuess::Ambiguous(vec![mt("text/x-amb-a"), mt("text/x-amb-b")]));
+    assert_eq!(
+        guess,
+        NameGuess::Ambiguous(vec![mt("text/x-amb-a"), mt("text/x-amb-b")])
+    );
 }
 
 #[test]
@@ -92,12 +100,18 @@ fn nothing_globs_in_a_higher_folder_clears_lower_patterns_of_that_type() {
 #[test]
 fn nothing_globs_in_a_lower_folder_leaves_higher_patterns() {
     let db = db(&["50:text/plain:*.txt\n", "0:text/plain:__NOGLOBS__\n"]);
-    assert_eq!(db.by_name(&name("a.txt")), NameGuess::Type(mt("text/plain")));
+    assert_eq!(
+        db.by_name(&name("a.txt")),
+        NameGuess::Type(mt("text/plain"))
+    );
 }
 
 #[test]
 fn a_case_sensitive_pattern_ignores_other_case() {
     let db = db(&["50:text/x-cs:README:cs\n"]);
-    assert_eq!(db.by_name(&name("README")), NameGuess::Type(mt("text/x-cs")));
+    assert_eq!(
+        db.by_name(&name("README")),
+        NameGuess::Type(mt("text/x-cs"))
+    );
     assert_eq!(db.by_name(&name("readme")), NameGuess::Unknown);
 }

@@ -19,10 +19,17 @@ pub(crate) fn key_lines(text: &str) -> Vec<KeyLine<'_>> {
     let mut group = "";
     let mut out = Vec::new();
     for line in data_lines(text) {
-        if let Some(name) = line.strip_prefix('[').and_then(|rest| rest.strip_suffix(']')) {
+        if let Some(name) = line
+            .strip_prefix('[')
+            .and_then(|rest| rest.strip_suffix(']'))
+        {
             group = name;
         } else if let Some((key, value)) = line.split_once('=') {
-            out.push(KeyLine { group, key: key.trim(), value: value.trim() });
+            out.push(KeyLine {
+                group,
+                key: key.trim(),
+                value: value.trim(),
+            });
         }
     }
     out

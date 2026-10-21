@@ -139,5 +139,9 @@ pub(crate) fn matches(pattern: &str, text: &str) -> bool {
             None => return false,
         }
     }
-    tokens.get(t..).unwrap_or_default().iter().all(|token| matches!(token, Token::Star))
+    tokens
+        .get(t..)
+        .unwrap_or_default()
+        .iter()
+        .all(|token| matches!(token, Token::Star))
 }

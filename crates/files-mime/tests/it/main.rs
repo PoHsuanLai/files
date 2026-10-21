@@ -1,5 +1,6 @@
 //! files-mime's one test binary: every file below is a module of it. All text is inline fixtures;
 //! nothing reads the real system.
+#![allow(clippy::unwrap_used, clippy::expect_used)] // tests may unwrap (CONVENTIONS)
 
 use files_core::{FileName, MimeType};
 
