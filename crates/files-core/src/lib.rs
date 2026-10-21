@@ -30,6 +30,7 @@ mod progress;
 mod size;
 mod trashed;
 mod view;
+mod volume;
 
 pub use conflict::{Answer, Conflict, ConflictKind, Reach, Resolution};
 pub use entry::{Entry, EntryKind, LinkTo, Special, Visibility};
@@ -45,3 +46,7 @@ pub use progress::Progress;
 pub use size::ByteSize;
 pub use trashed::{TrashId, TrashedItem};
 pub use view::{FolderPrefs, HiddenFiles, Sort, SortKey, SortOrder, ViewMode};
+pub use volume::{
+    Eject, EjectFailure, Mount, MountFailure, ProgramName, Volume, VolumeId, VolumeKind,
+    VolumeName, VolumeTrouble,
+};
