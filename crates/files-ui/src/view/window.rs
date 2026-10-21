@@ -10,9 +10,11 @@ use ds::prelude::{ActionTaken, Px, Shown};
 use ds::window::host::use_window_title;
 
 use super::busy::Busy;
+use super::info::InfoSheet;
 use super::menu::{ContextAt, ContextMenu, point_of};
 use super::pane::FolderPane;
 use super::questions::Questions;
+use super::quick_look::QuickLook;
 use super::row::dropped;
 use super::sidebar::PlacesPane;
 use crate::keys::{pressed, use_registered};
@@ -81,6 +83,8 @@ pub(super) fn Window() -> Element {
             }
             ContextMenu { browse, menu }
             Questions { browse }
+            QuickLook { browse }
+            InfoSheet { browse, zone: launch.zone }
             Busy { browse }
         }
     }

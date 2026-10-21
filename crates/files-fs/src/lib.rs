@@ -33,5 +33,5 @@ pub use fake::{FakeLister, FakeWatcher};
 pub use list::{DiskLister, Lister, Listing, Skipped};
 #[cfg(any(test, feature = "testing"))]
 pub use prefs::FakePrefs;
-pub use prefs::{KEPT, PrefBook, PrefsStore, TomlPrefs};
+pub use prefs::{KEPT, NoPrefs, PrefBook, PrefsStore, TomlPrefs};
 pub use watch::{FolderEvent, NotifyWatcher, WatchHandle, Watcher};

@@ -3,7 +3,8 @@
 //! 1. [`our_stylesheet_lints_clean`]: no literal design value in the window's own CSS.
 //! 2. [`rendered_markup_uses_only_styled_classes`] and [`no_raw_form_control_or_svg_is_rendered`]:
 //!    no raw markup, no class nothing styles, in the real window with a folder listed, with a
-//!    name being typed, with the context menu up and with the erase question up.
+//!    name being typed, with the context menu up, with the erase question up, with Quick Look up
+//!    and with Get Info up.
 //! 3. Rule 3 (a missing component is added to quire first) is a review discipline, not a check;
 //!    the gaps are listed in the lane's report.
 //! 4. Rule 4 (motion only through quire's timers): the window draws no motion of its own.
@@ -24,7 +25,8 @@ use super::support::{RecordingOpener, harness, launch_with, scratch_folder};
 
 /// What `markup` needs to know is styled: quire's own stylesheet, plus the window's.
 fn window_css() -> String {
-    format!("{}\n{STYLE}", ds::stylesheet())
+    // The card of Quick Look is anyview's and brings its own stylesheet, as it does at run time.
+    format!("{}\n{STYLE}\n{}", ds::stylesheet(), anyview_peek::STYLE)
 }
 
 /// What the window is showing when its markup is taken.
@@ -38,9 +40,20 @@ enum Pose {
     Menu,
     /// The Trash with its erase question up.
     Erasing,
+    /// Quick Look up over a file, its card drawn.
+    QuickLook,
+    /// Get Info up over a file, its facts read.
+    Info,
 }
 
-const POSES: [Pose; 4] = [Pose::Listed, Pose::Renaming, Pose::Menu, Pose::Erasing];
+const POSES: [Pose; 6] = [
+    Pose::Listed,
+    Pose::Renaming,
+    Pose::Menu,
+    Pose::Erasing,
+    Pose::QuickLook,
+    Pose::Info,
+];
 
 /// The window in `pose`.
 fn page(pose: Pose) -> String {
@@ -57,7 +70,9 @@ fn page(pose: Pose) -> String {
             trash.trash(&[item]).unwrap();
             Location::Trash
         }
-        Pose::Listed | Pose::Renaming | Pose::Menu => super::support::at(dir.path()),
+        Pose::Listed | Pose::Renaming | Pose::Menu | Pose::QuickLook | Pose::Info => {
+            super::support::at(dir.path())
+        }
     };
     let mut window: Harness = harness(launch_with(start, config.path(), &opener, trash));
     settle_until(&mut window, |h| h.html().contains("notes.txt"));
@@ -81,6 +96,22 @@ fn page(pose: Pose) -> String {
                 ShortcutKey::Backspace,
             ));
             settle_until(&mut window, |h| h.html().contains("permanently erase"));
+        }
+        Pose::QuickLook => {
+            let at = window.centre(".ds-vtable-item[*|data-row=\"0\"]").unwrap();
+            window.send(Input::click(at));
+            window.advance(Duration::from_millis(50));
+            window.send(Input::key(ShortcutKey::Space));
+            settle_until(&mut window, |h| {
+                h.count(".ds-peek") > 0 && h.count(".anyview-pane") > 0
+            });
+        }
+        Pose::Info => {
+            let at = window.centre(".ds-vtable-item[*|data-row=\"0\"]").unwrap();
+            window.send(Input::click(at));
+            window.advance(Duration::from_millis(50));
+            window.send(Input::chord(&[ShortcutKey::Super], ShortcutKey::Char('i')));
+            settle_until(&mut window, |h| h.html().contains("Extension"));
         }
     }
     window.html()

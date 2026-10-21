@@ -12,7 +12,7 @@ use dioxus::prelude::{
 };
 use ds::base::command::types_text;
 use ds::prelude::{ActionTaken, Keys, Shown, use_keys};
-use files_model::Input;
+use files_model::{InfoView, Input};
 
 use crate::state::Browse;
 
@@ -42,6 +42,8 @@ enum Own {
     PasteMove,
     /// Empty the Trash, after asking (Command+Shift+Backspace).
     EmptyTrash,
+    /// Show the properties of the selection (Command+I).
+    GetInfo,
 }
 
 /// Each action with its id and its default chords. `Primary` is Command or Ctrl. A symbol typed
@@ -69,6 +71,7 @@ const OWN: &[(Own, &str, &[&str])] = &[
         "files.empty-trash",
         &["Primary+Shift+Backspace"],
     ),
+    (Own::GetInfo, "files.get-info", &["Primary+I"]),
 ];
 
 /// The action an id names.
@@ -92,10 +95,12 @@ fn rows(id: &str, chords: &[&str]) -> Vec<(AppAction, DefaultChord)> {
 
 /// `groups` as one registration for `app`.
 fn registration(app: &AppId, groups: &[Vec<(AppAction, DefaultChord)>]) -> Registration {
+    // Files has no text styles, so Command+I is Get Info rather than Italic.
+    let start = Registration::new(app).forgo(StandardAction::Italic);
     groups
         .iter()
         .flatten()
-        .fold(Registration::new(app), |registration, (action, chord)| {
+        .fold(start, |registration, (action, chord)| {
             registration.action(action.clone(), *chord)
         })
 }
@@ -137,6 +142,13 @@ pub(crate) fn pressed(
     if browse.renaming() {
         return ActionTaken::No;
     }
+    if event.key() == Key::Escape {
+        return escape(browse);
+    }
+    // Get Info is a sheet over the window: the keys behind it wait.
+    if !matches!(browse.state.read().info(), InfoView::Closed) {
+        return ActionTaken::No;
+    }
     match keys.action_of(event, Context::Normal) {
         Some(action) => act(&action, browse, sidebar, trail),
         None => type_ahead(browse, event),
@@ -162,6 +174,9 @@ fn act(
         Action::Standard(standard) if *standard == StandardAction::Copy => send(Input::Copy),
         Action::Standard(standard) if *standard == StandardAction::Paste => send(Input::Paste),
         Action::Standard(standard) if *standard == StandardAction::Undo => send(Input::Undo),
+        Action::Standard(standard) if *standard == StandardAction::QuickLook => {
+            send(Input::QuickLook)
+        }
         Action::Standard(standard) if *standard == StandardAction::ToggleSidebar => {
             let next = sidebar().flipped();
             sidebar.set(next);
@@ -186,6 +201,7 @@ fn act(
             Some(Own::MoveToTrash) => send(Input::MoveToTrash),
             Some(Own::PasteMove) => send(Input::PasteMove),
             Some(Own::EmptyTrash) => send(Input::EmptyTrash),
+            Some(Own::GetInfo) => send(Input::GetInfo),
             None => ActionTaken::No,
         },
         // A standard action the window does not offer, or one chordkit adds later.
@@ -210,12 +226,35 @@ fn type_ahead(browse: Browse, event: &KeyboardEvent) -> ActionTaken {
     let Key::Character(text) = key else {
         return ActionTaken::No;
     };
-    // A space starts nothing: it only continues a name already begun.
+    // A space with no name begun is Quick Look (Finder's); in the middle of one it is a letter.
     if text == " " && browse.state.read().typed().is_empty() {
-        return ActionTaken::No;
+        browse.send(Input::QuickLook);
+        return ActionTaken::Yes;
     }
     for c in text.chars() {
         browse.send(Input::Type(c));
     }
     ActionTaken::Yes
+}
+
+/// Escape puts away what is up over the folder: Get Info, else Quick Look. With nothing up the
+/// key goes on to whoever has it.
+fn escape(browse: Browse) -> ActionTaken {
+    let input = {
+        let state = browse.state.read();
+        match (state.info(), state.quick_look()) {
+            (InfoView::Closed, None) => None,
+            (InfoView::Closed, Some(_)) => Some(Input::CloseQuickLook),
+            (InfoView::Loading(_) | InfoView::Shown(_) | InfoView::Failed(..) | _, _) => {
+                Some(Input::CloseInfo)
+            }
+        }
+    };
+    match input {
+        Some(input) => {
+            browse.send(input);
+            ActionTaken::Yes
+        }
+        None => ActionTaken::No,
+    }
 }

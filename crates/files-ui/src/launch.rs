@@ -8,6 +8,7 @@ use tokio::runtime::Handle;
 use ds::prelude::SystemPrefs;
 use ds_settings::{AppName, ConfigRoot, Store, SystemPrefsSource};
 use files_core::Location;
+use files_fs::PrefsStore;
 
 use crate::edge::{Opener, Seams, Zone};
 use crate::places::Places;
@@ -103,6 +104,14 @@ impl Launch {
     pub fn with_runtime(self, handle: Handle) -> Launch {
         Launch {
             runtime: Some(handle),
+            ..self
+        }
+    }
+
+    /// The same launch remembering each folder's view and sort in `prefs`.
+    pub fn with_prefs(self, prefs: Arc<dyn PrefsStore>) -> Launch {
+        Launch {
+            seams: self.seams.with_prefs(prefs),
             ..self
         }
     }

@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use ds::prelude::SystemPrefs;
 use ds_harness::{Harness, HarnessConfig, Viewport};
 use files_core::{FolderPath, Location};
-use files_fs::{DiskLister, FakeWatcher};
+use files_fs::{DiskLister, FakePrefs, FakeWatcher};
 use files_trash::FakeTrash;
 use files_ui::edge::Seams;
 use files_ui::{AppearanceSource, Launch, OpenFailure, Opener, Zone};
@@ -86,11 +86,23 @@ pub fn launch_with(
     opener: &Arc<RecordingOpener>,
     trash: Arc<FakeTrash>,
 ) -> Launch {
+    launch_remembering(start, config, opener, trash, Arc::new(FakePrefs::new()))
+}
+
+/// The same, over the given `prefs`, which stand for the state folder a relaunch finds again.
+pub fn launch_remembering(
+    start: Location,
+    config: &Path,
+    opener: &Arc<RecordingOpener>,
+    trash: Arc<FakeTrash>,
+    prefs: Arc<FakePrefs>,
+) -> Launch {
     let seams = Seams {
         lister: Arc::new(DiskLister),
         watcher: Arc::new(FakeWatcher::new()),
         opener: Arc::clone(opener) as Arc<dyn Opener>,
         trash,
+        prefs,
     };
     Launch::new(start, Arc::clone(opener) as Arc<dyn Opener>)
         .with_seams(seams)

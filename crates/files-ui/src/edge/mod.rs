@@ -10,11 +10,15 @@
 //! change is followed by a rescan of the places it touched. The Trash is listed from
 //! [`files_trash::Trash`].
 //!
-//! Not built yet: persisting a folder's view (`Effect::LoadPrefs` answers the defaults and
-//! `Effect::SavePrefs` is dropped until the prefs lane lands).
+//! A folder's view and sort are remembered through [`PrefsStore`] on a thread of their own
+//! (`prefs`); Quick Look's previews come from anyview's peek worker (`look`) and arrive as
+//! [`Heard::Looked`], not as an input: a picture is not something the model holds. Get Info's facts
+//! are read by the [`Lister`] on a thread and come back as `Input::InfoRead`.
 
+mod look;
 mod opener;
 mod ops;
+mod prefs;
 mod zone;
 
 use std::cell::RefCell;
@@ -23,11 +27,13 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Instant;
 
+use anyview_peek::{AnyPeeked, PeekWorker};
 use ds::base::time::clock;
-use files_core::{
-    FileName, FolderPath, FolderPrefs, ItemRef, Location, OpFailure, OpPlan, Summary,
+use files_core::{FileName, FolderPath, ItemRef, Location, OpFailure, OpPlan, Summary};
+use files_fs::{
+    DiskLister, FolderEvent, ListError, Lister, NoPrefs, NotifyWatcher, PrefsStore, WatchHandle,
+    Watcher,
 };
-use files_fs::{DiskLister, FolderEvent, ListError, Lister, NotifyWatcher, WatchHandle, Watcher};
 use files_model::{Change, Effect, Input, ListFailure, Now, OpenTarget};
 use files_ops::{Job, Worker};
 use files_trash::{SystemTrash, Trash};
@@ -47,6 +53,8 @@ pub struct Seams {
     pub opener: Arc<dyn Opener>,
     /// The Trash: moving to it, listing it, putting back, erasing.
     pub trash: Arc<dyn Trash>,
+    /// Where each folder's view and sort are remembered.
+    pub prefs: Arc<dyn PrefsStore>,
 }
 
 impl Seams {
@@ -57,7 +65,13 @@ impl Seams {
             watcher: Arc::new(NotifyWatcher),
             opener,
             trash: Arc::new(SystemTrash),
+            prefs: Arc::new(NoPrefs),
         }
+    }
+
+    /// The same seams remembering folder views in `prefs`.
+    pub fn with_prefs(self, prefs: Arc<dyn PrefsStore>) -> Seams {
+        Seams { prefs, ..self }
     }
 }
 
@@ -76,6 +90,8 @@ pub enum Heard {
     Told(String),
     /// A change was made that can be undone (a move to the Trash): said with an Undo button.
     Announced(Summary),
+    /// The preview of an item, for Quick Look.
+    Looked(ItemRef, Arc<AnyPeeked>),
 }
 
 /// Carries out effects. Lives on the window's thread; its workers answer on the channel it made.
@@ -85,6 +101,10 @@ pub struct Edge {
     watches: RefCell<HashMap<Location, WatchHandle>>,
     /// The queue of changes; `None` when the system would not start its thread.
     ops: Option<Worker>,
+    /// Remembers how each folder is shown.
+    prefs: prefs::Prefs,
+    /// Makes Quick Look's previews.
+    peek: PeekWorker,
 }
 
 impl fmt::Debug for Edge {
@@ -100,11 +120,14 @@ impl Edge {
     pub fn new(seams: Seams) -> (Edge, UnboundedReceiver<Heard>) {
         let (heard, inbox) = unbounded_channel();
         let ops = Worker::start(Arc::clone(&seams.trash), ops::sink(heard.clone())).ok();
+        let prefs = prefs::Prefs::start(Arc::clone(&seams.prefs), heard.clone());
         let edge = Edge {
             seams,
             heard,
             watches: RefCell::new(HashMap::new()),
             ops,
+            prefs,
+            peek: look::worker(),
         };
         (edge, inbox)
     }
@@ -144,11 +167,10 @@ impl Edge {
             }
             Effect::Tell(failure) => self.say(Heard::Told(failure.to_string())),
             Effect::Announce(summary) => self.say(Heard::Announced(summary)),
-            // Folders are not remembered yet: every folder opens with the defaults.
-            Effect::LoadPrefs(at) => {
-                self.say(Heard::Input(Input::PrefsLoaded(at, FolderPrefs::default())));
-            }
-            Effect::SavePrefs(..) => {}
+            Effect::LoadPrefs(at) => self.prefs.load(at),
+            Effect::SavePrefs(at, prefs) => self.prefs.save(at, prefs),
+            Effect::Look(item) => look::ask(&self.peek, item, self.heard.clone()),
+            Effect::ReadInfo(item) => self.read_info(item),
             // An effect files-model adds later is dropped until this names it.
             _ => {}
         }
@@ -184,6 +206,22 @@ impl Edge {
         });
         if started.is_err() {
             self.say(Heard::Input(Input::Listed(failed, Err(ListFailure::Other))));
+        }
+    }
+
+    /// Reads the facts of `item` for Get Info, off the window's thread.
+    fn read_info(&self, item: ItemRef) {
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
+        let failed = item.clone();
+        let started = Edge::work("files-info", move || {
+            let result = lister.info(&item).map_err(failure_of);
+            let _ = heard.send(Heard::Input(Input::InfoRead(item, result)));
+        });
+        if started.is_err() {
+            self.say(Heard::Input(Input::InfoRead(
+                failed,
+                Err(ListFailure::Other),
+            )));
         }
     }
 

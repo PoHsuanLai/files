@@ -3,6 +3,8 @@
 
 mod coherence;
 mod edge;
+mod edge_views;
+mod looks;
 mod menu;
 mod places;
 mod requests;

@@ -18,6 +18,21 @@ pub use book::{KEPT, PrefBook};
 pub use fake::FakePrefs;
 pub use toml_store::TomlPrefs;
 
+/// A store that remembers nothing: every folder opens with the defaults. What a window has until
+/// it is given a real one.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct NoPrefs;
+
+impl PrefsStore for NoPrefs {
+    fn load(&self, _folder: &FolderPath) -> FolderPrefs {
+        FolderPrefs::default()
+    }
+
+    fn save(&self, _folder: &FolderPath, _prefs: FolderPrefs) -> Result<(), PrefsError> {
+        Ok(())
+    }
+}
+
 /// Where each folder's view and sort are kept. Real: [`TomlPrefs`]; for tests: `FakePrefs`
 /// (feature `testing`).
 pub trait PrefsStore: Send + Sync {

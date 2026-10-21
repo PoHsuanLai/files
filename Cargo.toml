@@ -28,6 +28,12 @@ ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4
 ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4aab5a5bb4636a4235d3d92c046a58e0" }  # 90e73d8d: v0.3.37
 # The desktop's portable keymap core (actions, chords, Primary per platform); files owns no keymap.
 chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "eb0deff12add543565ec41eecffda646ede43cf0" }
+# anyview, the desktop's viewer: Quick Look is its light tier, `anyview-peek`'s worker and card, hosted as
+# mailo hosts them (headless otherwise: no media player, no D-Bus). The rev is anyview's main, which names
+# the quire rev above. `anyview-core` is the vocabulary (`FilePath`), `anyview-fs` opens a path as an input.
+anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "c6208b0f6c55f3c4a83010f2d0473528b614b68a" }  # c6208b0f
+anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "c6208b0f6c55f3c4a83010f2d0473528b614b68a" }  # c6208b0f
+anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "c6208b0f6c55f3c4a83010f2d0473528b614b68a", default-features = false }  # c6208b0f
 # Copied from quire/docs/workspace-deps.toml at the rev above.
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
 # Dates in the list view, in the person's own time zone.

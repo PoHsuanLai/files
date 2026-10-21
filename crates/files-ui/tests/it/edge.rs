@@ -5,10 +5,13 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use files_core::{
-    Answer, ByteSize, Entry, EntryKind, FileName, FolderPath, FolderPrefs, ItemRef, Location,
-    OpFailure, OpKind, OpPlan, Resolution, Transfer,
+    Answer, ByteSize, Entry, EntryKind, FileName, FolderPath, ItemRef, Location, OpFailure, OpKind,
+    OpPlan, Resolution, Transfer,
 };
-use files_fs::{FakeLister, FakeWatcher, FolderEvent, ListError, Lister, Watcher};
+use files_fs::{
+    FakeLister, FakePrefs, FakeWatcher, FolderEvent, ListError, Lister, NoPrefs, PrefsStore,
+    Watcher,
+};
 use files_model::{Change, Effect, End, Input, ListFailure, OpEvent, OpenTarget};
 use files_trash::{FakeTrash, Trash};
 use files_ui::Opener;
@@ -18,35 +21,38 @@ use tokio::sync::mpsc::UnboundedReceiver;
 
 use super::support::{NoAppOpener, RecordingOpener, at, scratch_folder};
 
-fn name(text: &str) -> FileName {
+pub(super) fn name(text: &str) -> FileName {
     FileName::new(text).unwrap()
 }
 
-fn file(text: &str) -> Entry {
+pub(super) fn file(text: &str) -> Entry {
     Entry::new(name(text), EntryKind::File(ByteSize(3)))
 }
 
-struct Rig {
-    edge: Edge,
-    inbox: UnboundedReceiver<Heard>,
-    lister: Arc<FakeLister>,
+pub(super) struct Rig {
+    pub(super) edge: Edge,
+    pub(super) inbox: UnboundedReceiver<Heard>,
+    pub(super) lister: Arc<FakeLister>,
     watcher: Arc<FakeWatcher>,
     opener: Arc<RecordingOpener>,
     trash: Arc<FakeTrash>,
+    pub(super) prefs: Arc<FakePrefs>,
     _bin: TempDir,
 }
 
-fn rig() -> Rig {
+pub(super) fn rig() -> Rig {
     let lister = Arc::new(FakeLister::new());
     let watcher = Arc::new(FakeWatcher::new());
     let opener = Arc::new(RecordingOpener::default());
     let bin = tempfile::tempdir().unwrap();
     let trash = Arc::new(FakeTrash::new(bin.path().join("bin")));
+    let prefs = Arc::new(FakePrefs::new());
     let seams = Seams {
         lister: Arc::clone(&lister) as Arc<dyn Lister>,
         watcher: Arc::clone(&watcher) as Arc<dyn Watcher + Send + Sync>,
         opener: Arc::clone(&opener) as Arc<dyn Opener>,
         trash: Arc::clone(&trash) as Arc<dyn Trash>,
+        prefs: Arc::clone(&prefs) as Arc<dyn PrefsStore>,
     };
     let (edge, inbox) = Edge::new(seams);
     Rig {
@@ -56,12 +62,13 @@ fn rig() -> Rig {
         watcher,
         opener,
         trash,
+        prefs,
         _bin: bin,
     }
 }
 
 /// The next thing the edge said, waiting up to five seconds for a worker.
-fn next(inbox: &mut UnboundedReceiver<Heard>) -> Heard {
+pub(super) fn next(inbox: &mut UnboundedReceiver<Heard>) -> Heard {
     let started = Instant::now();
     loop {
         if let Ok(heard) = inbox.try_recv() {
@@ -75,7 +82,7 @@ fn next(inbox: &mut UnboundedReceiver<Heard>) -> Heard {
     }
 }
 
-fn folder(path: &str) -> FolderPath {
+pub(super) fn folder(path: &str) -> FolderPath {
     FolderPath::new(path).unwrap()
 }
 
@@ -142,21 +149,6 @@ fn the_trash_is_listed_as_rows_named_as_it_stores_them() {
     assert_eq!(rows[0].name, name("notes.txt"));
     assert_eq!(rows[0].trashed, Some(thrown[0].clone()));
     assert_eq!(rows[0].shown_name(), &name("notes.txt"));
-}
-
-#[test]
-fn folders_are_remembered_by_default_for_now() {
-    let mut rig = rig();
-    let place = Location::Folder(folder("/p"));
-    rig.edge.run(vec![
-        Effect::LoadPrefs(place.clone()),
-        Effect::SavePrefs(place.clone(), FolderPrefs::default()),
-    ]);
-    assert_eq!(
-        next(&mut rig.inbox),
-        Heard::Input(Input::PrefsLoaded(place, FolderPrefs::default()))
-    );
-    assert!(rig.inbox.try_recv().is_err(), "saving says nothing");
 }
 
 #[test]
@@ -244,6 +236,7 @@ fn a_file_no_app_opens_is_told_in_words() {
         watcher: Arc::new(FakeWatcher::new()),
         opener: Arc::new(NoAppOpener),
         trash: Arc::new(FakeTrash::new("/nonexistent/never-used")),
+        prefs: Arc::new(NoPrefs),
     };
     let (edge, mut inbox) = Edge::new(seams);
     let target = OpenTarget::new(folder("/p"), name("x.zzz"));

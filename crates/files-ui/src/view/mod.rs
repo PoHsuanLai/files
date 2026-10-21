@@ -2,9 +2,11 @@
 //! components. The views read the browser and map it; nothing here decides anything.
 
 mod busy;
+mod info;
 mod menu;
 mod pane;
 mod questions;
+mod quick_look;
 mod rename;
 mod row;
 mod sidebar;

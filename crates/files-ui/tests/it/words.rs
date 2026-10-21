@@ -3,11 +3,13 @@
 use std::time::SystemTime;
 
 use chrono::{TimeZone, Utc};
-use files_core::{ByteSize, Entry, EntryKind, FileName, LinkTo, Special};
+use files_core::{
+    ByteSize, Entry, EntryKind, FileName, FolderPath, Info, ItemCount, ItemRef, LinkTo, Special,
+};
 use files_ui::Zone;
 use files_ui::words::{
     NONE, announce_words, busy_words, conflict_words, date_words, entry_size_words, erase_words,
-    kind_words, size_words,
+    exact_size_words, info_rows, items_words, kind_words, name_rows, size_words,
 };
 
 fn entry(name: &str, kind: EntryKind) -> Entry {
@@ -204,4 +206,75 @@ fn erasing_asks_about_what_it_erases() {
         erase_words(Some((4, "a.txt".to_owned()))),
         "Are you sure you want to permanently erase these 4 items?"
     );
+}
+
+#[test]
+fn get_info_says_the_words_and_then_the_exact_bytes() {
+    const CASES: &[(&str, u64, &str)] = &[
+        ("empty", 0, "Zero bytes"),
+        ("a few", 999, "999 bytes"),
+        ("a thousand", 1_000, "1 KB (1,000 bytes)"),
+        ("kilobytes", 12_345, "12 KB (12,345 bytes)"),
+        ("megabytes", 1_500_000, "1.5 MB (1,500,000 bytes)"),
+        ("a million exactly", 1_000_000, "1 MB (1,000,000 bytes)"),
+        (
+            "groups of three",
+            123_456_789,
+            "123.5 MB (123,456,789 bytes)",
+        ),
+    ];
+    for &(name, bytes, want) in CASES {
+        assert_eq!(exact_size_words(ByteSize(bytes)), want, "{name}");
+    }
+    let counts = [(0, "Zero items"), (1, "1 item"), (2, "2 items")];
+    for (count, want) in counts {
+        assert_eq!(items_words(ItemCount(count)), want);
+    }
+}
+
+#[test]
+fn get_info_rows_follow_the_kind_of_item() {
+    let item = |name: &str| {
+        ItemRef::new(
+            FolderPath::new("/home/p").unwrap(),
+            FileName::new(name).unwrap(),
+        )
+    };
+    let when = |at: Option<SystemTime>| at.map_or(NONE.to_owned(), |_| "then".to_owned());
+    let labels = |info: &Info| -> Vec<&'static str> {
+        info_rows(info, when).iter().map(|row| row.label).collect()
+    };
+    let file = Info::new(item("Report.pdf"), EntryKind::File(ByteSize(12_345)));
+    assert_eq!(labels(&file), ["Kind", "Size", "Where", "Modified"]);
+    let rows = info_rows(&file, when);
+    assert_eq!(rows[0].value, "PDF file");
+    assert_eq!(rows[1].value, "12 KB (12,345 bytes)");
+    assert_eq!(rows[2].value, "/home/p");
+    assert_eq!(rows[3].value, NONE);
+
+    let made = SystemTime::UNIX_EPOCH;
+    let folder = Info::new(item("Projects"), EntryKind::Folder)
+        .created_at(made)
+        .modified_at(made)
+        .holding(ItemCount(3));
+    assert_eq!(
+        labels(&folder),
+        ["Kind", "Contents", "Where", "Created", "Modified"]
+    );
+    assert_eq!(info_rows(&folder, when)[1].value, "3 items");
+
+    let names = |info: &Info| -> Vec<(&'static str, String)> {
+        name_rows(info)
+            .into_iter()
+            .map(|row| (row.label, row.value))
+            .collect()
+    };
+    assert_eq!(
+        names(&file),
+        [
+            ("Name", "Report.pdf".to_owned()),
+            ("Extension", "pdf".to_owned())
+        ]
+    );
+    assert_eq!(names(&folder), [("Name", "Projects".to_owned())]);
 }

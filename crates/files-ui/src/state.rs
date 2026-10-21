@@ -2,18 +2,24 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Instant;
 
+use anyview_peek::AnyPeeked;
 use dioxus::prelude::*;
 use ds::prelude::use_toasts;
 use ds::stack::toast_hub::UndoToken;
 use ds_blitz::use_window_handle;
+use files_core::ItemRef;
 use files_model::{Browser, Input, Rename};
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::edge::{self, Edge, Heard};
 use crate::launch::Launch;
 use crate::words::announce_words;
+
+/// The newest preview Quick Look was given, and the item it is of.
+pub(crate) type Looked = Option<(ItemRef, Arc<AnyPeeked>)>;
 
 /// One window's browser. `Copy`: hand it to any handler. The views read [`Browse::state`]; every
 /// change goes through [`Browse::send`].
@@ -27,6 +33,8 @@ pub(crate) struct Browse {
     /// table reads as "move the cursor" (Command+Down) and the window reads as "open" arrive in
     /// that order, and the open is of the row the cursor was on.
     trail: Signal<Option<Browser>>,
+    /// The preview Quick Look draws, once the peek worker has made it.
+    pub(crate) looked: Signal<Looked>,
 }
 
 impl std::fmt::Debug for Browse {
@@ -97,11 +105,13 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
     });
     let state = use_signal(|| setup.first.clone());
     let trail = use_signal(|| None);
+    let looked = use_signal(|| None);
     let browse = Browse {
         state,
         edge: use_hook(|| CopyValue::new(Rc::clone(&setup.edge))),
         start: setup.start,
         trail,
+        looked,
     };
     let toasts = use_toasts();
     let window = use_window_handle();
@@ -132,6 +142,10 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
                 match heard {
                     Heard::Input(input) => browse.send(input),
                     Heard::Told(text) => toasts.push(text, None),
+                    Heard::Looked(item, card) => {
+                        let mut slot = browse.looked;
+                        slot.set(Some((item, card)));
+                    }
                     Heard::Announced(summary) => {
                         announced += 1;
                         toasts.push_undoable(

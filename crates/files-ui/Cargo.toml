@@ -9,6 +9,10 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+anyview-core = { workspace = true }
+anyview-fs = { workspace = true }
+# The `pane` feature is the card that draws a peek (mailo's choice); no `media`, so no player.
+anyview-peek = { workspace = true, features = ["pane"] }
 chordkit = { workspace = true }
 chrono = { workspace = true }
 dioxus = { workspace = true }
