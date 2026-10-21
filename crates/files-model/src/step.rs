@@ -36,6 +36,7 @@ impl Browser {
             | Input::MoveCursor(..)
             | Input::Type(_)
             | Input::Open
+            | Input::OpenWith(_)
                 if self.rename.is_editing() =>
             {
                 (self, Vec::new())
@@ -57,6 +58,16 @@ impl Browser {
             Input::Enclosing => self.go_enclosing(),
             Input::Reload => self.reload(),
             Input::Open => self.open(),
+            Input::OpenWith(app) => self.open_with(app),
+            Input::ChooseApp => self.choose_app(),
+            Input::CloseChooseApp => self.close_chooser(),
+            Input::GoToFolder => self.go_to_folder(),
+            Input::GoToTyped(text) => self.go_to_typed(text),
+            Input::GoToSubmit => self.go_to_submit(),
+            Input::GoToCancel => self.go_to_cancel(),
+            Input::FolderChecked(folder, result) => self.folder_checked(folder, result),
+            Input::GetInfoFolder => self.get_info_folder(),
+            Input::CopyAsPathname => self.copy_as_pathname(),
             Input::Click(name, modifier) => self.select(|s, rows| s.click(rows, &name, modifier)),
             Input::SelectAll => self.select(|s, rows| s.select_all(rows)),
             Input::SelectNone => self.select(|_, _| Selection::default()),

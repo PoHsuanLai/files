@@ -4,8 +4,10 @@ use files_core::{
     Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, ItemRef, Location, Summary,
 };
 
+use crate::app::Chooser;
 use crate::arrange::arrange;
 use crate::effect::Effect;
+use crate::goto::GoTo;
 use crate::history::{Availability, History};
 use crate::listing::Listing;
 use crate::look::{InfoView, Looking};
@@ -45,6 +47,12 @@ pub struct Browser {
     pub(crate) looking: Looking,
     /// The Get Info panel.
     pub(crate) info: InfoView,
+    /// The person's home folder, which `~` means in Go to Folder; `None` until the caller says.
+    pub(crate) home: Option<FolderPath>,
+    /// The Go to Folder sheet.
+    pub(crate) goto: GoTo,
+    /// The sheet of every installed app.
+    pub(crate) chooser: Chooser,
 }
 
 impl Browser {
@@ -69,6 +77,9 @@ impl Browser {
             starting: None,
             looking: Looking::Closed,
             info: InfoView::Closed,
+            home: None,
+            goto: GoTo::Closed,
+            chooser: Chooser::Closed,
         };
         (browser, effects)
     }

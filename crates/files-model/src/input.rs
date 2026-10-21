@@ -6,6 +6,7 @@ use files_core::{
     Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef, Location, Resolution, Sort, ViewMode,
 };
 
+use crate::app::AppPick;
 use crate::listing::ListFailure;
 use crate::ops::{DropHow, OpEvent};
 
@@ -86,10 +87,27 @@ pub enum Input {
     Forward,
     /// Go to the folder that holds this one (⌘↑).
     Enclosing,
+    /// Put up the Go to Folder sheet (⇧⌘G), with the folder shown as its text.
+    GoToFolder,
+    /// The Go to Folder field's text changed.
+    GoToTyped(String),
+    /// Return in the Go to Folder field: go to the folder typed, if it is there.
+    GoToSubmit,
+    /// Put the Go to Folder sheet away (Escape, Cancel).
+    GoToCancel,
+    /// The answer to `Effect::CheckFolder`.
+    FolderChecked(FolderPath, Result<(), ListFailure>),
     /// Read the folder again.
     Reload,
     /// Open the selection (Return, double-click, ⌘↓).
     Open,
+    /// Open the selection with this app (Open With, in the context menu).
+    OpenWith(AppPick),
+    /// Put up the sheet that lists every installed app, to pick one to open the selection with
+    /// (Open With, Other).
+    ChooseApp,
+    /// Put the sheet of apps away.
+    CloseChooseApp,
     /// A click on a row.
     Click(FileName, Modifier),
     /// Select every row (⌘A).
@@ -102,6 +120,8 @@ pub enum Input {
     CloseQuickLook,
     /// Open Get Info on the row the keyboard is on, or on the folder when nothing is (⌘I).
     GetInfo,
+    /// Open Get Info on the folder shown, whatever is selected (the background's menu).
+    GetInfoFolder,
     /// The answer to `Effect::ReadInfo`.
     InfoRead(ItemRef, Result<Info, ListFailure>),
     /// Put Get Info away (Escape, Done).
@@ -142,6 +162,9 @@ pub enum Input {
     Answer(Resolution),
     /// Remember the selection for a paste (Command+C).
     Copy,
+    /// Put the full paths of the selection on the clipboard as text, one per line
+    /// (Option+Command+C).
+    CopyAsPathname,
     /// Copy what was copied into this folder (Command+V).
     Paste,
     /// Move what was copied into this folder (Option+Command+V).

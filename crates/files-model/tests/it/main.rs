@@ -3,10 +3,13 @@
 
 mod changes;
 mod common;
+mod go_to;
 mod listing;
 mod looks;
 mod navigation;
 mod open;
+mod open_with;
+mod pathname;
 mod prefs;
 mod rename;
 mod reveal;

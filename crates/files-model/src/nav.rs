@@ -2,8 +2,10 @@
 
 use files_core::{Entry, Location};
 
+use crate::app::Chooser;
 use crate::browser::Browser;
 use crate::effect::{Effect, OpenTarget};
+use crate::goto::GoTo;
 use crate::history::History;
 use crate::listing::Listing;
 use crate::look::{InfoView, Looking};
@@ -38,6 +40,9 @@ impl Browser {
             starting: None,
             looking: Looking::Closed,
             info: InfoView::Closed,
+            home: self.home,
+            goto: GoTo::Closed,
+            chooser: Chooser::Closed,
         };
         (browser, effects)
     }

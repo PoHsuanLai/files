@@ -23,10 +23,12 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
+mod app;
 mod arrange;
 mod browser;
 mod changes;
 mod effect;
+mod goto;
 mod history;
 mod input;
 mod listing;
@@ -34,6 +36,7 @@ mod look;
 mod nav;
 mod open;
 mod ops;
+mod pathname;
 mod rename;
 mod renaming;
 mod reveal;
@@ -42,9 +45,11 @@ mod sort;
 mod step;
 mod typeselect;
 
+pub use app::{AppPick, Chooser};
 pub use arrange::arrange;
 pub use browser::Browser;
 pub use effect::{Effect, OpenTarget};
+pub use goto::{GoTo, GoToProblem, expand};
 pub use history::{Availability, History};
 pub use input::{Change, Direction, Input, Modifier, Now};
 pub use listing::{ListFailure, Listing};

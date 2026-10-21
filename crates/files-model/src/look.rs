@@ -104,6 +104,17 @@ impl Browser {
         }
     }
 
+    /// Open Get Info on the folder shown itself, whatever is selected.
+    pub(crate) fn get_info_folder(self) -> Stepped {
+        let item = self
+            .folder()
+            .and_then(|folder| ItemRef::from_path(folder.as_path()).ok());
+        match item {
+            Some(item) => self.asking_info(item),
+            None => (self, Vec::new()),
+        }
+    }
+
     /// Show `folder` with `names` selected, and open Get Info on the first of them (or on the
     /// folder itself when none is named).
     pub(crate) fn properties(self, folder: FolderPath, names: Vec<FileName>) -> Stepped {

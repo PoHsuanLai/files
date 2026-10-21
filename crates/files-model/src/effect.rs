@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 
+use crate::app::AppPick;
 use files_core::{
     FileName, FolderPath, FolderPrefs, ItemRef, Location, OpFailure, OpPlan, Resolution, Summary,
 };
@@ -41,6 +42,18 @@ pub enum Effect {
     Unwatch(Location),
     /// Hand these files to the apps that open them.
     OpenFiles(Vec<OpenTarget>),
+    /// Hand these files to this app, whatever their own default is.
+    OpenFilesWith {
+        /// What to open.
+        targets: Vec<OpenTarget>,
+        /// The app to open it with.
+        app: AppPick,
+    },
+    /// Find out whether this is a folder the person may open, and answer with
+    /// `Input::FolderChecked`.
+    CheckFolder(FolderPath),
+    /// Put this text on the clipboard.
+    CopyText(String),
     /// Rename a file in a folder; the listing changes when the disk does.
     Rename {
         /// The folder it is in.
