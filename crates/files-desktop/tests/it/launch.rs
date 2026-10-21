@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use files_desktop::{
     ActivateCall, ActivationToken, AppChoice, AppEntry, DesktopLauncher, EntryError, FakeActivate,
-    FakeSpawn, LaunchError, Launcher, installed_check,
+    FakeSpawn, LaunchError, Launcher, Standing, installed_check,
 };
 use files_mime::{Associations, DesktopId, MimeApps, MimeDb, MimeLayer};
 
@@ -258,4 +258,77 @@ fn entries_that_are_not_apps_are_refused() {
         };
         assert_eq!(kind, want, "{text}");
     }
+}
+
+fn offers(rig: &Rig, paths: &[&str]) -> Vec<(String, Standing)> {
+    rig.launcher
+        .apps_for(&targets(paths))
+        .into_iter()
+        .map(|offer| (offer.name, offer.standing))
+        .collect()
+}
+
+#[test]
+fn the_apps_offered_for_files_put_the_default_first() {
+    let added = format!("{MIMEAPPS}[Added Associations]\ntext/plain=viewer.desktop;\n");
+    let rig = rig(&added, FakeSpawn::new());
+    // label, files, offers
+    let cases: Vec<(&str, Vec<&str>, Vec<(&str, Standing)>)> = vec![
+        (
+            "one type, two apps",
+            vec!["/p/a.txt"],
+            vec![("Editor", Standing::Default), ("Viewer", Standing::Other)],
+        ),
+        (
+            "one default only",
+            vec!["/p/c.png"],
+            vec![("Viewer", Standing::Default)],
+        ),
+        (
+            "the apps both types share",
+            vec!["/p/c.png", "/p/d.pdf"],
+            vec![("Viewer", Standing::Default)],
+        ),
+        (
+            "the first type leads",
+            vec!["/p/a.txt", "/p/c.png"],
+            vec![("Viewer", Standing::Other)],
+        ),
+        ("no type is known", vec!["/p/noext"], vec![]),
+        ("no files", vec![], vec![]),
+    ];
+    for (label, files, want) in cases {
+        let want: Vec<(String, Standing)> = want
+            .into_iter()
+            .map(|(name, standing)| (name.to_owned(), standing))
+            .collect();
+        assert_eq!(offers(&rig, &files), want, "{label}");
+    }
+}
+
+#[test]
+fn every_installed_app_is_offered_for_the_other_sheet() {
+    let rig = rig(MIMEAPPS, FakeSpawn::new());
+    let names: Vec<String> = rig
+        .launcher
+        .all_apps()
+        .into_iter()
+        .map(|offer| offer.name)
+        .collect();
+    assert_eq!(
+        names,
+        strs(&["Editor", "Viewer", "Vim", "Bus App", "Quoted"])
+    );
+}
+
+#[test]
+fn a_folder_is_offered_the_apps_for_folders() {
+    let dir = tempfile::tempdir().unwrap();
+    let rig = rig(
+        "[Default Applications]\ninode/directory=editor.desktop\n",
+        FakeSpawn::new(),
+    );
+    let shown = rig.launcher.apps_for(&[dir.path().to_path_buf()]);
+    assert_eq!(shown.len(), 1);
+    assert_eq!(shown[0].standing, Standing::Default);
 }

@@ -4,12 +4,14 @@ mod activate;
 mod desktop;
 mod entry;
 mod exec;
+mod offer;
 mod spawn;
 
 pub use activate::{Activate, BusActivate};
 pub use desktop::DesktopLauncher;
 pub use entry::{AppEntry, EntryError, Start, Terminal, installed_check, load_apps};
 pub use exec::{ExecError, ExecLine, Expand, Takes};
+pub use offer::{AppOffer, Standing};
 pub use spawn::{Spawn, SpawnCommand, StartError, SystemSpawn};
 
 #[cfg(feature = "testing")]

@@ -20,9 +20,9 @@ const UNKNOWN_TYPE: &str = "application/octet-stream";
 
 /// Opens files with the installed apps.
 pub struct DesktopLauncher {
-    db: MimeDb,
-    associations: Associations,
-    apps: Vec<AppEntry>,
+    pub(super) db: MimeDb,
+    pub(super) associations: Associations,
+    pub(super) apps: Vec<AppEntry>,
     spawn: Arc<dyn Spawn>,
     activate: Arc<dyn Activate>,
 }
@@ -60,17 +60,26 @@ impl DesktopLauncher {
         }
     }
 
-    fn app(&self, id: &DesktopId) -> Option<&AppEntry> {
+    pub(super) fn app(&self, id: &DesktopId) -> Option<&AppEntry> {
         self.apps.iter().find(|app| app.id == *id)
+    }
+
+    /// The type of a file: a folder's, else what its name says, else the type of anything that
+    /// has no name to go by. `None` when the path has no usable name.
+    pub(super) fn kind_of(&self, target: &Path) -> Option<MimeType> {
+        if target.is_dir() {
+            return MimeType::new(MimeType::FOLDER).ok();
+        }
+        let name = FileName::new(target.file_name()?).ok()?;
+        match self.db.by_name(&name) {
+            NameGuess::Type(kind) => Some(kind),
+            NameGuess::Ambiguous(_) | NameGuess::Unknown => MimeType::new(UNKNOWN_TYPE).ok(),
+        }
     }
 
     /// The default app of a file, by its name; `None` when nothing opens it.
     fn default_app(&self, target: &Path) -> Option<&AppEntry> {
-        let name = FileName::new(target.file_name()?).ok()?;
-        let kind = match self.db.by_name(&name) {
-            NameGuess::Type(kind) => kind,
-            NameGuess::Ambiguous(_) | NameGuess::Unknown => MimeType::new(UNKNOWN_TYPE).ok()?,
-        };
+        let kind = self.kind_of(target)?;
         let id = self.associations.default_for(&kind, &self.db)?;
         self.app(&id)
     }

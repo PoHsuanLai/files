@@ -40,9 +40,9 @@ pub mod uri;
 pub use file_manager::{Reveal, Show, ShowKind, ShowRequest, Sink, StartupId};
 pub use instance::{Bus, Claim, FileManagerName, InstanceError, Served, claim, forward, session};
 pub use launch::{
-    Activate, AppChoice, AppEntry, BusActivate, DesktopLauncher, EntryError, ExecError, ExecLine,
-    Expand, LaunchError, Launcher, Spawn, SpawnCommand, StartError, SystemSpawn, Takes,
-    installed_check, load_apps,
+    Activate, AppChoice, AppEntry, AppOffer, BusActivate, DesktopLauncher, EntryError, ExecError,
+    ExecLine, Expand, LaunchError, Launcher, Spawn, SpawnCommand, Standing, StartError,
+    SystemSpawn, Takes, installed_check, load_apps,
 };
 pub use token::ActivationToken;
 
