@@ -1,6 +1,6 @@
 //! Going places and opening things.
 
-use files_core::{Entry, Location};
+use files_core::Location;
 
 use crate::app::Chooser;
 use crate::browser::Browser;
@@ -21,7 +21,7 @@ impl Browser {
     /// is forgotten, except whether hidden files are shown.
     fn arrive(self, to: Location, history: History) -> Stepped {
         let mut effects = vec![Effect::Unwatch(self.location.clone())];
-        effects.extend(Browser::entering(&to));
+        effects.extend(Browser::entering(&to, self.home.as_ref()));
         let browser = Browser {
             location: to,
             history,
@@ -50,8 +50,19 @@ impl Browser {
 
     /// Read this place again.
     pub(crate) fn reload(self) -> Stepped {
-        let effects = vec![Effect::List(self.location.clone())];
-        (self, effects)
+        let effects = vec![Browser::reading(&self.location, self.home.as_ref())];
+        match self.location {
+            // A search starts over, so what it finds again is not listed twice.
+            Location::Tag(_) => (
+                Browser {
+                    listing: Listing::Loading,
+                    ..self
+                }
+                .refreshed(),
+                effects,
+            ),
+            Location::Folder(_) | Location::Trash | _ => (self, effects),
+        }
     }
 
     /// Go to a new place; going where it already is reads it again.
@@ -87,27 +98,26 @@ impl Browser {
         }
     }
 
+    /// The folder that opening the selection goes into: the selection is that one folder (or a
+    /// link to one).
+    pub(crate) fn lone_folder(&self) -> Option<Location> {
+        match self.selected_rows().as_slice() {
+            [(only, item)] if opens(only) == Opens::Folder => {
+                Some(Location::Folder(item.as_folder()))
+            }
+            _ => None,
+        }
+    }
+
     /// Open the selection: a lone folder is entered, files go to their apps, and anything else
     /// does nothing.
     pub(crate) fn open(self) -> Stepped {
-        let Some(folder) = self.folder().cloned() else {
-            return (self, Vec::new());
-        };
-        let chosen: Vec<&Entry> = self
-            .rows
-            .iter()
-            .filter(|e| self.selection.contains(&e.name))
-            .collect();
-        let into = match chosen.as_slice() {
-            [only] if opens(only) == Opens::Folder => {
-                Some(Location::Folder(folder.join(&only.name)))
-            }
-            _ => None,
-        };
-        let files: Vec<OpenTarget> = chosen
-            .iter()
-            .filter(|e| opens(e) == Opens::File)
-            .map(|e| OpenTarget::new(folder.clone(), e.name.clone()))
+        let into = self.lone_folder();
+        let files: Vec<OpenTarget> = self
+            .selected_rows()
+            .into_iter()
+            .filter(|(row, _)| opens(row) == Opens::File)
+            .map(|(_, item)| OpenTarget::new(item.folder, item.name))
             .collect();
         match (into, files.is_empty()) {
             (Some(to), _) => self.go(to),

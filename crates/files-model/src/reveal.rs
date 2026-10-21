@@ -33,7 +33,7 @@ pub(crate) fn applied(
 ) -> Selection {
     match listing {
         Listing::Loaded(_) => {}
-        Listing::Loading | Listing::Failed(_) => return selection,
+        Listing::Loading | Listing::Searching(_) | Listing::Failed(_) => return selection,
     }
     let found: Vec<FileName> = asked
         .iter()

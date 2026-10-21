@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::app::AppPick;
 use files_core::{
     FileName, FolderPath, FolderPrefs, ItemRef, Location, OpFailure, OpPlan, Resolution, Summary,
-    VolumeId, VolumeName, VolumeTrouble,
+    TagColour, VolumeId, VolumeName, VolumeTrouble,
 };
 
 /// One file to hand to an app: where it is, and what it is called.
@@ -30,6 +30,15 @@ impl OpenTarget {
     }
 }
 
+/// Whether a tag is put on files or taken off them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Mark {
+    /// Put the tag on.
+    Add,
+    /// Take the tag off.
+    Remove,
+}
+
 /// Something for the caller to carry out; the answer, if any, comes back as an
 /// [`Input`](crate::Input).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,6 +46,15 @@ impl OpenTarget {
 pub enum Effect {
     /// Read the folder and answer with `Input::Listed`.
     List(Location),
+    /// Look through `within` and the folders under it for files tagged `colour`, and answer with
+    /// `Input::Found` for each batch and `Input::SearchDone` at the end. Asking again, or
+    /// `Effect::Unwatch` of the same place, stops the walk before.
+    Find {
+        /// The colour looked for.
+        colour: TagColour,
+        /// The folder the walk starts in.
+        within: FolderPath,
+    },
     /// Start telling us about changes there, as `Input::Changed`.
     Watch(Location),
     /// Stop telling us about changes there.
@@ -90,6 +108,18 @@ pub enum Effect {
     MountVolume(VolumeId),
     /// Eject this disk and answer with `Input::Ejected`.
     EjectVolume(VolumeId),
+    /// Put the tag of `colour` on these items, or take it off them. The listings follow when the
+    /// disk does.
+    Tag {
+        /// What to change.
+        items: Vec<ItemRef>,
+        /// The tag's colour.
+        colour: TagColour,
+        /// Put on or take off.
+        how: Mark,
+    },
+    /// Close the window: its last tab was closed.
+    CloseWindow,
     /// Tell the person a disk could not be opened or ejected.
     TellVolume {
         /// The disk's name.

@@ -59,7 +59,7 @@ impl Browser {
     /// The item Quick Look is showing, by where it is.
     pub fn quick_item(&self) -> Option<ItemRef> {
         let entry = self.quick_look()?;
-        Some(ItemRef::new(self.folder()?.clone(), entry.name.clone()))
+        self.item_of(entry)
     }
 
     /// The Get Info panel.

@@ -18,15 +18,11 @@ type Stepped = (Browser, Vec<Effect>);
 pub(crate) const NEW_FOLDER: &str = "untitled folder";
 
 impl Browser {
-    /// The selected items, in row order, when this is a folder.
+    /// The selected items, in row order: in a folder, or found by a search.
     fn selected_items(&self) -> Vec<ItemRef> {
-        let Some(folder) = self.folder() else {
-            return Vec::new();
-        };
-        self.rows
-            .iter()
-            .filter(|row| self.selection.contains(&row.name))
-            .map(|row| ItemRef::new(folder.clone(), row.name.clone()))
+        self.selected_rows()
+            .into_iter()
+            .map(|(_, item)| item)
             .collect()
     }
 

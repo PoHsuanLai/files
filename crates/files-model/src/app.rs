@@ -46,16 +46,12 @@ impl Browser {
             chooser: Chooser::Closed,
             ..self
         };
-        let targets: Vec<OpenTarget> = match browser.folder() {
-            Some(folder) => browser
-                .rows
-                .iter()
-                .filter(|entry| browser.selection.contains(&entry.name))
-                .filter(|entry| opens(entry) != Opens::Nothing)
-                .map(|entry| OpenTarget::new(folder.clone(), entry.name.clone()))
-                .collect(),
-            None => Vec::new(),
-        };
+        let targets: Vec<OpenTarget> = browser
+            .selected_rows()
+            .into_iter()
+            .filter(|(row, _)| opens(row) != Opens::Nothing)
+            .map(|(_, item)| OpenTarget::new(item.folder, item.name))
+            .collect();
         if targets.is_empty() {
             (browser, Vec::new())
         } else {
@@ -65,9 +61,10 @@ impl Browser {
 
     /// Put up the sheet of every installed app, when something is selected in a folder.
     pub(crate) fn choose_app(self) -> Stepped {
-        let chooser = match (self.folder(), self.selection.is_empty()) {
-            (Some(_), false) => Chooser::Open,
-            _ => Chooser::Closed,
+        let chooser = if self.selected_targets().is_empty() {
+            Chooser::Closed
+        } else {
+            Chooser::Open
         };
         (Browser { chooser, ..self }, Vec::new())
     }
@@ -83,16 +80,11 @@ impl Browser {
         )
     }
 
-    /// The selected items of the folder shown, by where they are, in shown order.
+    /// The selected items, by where they are, in shown order. In the Trash there are none.
     pub fn selected_targets(&self) -> Vec<OpenTarget> {
-        match self.folder() {
-            Some(folder) => self
-                .rows
-                .iter()
-                .filter(|entry| self.selection.contains(&entry.name))
-                .map(|entry| OpenTarget::new(folder.clone(), entry.name.clone()))
-                .collect(),
-            None => Vec::new(),
-        }
+        self.selected_rows()
+            .into_iter()
+            .map(|(_, item)| OpenTarget::new(item.folder, item.name))
+            .collect()
     }
 }

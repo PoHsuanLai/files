@@ -60,7 +60,7 @@ pub struct Browser {
 impl Browser {
     /// A browser at `location` with nothing loaded yet, and the effects that load it.
     pub fn new(location: Location) -> (Browser, Vec<Effect>) {
-        let effects = Browser::entering(&location);
+        let effects = Browser::entering(&location, None);
         let browser = Browser {
             location,
             history: History::default(),
@@ -205,13 +205,61 @@ impl Browser {
         self.folder()?.parent().map(Location::Folder)
     }
 
-    /// What to ask for on arriving at `to`.
-    pub(crate) fn entering(to: &Location) -> Vec<Effect> {
-        vec![
-            Effect::List(to.clone()),
-            Effect::Watch(to.clone()),
-            Effect::LoadPrefs(to.clone()),
-        ]
+    /// What to ask for to read `at`: its listing, or for a tag its search from `home`.
+    pub(crate) fn reading(at: &Location, home: Option<&FolderPath>) -> Effect {
+        match (at, home) {
+            (Location::Tag(colour), Some(within)) => Effect::Find {
+                colour: *colour,
+                within: within.clone(),
+            },
+            _ => Effect::List(at.clone()),
+        }
+    }
+
+    /// What to ask for on arriving at `to`. A search is not watched.
+    pub(crate) fn entering(to: &Location, home: Option<&FolderPath>) -> Vec<Effect> {
+        let mut effects = vec![Browser::reading(to, home)];
+        if !matches!(to, Location::Tag(_)) {
+            effects.push(Effect::Watch(to.clone()));
+        }
+        effects.push(Effect::LoadPrefs(to.clone()));
+        effects
+    }
+
+    /// A new browser at `location` for a new tab: it knows what this one knows of the person's
+    /// home, the disks, hidden files, what was copied and what can be undone, and starts with
+    /// nothing else.
+    pub(crate) fn opened_like(&self, location: Location) -> (Browser, Vec<Effect>) {
+        let (browser, _) = Browser::new(location.clone());
+        let browser = Browser {
+            home: self.home.clone(),
+            hidden: self.hidden,
+            volumes: self.volumes.clone(),
+            clipboard: self.clipboard.clone(),
+            undo: self.undo.clone(),
+            ..browser
+        };
+        let effects = Browser::entering(&location, browser.home.as_ref());
+        (browser, effects)
+    }
+
+    /// The item a row stands for: where a search found it, else in the folder shown. `None` for
+    /// a row of the Trash.
+    pub(crate) fn item_of(&self, row: &Entry) -> Option<ItemRef> {
+        match (&row.found, self.folder()) {
+            (Some(item), _) => Some(item.clone()),
+            (None, Some(folder)) => Some(ItemRef::new(folder.clone(), row.name.clone())),
+            (None, None) => None,
+        }
+    }
+
+    /// The selected rows with the items they stand for, in shown order.
+    pub(crate) fn selected_rows(&self) -> Vec<(&Entry, ItemRef)> {
+        self.rows
+            .iter()
+            .filter(|row| self.selection.contains(&row.name))
+            .filter_map(|row| self.item_of(row).map(|item| (row, item)))
+            .collect()
     }
 
     /// The browser with its rows, selection and rename brought in line with its listing, prefs and

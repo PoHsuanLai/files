@@ -4,13 +4,14 @@ use std::time::Duration;
 
 use files_core::{
     EjectFailure, Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef, Location, MountFailure,
-    Resolution, Sort, ViewMode, Volume, VolumeId,
+    Resolution, Sort, TagColour, ViewMode, Volume, VolumeId,
 };
 
 use crate::app::AppPick;
 use crate::asked::Bring;
 use crate::listing::ListFailure;
 use crate::ops::{DropHow, OpEvent};
+use crate::tabs::TabId;
 
 /// The time, as the caller reads a monotonic clock: since an arbitrary origin, never going back.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -64,6 +65,10 @@ pub enum Input {
     Changed(Location, Change),
     /// The answer to `Effect::LoadPrefs`.
     PrefsLoaded(Location, FolderPrefs),
+    /// A batch of the files a search found, from `Effect::Find`.
+    Found(Location, Vec<Entry>),
+    /// The search of a place has looked everywhere it will.
+    SearchDone(Location),
     /// Go to a place.
     Go(Location),
     /// Go to a folder and select these entries in it (another program asked to show them, as
@@ -219,4 +224,21 @@ pub enum Input {
     /// Ask whether to empty the Trash, from any place (another program asked; the person
     /// answers).
     AskEmptyTrash,
+    /// Put the tag of this colour on the selection, or take it off when every selected item has
+    /// it already.
+    Tag(TagColour),
+    /// Open a new tab on the place the front tab shows (⌘T). Handled by `Tabs`.
+    NewTab,
+    /// Open the selected folder in a new tab (the context menu). Handled by `Tabs`.
+    OpenInNewTab,
+    /// Close the front tab, or the window when it is the last (⌘W). Handled by `Tabs`.
+    CloseTab,
+    /// Show the tab to the right of the front one, the first after the last (⇧⌘]). Handled by
+    /// `Tabs`.
+    NextTab,
+    /// Show the tab to the left of the front one, the last before the first (⇧⌘[). Handled by
+    /// `Tabs`.
+    PreviousTab,
+    /// Show this tab. Handled by `Tabs`.
+    ShowTab(TabId),
 }
