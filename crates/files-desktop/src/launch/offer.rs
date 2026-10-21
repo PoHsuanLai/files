@@ -24,6 +24,8 @@ pub struct AppOffer {
     pub name: String,
     /// Whether it is the default.
     pub standing: Standing,
+    /// The image file of its icon, when its entry names one and the icon theme has it.
+    pub icon: Option<PathBuf>,
 }
 
 impl DesktopLauncher {
@@ -55,6 +57,7 @@ impl DesktopLauncher {
                 };
                 Some(AppOffer {
                     name: app.name.clone(),
+                    icon: self.icons.resolve(app.icon.as_deref()),
                     id,
                     standing,
                 })
@@ -70,6 +73,7 @@ impl DesktopLauncher {
                 id: app.id.clone(),
                 name: app.name.clone(),
                 standing: Standing::Other,
+                icon: self.icons.resolve(app.icon.as_deref()),
             })
             .collect()
     }

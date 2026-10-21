@@ -1,5 +1,7 @@
 //! What the context menu offers: pure, so a table can say it.
 
+use std::path::PathBuf;
+
 use files_core::{Location, TagColour};
 use files_model::{AppPick, Availability, Browser, Held, Input};
 
@@ -140,6 +142,8 @@ pub struct AppLine {
     pub pick: AppPick,
     /// Its words: the name, and "(default)" after the default's.
     pub title: String,
+    /// The image file of its icon, when it has one.
+    pub icon: Option<PathBuf>,
 }
 
 /// The Open With lines for `apps`: the default first with "(default)" after its name, the others
@@ -155,10 +159,12 @@ pub fn app_lines(apps: Vec<AppChoiceView>) -> Vec<AppLine> {
         .map(|app| AppLine {
             title: format!("{} (default)", app.name),
             pick: app.pick,
+            icon: app.icon,
         })
         .chain(others.into_iter().map(|app| AppLine {
             title: app.name,
             pick: app.pick,
+            icon: app.icon,
         }))
         .collect()
 }
@@ -170,6 +176,7 @@ pub fn app_names(apps: Vec<AppChoiceView>) -> Vec<AppLine> {
         .map(|app| AppLine {
             pick: app.pick,
             title: app.name,
+            icon: app.icon,
         })
         .collect();
     lines.sort_by_cached_key(|line| (line.title.to_lowercase(), line.title.clone()));

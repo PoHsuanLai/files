@@ -6,12 +6,15 @@ use ds::base::vocab::RowState;
 use ds::components::chrome::column::model::ColumnGap;
 use ds::components::controls::button_model::{Answers, ButtonFocus};
 use ds::prelude::{
-    Button, Column, ColumnAlign, Form, List, ListItem, Row, RowLeading, Selection, Sheet,
+    Button, Column, ColumnAlign, Form, Icon, IconSize, List, ListItem, Row, RowLeading, Selection,
+    Sheet,
 };
 use files_model::{AppPick, Chooser, Input};
 
 use crate::menu::{AppLine, app_names};
 use crate::state::Browse;
+
+use super::icon::app_icon;
 
 /// The sheet of apps, while it is up.
 #[component]
@@ -28,9 +31,15 @@ pub(super) fn AppChooser(browse: Browse) -> Element {
 #[component]
 fn AppRow(line: AppLine, selection: Selection, onpick: EventHandler<AppPick>) -> Element {
     let pick = line.pick.clone();
+    // An app with no picture shows quire's plain app glyph, so the names stay in one column.
+    let leading = line
+        .icon
+        .as_deref()
+        .and_then(|file| app_icon(file, IconSize::Large))
+        .map_or(RowLeading::Icon(Icon::Window), RowLeading::Source);
     rsx! {
         Row {
-            leading: RowLeading::None,
+            leading,
             title: line.title,
             state: RowState {
                 selection,

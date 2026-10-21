@@ -22,6 +22,9 @@ pub struct AppChoiceView {
     pub name: String,
     /// Whether it is the default.
     pub role: AppRole,
+    /// The image file of its icon, when it has one; the window draws it as it is. An app with
+    /// none shows no image in the menu and the plain app glyph in the sheet.
+    pub icon: Option<PathBuf>,
 }
 
 /// Which apps are installed and which open what. The binary gives the window one that reads the

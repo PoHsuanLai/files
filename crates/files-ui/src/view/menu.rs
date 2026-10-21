@@ -2,12 +2,16 @@
 
 use dioxus::prelude::*;
 use ds::host::measure::Anchor;
-use ds::prelude::{Availability, Check, Menu, MenuItem, MenuPlacement, Point, Px};
+use ds::prelude::{
+    Availability, Check, IconSize, Menu, MenuImage, MenuItem, MenuPlacement, Point, Px,
+};
 use files_core::TagColour;
 use files_model::Availability as Can;
 
 use crate::menu::{Command, OTHER_APP, Over, Pick, TagMark, app_lines, groups_for, tag_mark};
 use crate::state::Browse;
+
+use super::icon::app_icon;
 
 /// Where a context menu was asked for, and over what.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -39,7 +43,17 @@ fn availability(can: Can) -> Availability {
 fn open_with(browse: Browse) -> Vec<MenuItem<Pick>> {
     let mut lines: Vec<MenuItem<Pick>> = app_lines(browse.apps_for_selection())
         .into_iter()
-        .map(|line| MenuItem::new(Pick::App(line.pick), line.title))
+        .map(|line| {
+            let item = MenuItem::new(Pick::App(line.pick), line.title);
+            match line
+                .icon
+                .as_deref()
+                .and_then(|file| app_icon(file, IconSize::Base))
+            {
+                Some(icon) => item.with_image(MenuImage::Source(icon)),
+                None => item,
+            }
+        })
         .collect();
     if !lines.is_empty() {
         lines.push(MenuItem::Separator);

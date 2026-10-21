@@ -59,6 +59,8 @@ serde_json = "1"
 # Desktop entries (the parser and the walk of the applications folders), UI-free without its default feature.
 ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "90e73d8d4aab5a5bb4636a4235d3d92c046a58e0", default-features = false }  # 90e73d8d (v0.3.37)
 tempfile = "3"
+# The binary finds an app's icon file in the person's icon theme (detent's version). MIT.
+freedesktop-icons = "0.4"
 # The disk service's signals are read as a stream (files-desktop only).
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
 # The remembered folder views (files-fs): a TOML file the app owns, read and written as text.

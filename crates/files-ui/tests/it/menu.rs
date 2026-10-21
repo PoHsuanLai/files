@@ -1,5 +1,6 @@
 //! The context menu's commands: what each place offers, and what can be picked.
 
+use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 use files_core::{
@@ -153,6 +154,7 @@ fn app(id: &str, name: &str, role: AppRole) -> AppChoiceView {
         pick: AppPick::new(id),
         name: name.to_owned(),
         role,
+        icon: None,
     }
 }
 
@@ -160,6 +162,7 @@ fn line(id: &str, title: &str) -> AppLine {
     AppLine {
         pick: AppPick::new(id),
         title: title.to_owned(),
+        icon: None,
     }
 }
 
@@ -187,6 +190,36 @@ fn open_with_lists_the_default_first_and_marks_it_then_the_rest_by_name() {
     ];
     assert_eq!(app_lines(plain), vec![line("a", "Ant"), line("b", "Bee")]);
     assert!(app_lines(Vec::new()).is_empty());
+}
+
+#[test]
+fn an_apps_icon_goes_with_its_line_in_the_menu_and_the_sheet() {
+    let with_icon = |mut view: AppChoiceView| {
+        view.icon = Some(PathBuf::from("/icons/v.png"));
+        view
+    };
+    let apps = || {
+        vec![
+            with_icon(app("v", "Viewer", AppRole::Default)),
+            app("z", "Zed", AppRole::Other),
+        ]
+    };
+    let icons = |lines: Vec<AppLine>| -> Vec<(String, Option<PathBuf>)> {
+        lines.into_iter().map(|l| (l.title, l.icon)).collect()
+    };
+    let want = vec![
+        (
+            "Viewer (default)".to_owned(),
+            Some(PathBuf::from("/icons/v.png")),
+        ),
+        ("Zed".to_owned(), None),
+    ];
+    assert_eq!(icons(app_lines(apps())), want);
+    let sheet: Vec<_> = want
+        .iter()
+        .map(|(title, icon)| (title.replace(" (default)", ""), icon.clone()))
+        .collect();
+    assert_eq!(icons(app_names(apps())), sheet);
 }
 
 #[test]

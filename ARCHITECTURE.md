@@ -55,6 +55,16 @@ against the home folder the binary passed in (`~`), `Effect::CheckFolder` asks t
 is a folder, and `Input::FolderChecked` either visits it or leaves the sheet up with its words.
 Copy as Pathname is `Effect::CopyText`, written to quire's clipboard by the edge.
 
+Each offer carries its app's icon as an image file. `DesktopLauncher` is built with
+`DesktopLauncher::builder(Catalog, activate)` and takes an `IconLookup` (the theme, behind a
+trait; `NoIcons` by default, `FakeIcons` in tests). An `Icon=` that is an absolute path is used as
+it is; a name goes to the lookup, and each answer, found or not, is kept for the launcher's life.
+The binary's `ThemeIcons` is the real lookup: the theme named in GTK's `settings.ini` or KDE's
+`kdeglobals` (hicolor otherwise) through `freedesktop-icons`, at 32 px, PNG or SVG only. The menu
+draws the file with quire's image `MenuImage::Source`; the "Other…" sheet leads its rows with it
+(`RowLeading::Source`), and an app with none gets quire's plain app glyph there and an empty image
+slot in the menu.
+
 ## 6. Disks
 
 Mounted and attached disks are the sidebar's Locations after the computer. `files-core` holds the
@@ -113,7 +123,7 @@ wraps any `Lister` so every entry it gives has its tags. `Input::Tag(colour)` pu
 selection, or takes it off when every selected item has it (`Effect::Tag`); the edge does the
 read-modify-write on a thread, rescans the folders it touched, and tells "Tags can't be added on this
 disk." when the disk keeps no attributes. `Location::Tag(colour)` is a search: `Effect::Find` walks the
-home folder (`files_fs::find_tagged`, at most 20,000 entries, links not followed, dot folders not entered)
+home folder (`files_fs::TagWalk`, at most 20,000 entries, links not followed, dot folders not entered)
 and streams batches as `Input::Found` and `Input::SearchDone`; `Listing::Searching` shows them while it
 walks, with a progress bar. A result row is keyed by its whole path and carries the item it stands for
 (`Entry::found`), so Open, Copy and Move to Trash act on the real file.

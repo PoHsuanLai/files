@@ -8,8 +8,10 @@ use files_core::{FileName, MimeType};
 use files_mime::{Associations, DesktopId, MimeDb, NameGuess};
 
 use super::activate::Activate;
+use super::build::{Catalog, LauncherBuilder};
 use super::entry::{AppEntry, Start, Terminal};
 use super::exec::{ExecLine, Expand, Takes};
+use super::icons::AppIcons;
 use super::spawn::{Spawn, SpawnCommand};
 use super::{AppChoice, LaunchError, Launcher};
 use crate::token::ActivationToken;
@@ -23,8 +25,9 @@ pub struct DesktopLauncher {
     pub(super) db: MimeDb,
     pub(super) associations: Associations,
     pub(super) apps: Vec<AppEntry>,
-    spawn: Arc<dyn Spawn>,
-    activate: Arc<dyn Activate>,
+    pub(super) spawn: Arc<dyn Spawn>,
+    pub(super) activate: Arc<dyn Activate>,
+    pub(super) icons: AppIcons,
 }
 
 impl fmt::Debug for DesktopLauncher {
@@ -42,22 +45,10 @@ struct Job<'a> {
 }
 
 impl DesktopLauncher {
-    /// A launcher over the type database, the associations, the installed apps, and the two ways
-    /// to start one.
-    pub fn new(
-        db: MimeDb,
-        associations: Associations,
-        apps: Vec<AppEntry>,
-        spawn: Arc<dyn Spawn>,
-        activate: Arc<dyn Activate>,
-    ) -> DesktopLauncher {
-        DesktopLauncher {
-            db,
-            associations,
-            apps,
-            spawn,
-            activate,
-        }
+    /// A launcher over `catalog`, started apps over `activate` when they are bus activatable.
+    /// Further settings are set on the [`LauncherBuilder`] it returns.
+    pub fn builder(catalog: Catalog, activate: Arc<dyn Activate>) -> LauncherBuilder {
+        LauncherBuilder::new(catalog, activate)
     }
 
     pub(super) fn app(&self, id: &DesktopId) -> Option<&AppEntry> {

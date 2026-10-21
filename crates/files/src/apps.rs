@@ -35,6 +35,7 @@ fn view_of(offer: AppOffer) -> AppChoiceView {
             Standing::Default => AppRole::Default,
             Standing::Other => AppRole::Other,
         },
+        icon: offer.icon,
     }
 }
 

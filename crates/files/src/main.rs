@@ -9,6 +9,7 @@
 mod apps;
 mod args;
 mod bridge;
+mod icons;
 mod launcher;
 mod opener;
 mod places;

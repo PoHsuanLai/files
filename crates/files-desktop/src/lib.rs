@@ -50,11 +50,12 @@ pub use file_manager::{Reveal, Show, ShowKind, ShowRequest, Sink, StartupId};
 pub use instance::{Bus, Claim, FileManagerName, InstanceError, Served, claim, forward, session};
 pub use intents::{Ask, Reply, Undoing, Window};
 pub use launch::{
-    Activate, AppChoice, AppEntry, AppOffer, BusActivate, DesktopLauncher, EntryError, ExecError,
-    ExecLine, Expand, LaunchError, Launcher, Spawn, SpawnCommand, Standing, StartError,
-    SystemSpawn, Takes, installed_check, load_apps,
+    Activate, AppChoice, AppEntry, AppIcons, AppOffer, BusActivate, Catalog, DesktopLauncher,
+    EntryError, ExecError, ExecLine, Expand, IconLookup, LaunchError, Launcher, LauncherBuilder,
+    NoIcons, Spawn, SpawnCommand, Standing, StartError, SystemSpawn, Takes, installed_check,
+    load_apps,
 };
 pub use token::ActivationToken;
 
 #[cfg(feature = "testing")]
-pub use launch::{ActivateCall, FakeActivate, FakeSpawn};
+pub use launch::{ActivateCall, FakeActivate, FakeIcons, FakeSpawn};

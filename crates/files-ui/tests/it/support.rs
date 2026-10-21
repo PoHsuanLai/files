@@ -50,16 +50,20 @@ impl Opener for RecordingOpener {
     }
 }
 
-/// Apps that answer from a list. For any file `Viewer` is the default and `editor` and `Zed` open
-/// it too; every installed app is `Zed`, `Calculator` and `Viewer`.
+/// Apps that answer from a list. Only `Viewer` has an icon. For any file it is the default and
+/// `editor` and `Zed` open it too; every installed app is `Zed`, `Calculator` and `Viewer`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FakeApps;
+
+/// Where the fake Viewer's icon is; nothing reads it, the window only names it in its markup.
+pub const VIEWER_ICON: &str = "/icons/viewer.png";
 
 fn app(id: &str, name: &str, role: AppRole) -> AppChoiceView {
     AppChoiceView {
         pick: AppPick::new(id),
         name: name.to_owned(),
         role,
+        icon: (id == "viewer.desktop").then(|| PathBuf::from(VIEWER_ICON)),
     }
 }
 

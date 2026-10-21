@@ -4,6 +4,7 @@
 mod busy;
 mod chooser;
 mod goto;
+mod icon;
 mod info;
 mod menu;
 mod pane;

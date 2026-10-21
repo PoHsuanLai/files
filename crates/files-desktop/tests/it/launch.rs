@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use files_desktop::{
-    ActivateCall, ActivationToken, AppChoice, AppEntry, DesktopLauncher, EntryError, FakeActivate,
-    FakeSpawn, LaunchError, Launcher, Standing, installed_check,
+    ActivateCall, ActivationToken, AppChoice, AppEntry, Catalog, DesktopLauncher, EntryError,
+    FakeActivate, FakeIcons, FakeSpawn, LaunchError, Launcher, Standing, installed_check,
 };
 use files_mime::{Associations, DesktopId, MimeApps, MimeDb, MimeLayer};
 
@@ -32,11 +32,11 @@ const APPS: [(&str, &str); 5] = [
     ),
     (
         "org.example.Bus.desktop",
-        "[Desktop Entry]\nType=Application\nName=Bus App\nDBusActivatable=true\nExec=bus-app %U\n",
+        "[Desktop Entry]\nType=Application\nName=Bus App\nIcon=not-in-theme\nDBusActivatable=true\nExec=bus-app %U\n",
     ),
     (
         "quoted.desktop",
-        "[Desktop Entry]\nType=Application\nName=Quoted\nPath=/srv/work\n\
+        "[Desktop Entry]\nType=Application\nName=Quoted\nIcon=/opt/My App/icon.png\nPath=/srv/work\n\
          Exec=\"/opt/My App/run\" --open %u\n",
     ),
 ];
@@ -45,6 +45,7 @@ struct Rig {
     launcher: DesktopLauncher,
     spawn: Arc<FakeSpawn>,
     activate: Arc<FakeActivate>,
+    theme: Arc<FakeIcons>,
 }
 
 fn id(text: &str) -> DesktopId {
@@ -70,11 +71,21 @@ fn rig(mimeapps: &str, spawn: FakeSpawn) -> Rig {
     );
     let spawn = Arc::new(spawn);
     let activate = Arc::new(FakeActivate::new());
-    let launcher = DesktopLauncher::new(db, associations, apps, spawn.clone(), activate.clone());
+    let theme = Arc::new(FakeIcons::new().with("viewer-icon", "/theme/viewer-icon.png"));
+    let catalog = Catalog {
+        db,
+        associations,
+        apps,
+    };
+    let launcher = DesktopLauncher::builder(catalog, activate.clone())
+        .spawn(spawn.clone())
+        .icons(theme.clone())
+        .build();
     Rig {
         launcher,
         spawn,
         activate,
+        theme,
     }
 }
 
@@ -333,4 +344,41 @@ fn a_folder_is_offered_the_apps_for_folders() {
     let shown = rig.launcher.apps_for(&[dir.path().to_path_buf()]);
     assert_eq!(shown.len(), 1);
     assert_eq!(shown[0].standing, Standing::Default);
+}
+
+#[test]
+fn offers_carry_the_icon_file_of_the_entry() {
+    let rig = rig(MIMEAPPS, FakeSpawn::new());
+    let icons: Vec<(String, Option<PathBuf>)> = rig
+        .launcher
+        .all_apps()
+        .into_iter()
+        .map(|offer| (offer.name, offer.icon))
+        .collect();
+    // (app, icon): a theme name found, an absolute path as it is, a name the theme lacks, and an
+    // entry with no icon at all.
+    let want = [
+        ("Editor", None),
+        ("Viewer", Some("/theme/viewer-icon.png")),
+        ("Vim", None),
+        ("Bus App", None),
+        ("Quoted", Some("/opt/My App/icon.png")),
+    ];
+    let want: Vec<(String, Option<PathBuf>)> = want
+        .into_iter()
+        .map(|(name, icon)| (name.to_owned(), icon.map(PathBuf::from)))
+        .collect();
+    assert_eq!(icons, want);
+}
+
+#[test]
+fn an_icon_is_looked_up_once_for_the_life_of_the_launcher() {
+    let rig = rig(MIMEAPPS, FakeSpawn::new());
+    let _ = rig.launcher.all_apps();
+    let after_first = rig.theme.asked();
+    // Viewer and Bus App name theme icons; Quoted's is a path and is never asked of the theme.
+    assert_eq!(after_first, 2);
+    let _ = rig.launcher.all_apps();
+    let _ = rig.launcher.apps_for(&targets(&["/p/c.png"]));
+    assert_eq!(rig.theme.asked(), after_first);
 }

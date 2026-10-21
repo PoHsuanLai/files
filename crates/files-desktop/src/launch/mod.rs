@@ -1,23 +1,29 @@
 //! Opening files with apps, as the Desktop Entry Specification says to.
 
 mod activate;
+mod build;
 mod desktop;
 mod entry;
 mod error;
 mod exec;
+mod icons;
 mod offer;
 mod spawn;
 
 pub use activate::{Activate, BusActivate};
+pub use build::{Catalog, LauncherBuilder};
 pub use desktop::DesktopLauncher;
 pub use entry::{AppEntry, Start, Terminal, installed_check, load_apps};
 pub use error::{EntryError, ExecError, LaunchError, StartError};
 pub use exec::{ExecLine, Expand, Takes};
+pub use icons::{AppIcons, IconLookup, NoIcons};
 pub use offer::{AppOffer, Standing};
 pub use spawn::{Spawn, SpawnCommand, SystemSpawn};
 
 #[cfg(feature = "testing")]
 pub use activate::{ActivateCall, FakeActivate};
+#[cfg(feature = "testing")]
+pub use icons::FakeIcons;
 #[cfg(feature = "testing")]
 pub use spawn::FakeSpawn;
 

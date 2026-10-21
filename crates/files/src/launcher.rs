@@ -4,9 +4,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use files_desktop::{
-    Activate, ActivationToken, DesktopLauncher, StartError, SystemSpawn, installed_check, load_apps,
+    Activate, ActivationToken, Catalog, DesktopLauncher, StartError, installed_check, load_apps,
 };
 use files_mime::{Associations, MimeDb, XdgDirs};
+
+use crate::icons::ThemeIcons;
 
 /// The XDG folders, read once from the environment (`$XDG_DATA_HOME` and friends, with the
 /// specification's defaults).
@@ -51,7 +53,14 @@ pub fn launcher(dirs: &XdgDirs, activate: Arc<dyn Activate>) -> DesktopLauncher 
         .collect();
     let apps = load_apps(&applications);
     let associations = Associations::load(dirs, installed_check(&apps));
-    DesktopLauncher::new(db, associations, apps, Arc::new(SystemSpawn), activate)
+    let catalog = Catalog {
+        db,
+        associations,
+        apps,
+    };
+    DesktopLauncher::builder(catalog, activate)
+        .icons(Arc::new(ThemeIcons::from_settings(&dirs.config_home)))
+        .build()
 }
 
 /// Starting apps over the bus when there is no bus to ask: every such app fails in words.

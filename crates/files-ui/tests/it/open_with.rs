@@ -13,7 +13,7 @@ use files_model::AppPick;
 use files_ui::OpenAs;
 use tempfile::TempDir;
 
-use super::support::{RecordingOpener, harness, launch, scratch_folder};
+use super::support::{RecordingOpener, VIEWER_ICON, harness, launch, scratch_folder};
 
 /// A window on the scratch folder with what it needs kept alive.
 struct Rig {
@@ -85,6 +85,41 @@ fn the_submenu_lists_the_default_first_then_the_rest_by_name_then_other() {
     ];
     assert!(order.windows(2).all(|pair| pair[0] < pair[1]), "{order:?}");
     assert!(!html.contains("Calculator"), "that is for the Other sheet");
+}
+
+#[test]
+fn an_app_with_an_icon_shows_its_picture_in_the_submenu_and_one_without_shows_none() {
+    let mut rig = open();
+    rig.enter_submenu();
+    let html = rig.harness.html();
+    // Viewer has an icon file; editor and Zed have none, so theirs is the empty box that keeps
+    // the titles in line.
+    assert_eq!(
+        rig.harness.count(".ds-menu-image[data-image=\"image\"]"),
+        1,
+        "{html}"
+    );
+    assert!(html.contains(&format!("file://{VIEWER_ICON}")), "{html}");
+}
+
+#[test]
+fn the_other_sheet_draws_each_apps_picture_or_the_plain_app_glyph() {
+    let mut rig = open();
+    rig.enter_submenu();
+    for _ in 0..3 {
+        rig.key(ShortcutKey::Down);
+    }
+    rig.key(ShortcutKey::Enter);
+    settle_until(&mut rig.harness, |h| {
+        h.html().contains("Choose Application") && h.count(".ds-menu") == 0
+    });
+    // Viewer leads with its picture; Zed and Calculator with the glyph.
+    let leading = |kind: &str| {
+        rig.harness.count(&format!(
+            ".ds-sheet-body .ds-row-leading[data-leading=\"{kind}\"]"
+        ))
+    };
+    assert_eq!((leading("image"), leading("icon")), (1, 2));
 }
 
 #[test]
