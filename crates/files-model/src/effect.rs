@@ -2,7 +2,9 @@
 
 use std::path::PathBuf;
 
-use files_core::{FileName, FolderPath, FolderPrefs, Location};
+use files_core::{
+    FileName, FolderPath, FolderPrefs, Location, OpFailure, OpPlan, Resolution, Summary,
+};
 
 /// One file to hand to an app: where it is, and what it is called.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,4 +54,17 @@ pub enum Effect {
     LoadPrefs(Location),
     /// Remember how this folder is shown.
     SavePrefs(Location, FolderPrefs),
+    /// Do this change to the files, after the ones already asked for; the browser hears how it
+    /// goes as `Input::Op`.
+    Run(OpPlan),
+    /// Take back the newest change that can be taken back.
+    Undo,
+    /// The person's answer to a taken name the work is waiting on.
+    Answer(Resolution),
+    /// Stop the change under way.
+    Cancel,
+    /// Tell the person a change failed.
+    Tell(OpFailure),
+    /// Tell the person a change was made that they can undo (a move to the Trash).
+    Announce(Summary),
 }

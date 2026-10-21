@@ -52,6 +52,21 @@ impl Browser {
             Input::SetView(view) => self.set_view(view),
             Input::SetSort(sort) => self.set_sort(sort),
             Input::ToggleHidden => self.toggle_hidden(),
+            Input::NewFolder => self.new_folder(),
+            Input::MoveToTrash => self.move_to_trash(),
+            Input::PutBack => self.put_back(),
+            Input::DeleteImmediately => self.delete_immediately(),
+            Input::EmptyTrash => self.empty_trash(),
+            Input::Confirm => self.confirm(),
+            Input::Dismiss => self.dismiss(),
+            Input::Answer(resolution) => self.answer(resolution),
+            Input::Copy => self.copy(),
+            Input::Paste => self.paste(),
+            Input::PasteMove => self.paste_move(),
+            Input::Drop { sources, onto, how } => self.dropped(sources, onto, how),
+            Input::Undo => self.undo(),
+            Input::CancelWork => self.cancel_work(),
+            Input::Op(event) => self.heard(event),
         }
     }
 

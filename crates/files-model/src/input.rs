@@ -2,9 +2,12 @@
 
 use std::time::Duration;
 
-use files_core::{Entry, FileName, FolderPath, FolderPrefs, Location, Sort, ViewMode};
+use files_core::{
+    Entry, FileName, FolderPath, FolderPrefs, ItemRef, Location, Resolution, Sort, ViewMode,
+};
 
 use crate::listing::ListFailure;
+use crate::ops::{DropHow, OpEvent};
 
 /// The time, as the caller reads a monotonic clock: since an arbitrary origin, never going back.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -103,4 +106,42 @@ pub enum Input {
     SetSort(Sort),
     /// Show or leave out hidden files.
     ToggleHidden,
+    /// Make a new folder here and start renaming it (Shift+Command+N).
+    NewFolder,
+    /// Move the selection to the Trash (Command+Backspace).
+    MoveToTrash,
+    /// Put the selected items of the Trash back where they came from.
+    PutBack,
+    /// Ask whether to erase the selected items of the Trash for good.
+    DeleteImmediately,
+    /// Ask whether to empty the Trash.
+    EmptyTrash,
+    /// Yes, to the question that is up (empty the Trash, erase for good).
+    Confirm,
+    /// Put the question that is up away; a taken name is answered with Stop.
+    Dismiss,
+    /// The answer to a taken name the work is waiting on.
+    Answer(Resolution),
+    /// Remember the selection for a paste (Command+C).
+    Copy,
+    /// Copy what was copied into this folder (Command+V).
+    Paste,
+    /// Move what was copied into this folder (Option+Command+V).
+    PasteMove,
+    /// Items were dropped on a folder row of this folder, or on this folder when `onto` is `None`.
+    /// The window says whether the copy key was held; the model never reads keys.
+    Drop {
+        /// What was dropped.
+        sources: Vec<ItemRef>,
+        /// The folder row it was dropped on.
+        onto: Option<FileName>,
+        /// How it was meant.
+        how: DropHow,
+    },
+    /// Take back the newest change that can be taken back (Command+Z).
+    Undo,
+    /// Stop the change under way.
+    CancelWork,
+    /// A worker's report on a change.
+    Op(OpEvent),
 }

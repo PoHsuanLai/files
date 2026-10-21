@@ -4,7 +4,8 @@
 //! folder holds, what is selected, what is being renamed. It is stepped with
 //! [`Browser::step`]`(self, input, now) -> (Browser, Vec<Effect>)`: no disk, no clock, no runtime.
 //! The caller carries out the [`Effect`]s (list this folder, watch it, rename that file) and feeds
-//! the answers back as [`Input`]s.
+//! the answers back as [`Input`]s. Changing files is the same: `Input::MoveToTrash` asks for
+//! `Effect::Run(OpPlan)`, and the workers' reports come back as `Input::Op`.
 //!
 //! ```
 //! use files_core::{Entry, EntryKind, FileName, FolderPath, Location};
@@ -24,12 +25,14 @@
 
 mod arrange;
 mod browser;
+mod changes;
 mod effect;
 mod history;
 mod input;
 mod listing;
 mod nav;
 mod open;
+mod ops;
 mod rename;
 mod renaming;
 mod reveal;
@@ -45,6 +48,7 @@ pub use history::{Availability, History};
 pub use input::{Change, Direction, Input, Modifier, Now};
 pub use listing::{ListFailure, Listing};
 pub use open::{Opens, opens};
+pub use ops::{DropHow, End, OpEvent, Outcome, Question, Work};
 pub use rename::{Rename, RenameProblem};
 pub use selection::Selection;
 pub use sort::compare;

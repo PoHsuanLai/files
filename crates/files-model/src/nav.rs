@@ -30,6 +30,11 @@ impl Browser {
             prefs: Default::default(),
             hidden: self.hidden,
             reveal: Vec::new(),
+            work: self.work,
+            undo: self.undo,
+            question: self.question,
+            clipboard: self.clipboard,
+            starting: None,
         };
         (browser, effects)
     }

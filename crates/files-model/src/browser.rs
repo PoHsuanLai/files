@@ -1,11 +1,14 @@
 //! One window's view of one location.
 
-use files_core::{Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, Location};
+use files_core::{
+    Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, ItemRef, Location, Summary,
+};
 
 use crate::arrange::arrange;
 use crate::effect::Effect;
 use crate::history::{Availability, History};
 use crate::listing::Listing;
+use crate::ops::{Question, Work};
 use crate::rename::Rename;
 use crate::reveal;
 use crate::selection::Selection;
@@ -27,6 +30,16 @@ pub struct Browser {
     pub(crate) hidden: HiddenFiles,
     /// The names an `Input::Reveal` asked to select, until the person selects something.
     pub(crate) reveal: Vec<FileName>,
+    /// What is being changed now.
+    pub(crate) work: Work,
+    /// What would be undone now, if anything.
+    pub(crate) undo: Option<Summary>,
+    /// What the window is waiting for an answer to.
+    pub(crate) question: Question,
+    /// What was copied, for a paste.
+    pub(crate) clipboard: Vec<ItemRef>,
+    /// The folder just made, whose name is opened for editing once it is listed.
+    pub(crate) starting: Option<FileName>,
 }
 
 impl Browser {
@@ -44,6 +57,11 @@ impl Browser {
             prefs: FolderPrefs::default(),
             hidden: HiddenFiles::default(),
             reveal: Vec::new(),
+            work: Work::Idle,
+            undo: None,
+            question: Question::None,
+            clipboard: Vec::new(),
+            starting: None,
         };
         (browser, effects)
     }
@@ -102,6 +120,42 @@ impl Browser {
         self.typeselect.prefix()
     }
 
+    /// The change being made now, if any.
+    pub fn work(&self) -> &Work {
+        &self.work
+    }
+
+    /// What the window is waiting for an answer to.
+    pub fn question(&self) -> &Question {
+        &self.question
+    }
+
+    /// What undoing would take back now, if anything.
+    pub fn undo_summary(&self) -> Option<&Summary> {
+        self.undo.as_ref()
+    }
+
+    /// Whether Undo works.
+    pub fn can_undo(&self) -> Availability {
+        match self.undo {
+            Some(_) => Availability::Available,
+            None => Availability::Unavailable,
+        }
+    }
+
+    /// Whether Paste works: something was copied and this is a folder.
+    pub fn can_paste(&self) -> Availability {
+        match (self.folder(), self.clipboard.is_empty()) {
+            (Some(_), false) => Availability::Available,
+            _ => Availability::Unavailable,
+        }
+    }
+
+    /// What was copied, for a paste.
+    pub fn clipboard(&self) -> &[ItemRef] {
+        &self.clipboard
+    }
+
     /// The places behind and ahead.
     pub fn history(&self) -> &History {
         &self.history
@@ -150,10 +204,13 @@ impl Browser {
         let rename = self.rename.kept_in(entries);
         let selection = self.selection.kept_in(&rows);
         let selection = reveal::applied(&self.listing, &rows, &self.reveal, selection);
+        let (starting, selection, rename) =
+            Browser::started(self.starting.clone(), &rows, selection, rename);
         Browser {
             rows,
             selection,
             rename,
+            starting,
             ..self
         }
     }
