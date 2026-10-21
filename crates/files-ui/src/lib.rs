@@ -5,6 +5,8 @@
 //! - [`Launch`] is everything the window is given at start: the folder to open, the person's
 //!   favourite places, where the look comes from, and the seams to the outside ([`Seams`]).
 //!   The binary reads the environment once and builds it; the window reads nothing itself.
+//! - [`Requests`] is the seam for other programs' asks (show this folder, reveal these files): the
+//!   binary fills it from the bus, the window turns each into a model input and raises itself.
 //! - [`edge`] carries out what `files-model` asks for (list this folder, watch it, rename that file,
 //!   open these files) against the traits of `files-fs` and the seams of this crate, and feeds the
 //!   answers back as inputs.
@@ -22,9 +24,11 @@
 //! ```
 
 pub mod edge;
+mod error;
 mod keys;
 mod launch;
 pub mod places;
+mod requests;
 pub mod rows;
 mod run;
 mod state;
@@ -32,7 +36,9 @@ mod view;
 pub mod words;
 
 pub use edge::{DiskRenamer, Opener, RenameError, Renamer, Seams, Zone};
+pub use error::OpenFailure;
 pub use launch::{AppearanceSource, Launch};
 pub use places::{Heading, PlaceKey, PlaceKind, Places};
+pub use requests::{RaiseToken, Request, RequestSender, Requests, channel};
 pub use run::{APP_ID, run};
 pub use view::{App, STYLE};

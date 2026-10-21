@@ -194,7 +194,7 @@ fn what_cannot_be_opened_says_so_in_plain_words() {
     assert_eq!(error, LaunchError::NoApp("x.zzz".to_owned()));
     assert_eq!(
         error.to_string(),
-        "There\u{2019}s no app to open \u{201c}x.zzz\u{201d}."
+        "There is no app set to open \u{201c}x.zzz\u{201d}."
     );
     assert_eq!(argvs(&rig), vec![strs(&["editor", "/p/a.txt"])]);
 

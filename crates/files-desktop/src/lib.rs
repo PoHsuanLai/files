@@ -38,7 +38,7 @@ mod token;
 pub mod uri;
 
 pub use file_manager::{Reveal, Show, ShowKind, ShowRequest, Sink, StartupId};
-pub use instance::{Claim, FileManagerName, InstanceError, Served, claim, forward};
+pub use instance::{Bus, Claim, FileManagerName, InstanceError, Served, claim, forward, session};
 pub use launch::{
     Activate, AppChoice, AppEntry, BusActivate, DesktopLauncher, EntryError, ExecError, ExecLine,
     Expand, LaunchError, Launcher, Spawn, SpawnCommand, StartError, SystemSpawn, Takes,

@@ -37,7 +37,7 @@ pub enum AppChoice {
 #[non_exhaustive]
 pub enum LaunchError {
     /// Nothing opens this file. Holds the file's name.
-    #[error("There\u{2019}s no app to open \u{201c}{0}\u{201d}.")]
+    #[error("There is no app set to open \u{201c}{0}\u{201d}.")]
     NoApp(String),
     /// The app runs in a terminal window, which files cannot open yet. Holds the app's name.
     #[error("\u{201c}{0}\u{201d} runs in a terminal window, which Files can\u{2019}t open yet.")]

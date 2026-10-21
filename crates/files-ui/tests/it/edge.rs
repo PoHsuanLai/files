@@ -11,7 +11,7 @@ use files_ui::edge::{DiskRenamer, Edge, Heard, Seams, change_of};
 use files_ui::{Opener, Renamer};
 use tokio::sync::mpsc::UnboundedReceiver;
 
-use super::support::{RecordingOpener, at, scratch_folder};
+use super::support::{NoAppOpener, RecordingOpener, at, scratch_folder};
 
 fn name(text: &str) -> FileName {
     FileName::new(text).unwrap()
@@ -216,6 +216,23 @@ fn files_are_handed_to_the_opener_by_path() {
     let target = OpenTarget::new(folder("/p"), name("a.txt"));
     rig.edge.run(vec![Effect::OpenFiles(vec![target])]);
     assert_eq!(rig.opener.opened(), vec![PathBuf::from("/p/a.txt")]);
+}
+
+#[test]
+fn a_file_no_app_opens_is_told_in_words() {
+    let seams = Seams {
+        lister: Arc::new(FakeLister::new()),
+        watcher: Arc::new(FakeWatcher::new()),
+        opener: Arc::new(NoAppOpener),
+        renamer: Arc::new(DiskRenamer),
+    };
+    let (edge, mut inbox) = Edge::new(seams);
+    let target = OpenTarget::new(folder("/p"), name("x.zzz"));
+    edge.run(vec![Effect::OpenFiles(vec![target])]);
+    assert_eq!(
+        next(&mut inbox),
+        Heard::Told("There is no app set to open \u{201c}x.zzz\u{201d}.".to_owned())
+    );
 }
 
 #[test]

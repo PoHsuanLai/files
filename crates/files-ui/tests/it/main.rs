@@ -4,6 +4,7 @@
 mod coherence;
 mod edge;
 mod places;
+mod requests;
 mod rows;
 mod support;
 mod window;

@@ -5,6 +5,7 @@
 //! chosen file manager is never taken over. [`Served::file_manager`] says which it was, so the
 //! window can offer to become the default.
 
+pub use zbus::Connection as Bus;
 use zbus::Connection;
 use zbus::fdo::{DBusProxy, RequestNameFlags, RequestNameReply};
 use zbus::names::BusName;
@@ -56,6 +57,11 @@ pub enum Claim {
     First(Served),
     /// Another one is running; [`forward`] this launch's request to it and exit.
     Running,
+}
+
+/// A connection to the person's session bus, driven by the runtime the caller is in.
+pub async fn session() -> Result<Connection, InstanceError> {
+    Ok(Connection::session().await?)
 }
 
 /// Becomes the running app if none is, serving each request that arrives at `sink`.

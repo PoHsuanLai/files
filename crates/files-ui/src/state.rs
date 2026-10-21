@@ -6,6 +6,7 @@ use std::time::Instant;
 
 use dioxus::prelude::*;
 use ds::prelude::use_toasts;
+use ds_blitz::use_window_handle;
 use files_model::{Browser, Input, Rename};
 use tokio::sync::mpsc::UnboundedReceiver;
 
@@ -101,6 +102,21 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
         trail,
     };
     let toasts = use_toasts();
+    let window = use_window_handle();
+    let requests = launch.requests.clone();
+    use_hook(move || {
+        spawn(async move {
+            let Some(mut asked) = requests.take() else {
+                return;
+            };
+            while let Some(request) = asked.recv().await {
+                browse.send(request.input);
+                if let Some(window) = &window {
+                    window.focus_with_token(request.raise.map(|token| token.0));
+                }
+            }
+        })
+    });
     use_hook(move || {
         spawn(async move {
             let Some(mut inbox) = setup.inbox.borrow_mut().take() else {

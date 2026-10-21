@@ -3,12 +3,15 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use tokio::runtime::Handle;
+
 use ds::prelude::SystemPrefs;
 use ds_settings::{AppName, ConfigRoot, Store, SystemPrefsSource};
 use files_core::Location;
 
 use crate::edge::{Opener, Seams, Zone};
 use crate::places::Places;
+use crate::requests::Requests;
 
 /// Where the look comes from: the design system's own settings (`appearance.toml`: the person's
 /// theme, accent and motion) and the desktop's preferences. The window follows both live.
@@ -54,6 +57,11 @@ pub struct Launch {
     pub zone: Zone,
     /// The disk and the desktop, behind traits.
     pub seams: Seams,
+    /// What other programs ask of the window (show this folder, reveal these files).
+    pub requests: Requests,
+    /// The runtime the window runs on, when the caller made one (the one that also drives its
+    /// bus connection); `None` lets the window make its own.
+    pub runtime: Option<Handle>,
 }
 
 impl Launch {
@@ -66,6 +74,8 @@ impl Launch {
             appearance: AppearanceSource::desktop(),
             zone: Zone::Local,
             seams: Seams::disk(opener),
+            requests: Requests::none(),
+            runtime: None,
         }
     }
 
@@ -82,6 +92,19 @@ impl Launch {
     /// The same launch showing dates in `zone`.
     pub fn with_zone(self, zone: Zone) -> Launch {
         Launch { zone, ..self }
+    }
+
+    /// The same launch answering these requests.
+    pub fn with_requests(self, requests: Requests) -> Launch {
+        Launch { requests, ..self }
+    }
+
+    /// The same launch running on the runtime `handle` belongs to.
+    pub fn with_runtime(self, handle: Handle) -> Launch {
+        Launch {
+            runtime: Some(handle),
+            ..self
+        }
     }
 
     /// The same launch over these seams.

@@ -8,7 +8,7 @@ use ds_harness::{Harness, HarnessConfig, Viewport};
 use files_core::{FolderPath, Location};
 use files_fs::{DiskLister, FakeWatcher};
 use files_ui::edge::{DiskRenamer, Seams};
-use files_ui::{AppearanceSource, Launch, Opener, Zone};
+use files_ui::{AppearanceSource, Launch, OpenFailure, Opener, Zone};
 use tempfile::TempDir;
 
 /// An opener that remembers what it was asked to open.
@@ -28,11 +28,27 @@ impl RecordingOpener {
 }
 
 impl Opener for RecordingOpener {
-    fn open(&self, targets: Vec<PathBuf>) {
+    fn open(&self, targets: Vec<PathBuf>) -> Result<(), OpenFailure> {
         self.opened
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .extend(targets);
+        Ok(())
+    }
+}
+
+/// An opener that finds no app for anything.
+#[derive(Debug, Clone, Copy)]
+pub struct NoAppOpener;
+
+impl Opener for NoAppOpener {
+    fn open(&self, targets: Vec<PathBuf>) -> Result<(), OpenFailure> {
+        let first = targets.first().and_then(|path| path.file_name());
+        let shown = first.map(|name| name.to_string_lossy().into_owned());
+        Err(OpenFailure(format!(
+            "There is no app set to open \u{201c}{}\u{201d}.",
+            shown.unwrap_or_default()
+        )))
     }
 }
 

@@ -112,7 +112,9 @@ impl Edge {
             }
             Effect::OpenFiles(targets) => {
                 let paths = targets.iter().map(OpenTarget::path).collect();
-                self.seams.opener.open(paths);
+                if let Err(failure) = self.seams.opener.open(paths) {
+                    self.say(Heard::Told(failure.to_string()));
+                }
             }
             Effect::Rename { folder, from, to } => self.rename(folder, from, to),
             // Folders are not remembered yet: every folder opens with the defaults.
