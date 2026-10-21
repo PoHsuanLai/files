@@ -7,6 +7,10 @@
 //! the answers back as [`Input`]s. Changing files is the same: `Input::MoveToTrash` asks for
 //! `Effect::Run(OpPlan)`, and the workers' reports come back as `Input::Op`.
 //!
+//! A window holds several browsers as [`Tabs`]: it steps an input for the front tab or opens, closes
+//! and switches tabs, and tags each effect with the tab that asked ([`Tabbed`]) so the answer finds its
+//! way back to that tab, in front or not ([`Tabs::heard`]).
+//!
 //! ```
 //! use files_core::{Entry, EntryKind, FileName, FolderPath, Location};
 //! use files_model::{Browser, Effect, Input, Now};

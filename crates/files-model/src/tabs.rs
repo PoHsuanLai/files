@@ -181,30 +181,31 @@ impl Tabs {
     /// The tabs after `input` for the front tab (or, for the tab inputs, for the window), and
     /// what the caller should do about it.
     pub fn step(self, input: Input, now: Now) -> (Tabs, Vec<Tabbed>) {
-        match input {
-            Input::NewTab => self.new_tab(),
-            Input::OpenInNewTab => self.open_in_new_tab(),
-            Input::CloseTab => self.close_front(),
-            Input::NextTab => {
-                let to = (self.at + 1) % self.len();
-                self.show_at(to)
-            }
-            Input::PreviousTab => {
-                let to = (self.at + self.len() - 1) % self.len();
-                self.show_at(to)
-            }
-            Input::ShowTab(id) => {
-                let to = self.iter().position(|tab| tab.id == id);
-                match to {
-                    Some(to) => self.show_at(to),
-                    None => (self, Vec::new()),
-                }
-            }
-            other => {
-                let id = self.front_id();
-                self.heard(id, other, now)
-            }
+        if matches!(input, Input::NewTab) {
+            return self.new_tab();
         }
+        if matches!(input, Input::OpenInNewTab) {
+            return self.open_in_new_tab();
+        }
+        if matches!(input, Input::CloseTab) {
+            return self.close_front();
+        }
+        if matches!(input, Input::NextTab) {
+            let to = (self.at + 1) % self.len();
+            return self.show_at(to);
+        }
+        if matches!(input, Input::PreviousTab) {
+            let to = (self.at + self.len() - 1) % self.len();
+            return self.show_at(to);
+        }
+        if let Input::ShowTab(id) = input {
+            return match self.iter().position(|tab| tab.id == id) {
+                Some(to) => self.show_at(to),
+                None => (self, Vec::new()),
+            };
+        }
+        let id = self.front_id();
+        self.heard(id, input, now)
     }
 
     /// The answer `input` to something tab `tab` asked for. It goes to that tab, in front or not;
