@@ -6,6 +6,7 @@ use crate::browser::Browser;
 use crate::effect::{Effect, OpenTarget};
 use crate::history::History;
 use crate::listing::Listing;
+use crate::look::{InfoView, Looking};
 use crate::open::{Opens, opens};
 use crate::rename::Rename;
 use crate::selection::Selection;
@@ -35,6 +36,8 @@ impl Browser {
             question: self.question,
             clipboard: self.clipboard,
             starting: None,
+            looking: Looking::Closed,
+            info: InfoView::Closed,
         };
         (browser, effects)
     }

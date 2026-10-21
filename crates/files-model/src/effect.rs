@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use files_core::{
-    FileName, FolderPath, FolderPrefs, Location, OpFailure, OpPlan, Resolution, Summary,
+    FileName, FolderPath, FolderPrefs, ItemRef, Location, OpFailure, OpPlan, Resolution, Summary,
 };
 
 /// One file to hand to an app: where it is, and what it is called.
@@ -54,6 +54,11 @@ pub enum Effect {
     LoadPrefs(Location),
     /// Remember how this folder is shown.
     SavePrefs(Location, FolderPrefs),
+    /// Make a preview of this item for Quick Look; the answer is not an input (a picture is not
+    /// something the model holds), the window shows it when it arrives.
+    Look(ItemRef),
+    /// Read the facts of this item for Get Info and answer with `Input::InfoRead`.
+    ReadInfo(ItemRef),
     /// Do this change to the files, after the ones already asked for; the browser hears how it
     /// goes as `Input::Op`.
     Run(OpPlan),

@@ -8,6 +8,7 @@ use crate::arrange::arrange;
 use crate::effect::Effect;
 use crate::history::{Availability, History};
 use crate::listing::Listing;
+use crate::look::{InfoView, Looking};
 use crate::ops::{Question, Work};
 use crate::rename::Rename;
 use crate::reveal;
@@ -40,6 +41,10 @@ pub struct Browser {
     pub(crate) clipboard: Vec<ItemRef>,
     /// The folder just made, whose name is opened for editing once it is listed.
     pub(crate) starting: Option<FileName>,
+    /// Whether Quick Look is up.
+    pub(crate) looking: Looking,
+    /// The Get Info panel.
+    pub(crate) info: InfoView,
 }
 
 impl Browser {
@@ -62,6 +67,8 @@ impl Browser {
             question: Question::None,
             clipboard: Vec::new(),
             starting: None,
+            looking: Looking::Closed,
+            info: InfoView::Closed,
         };
         (browser, effects)
     }
@@ -206,11 +213,17 @@ impl Browser {
         let selection = reveal::applied(&self.listing, &rows, &self.reveal, selection);
         let (starting, selection, rename) =
             Browser::started(self.starting.clone(), &rows, selection, rename);
+        // Quick Look has nothing to show once the row it was over is gone.
+        let looking = match (self.looking, selection.cursor()) {
+            (Looking::Open, Some(_)) => Looking::Open,
+            (Looking::Open | Looking::Closed, _) => Looking::Closed,
+        };
         Browser {
             rows,
             selection,
             rename,
             starting,
+            looking,
             ..self
         }
     }

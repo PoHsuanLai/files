@@ -4,6 +4,7 @@
 mod changes;
 mod common;
 mod listing;
+mod looks;
 mod navigation;
 mod open;
 mod prefs;

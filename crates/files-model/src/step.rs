@@ -17,6 +17,19 @@ impl Browser {
     /// Answers for a place the browser has since left are ignored. While a name is being edited,
     /// the keys that would move the selection do nothing.
     pub fn step(self, input: Input, now: Now) -> (Browser, Vec<Effect>) {
+        let showing = self.quick_item();
+        let (next, mut effects) = self.stepped(input, now);
+        // Quick Look follows the cursor: whenever it lands on a new item, ask for its preview.
+        if let Some(item) = next
+            .quick_item()
+            .filter(|item| Some(item) != showing.as_ref())
+        {
+            effects.push(Effect::Look(item));
+        }
+        (next, effects)
+    }
+
+    fn stepped(self, input: Input, now: Now) -> Stepped {
         match input {
             Input::Click(..)
             | Input::SelectAll
@@ -33,6 +46,12 @@ impl Browser {
             Input::Listed(..) | Input::Changed(..) | Input::PrefsLoaded(..) => (self, Vec::new()),
             Input::Reveal { folder, names } => self.revealing(folder, names),
             Input::Go(to) => self.go(to),
+            Input::Properties { folder, names } => self.properties(folder, names),
+            Input::QuickLook => self.toggle_quick_look(),
+            Input::CloseQuickLook => self.close_quick_look(),
+            Input::GetInfo => self.get_info(),
+            Input::InfoRead(item, result) => self.info_read(item, result),
+            Input::CloseInfo => self.close_info(),
             Input::Back => self.go_back(),
             Input::Forward => self.go_forward(),
             Input::Enclosing => self.go_enclosing(),

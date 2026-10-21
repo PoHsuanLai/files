@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use files_core::{
-    Entry, FileName, FolderPath, FolderPrefs, ItemRef, Location, Resolution, Sort, ViewMode,
+    Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef, Location, Resolution, Sort, ViewMode,
 };
 
 use crate::listing::ListFailure;
@@ -72,6 +72,14 @@ pub enum Input {
         /// The entries to select; the first is the cursor, and so the one scrolled into view.
         names: Vec<FileName>,
     },
+    /// Go to a folder, select these entries in it and open Get Info on the first of them (another
+    /// program asked for an item's properties). With no names, Get Info is on the folder itself.
+    Properties {
+        /// The folder to show.
+        folder: FolderPath,
+        /// The entries to select; the first is the one Get Info is about.
+        names: Vec<FileName>,
+    },
     /// Go back (⌘[).
     Back,
     /// Go forward (⌘]).
@@ -88,6 +96,16 @@ pub enum Input {
     SelectAll,
     /// Select nothing.
     SelectNone,
+    /// Open Quick Look on the row the keyboard is on, or put it away if it is up (Space, ⌘Y).
+    QuickLook,
+    /// Put Quick Look away (Escape).
+    CloseQuickLook,
+    /// Open Get Info on the row the keyboard is on, or on the folder when nothing is (⌘I).
+    GetInfo,
+    /// The answer to `Effect::ReadInfo`.
+    InfoRead(ItemRef, Result<Info, ListFailure>),
+    /// Put Get Info away (Escape, Done).
+    CloseInfo,
     /// An arrow or jump key.
     MoveCursor(Direction, Modifier),
     /// A typed character, to jump to a name.
