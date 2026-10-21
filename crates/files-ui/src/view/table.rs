@@ -3,29 +3,33 @@
 use dioxus::prelude::*;
 use ds::base::selection::Pick;
 use ds::components::controls::scroller::handle::use_scroller;
-use ds::components::lists::table::model::{CellAlign, Sort as TableSort, TableColumn};
+use ds::components::lists::table::model::{CellAlign, Sort as TableSort, Sorting, TableColumn};
 use ds::components::lists::virtual_table::VirtualTable;
 use ds::prelude::{Icon, IconSource, IconView, Label, Px, TableLook};
-use files_core::{Entry, Sort};
+use files_core::{Entry, Location, Sort};
 use files_model::{Browser, Input, Opens, Rename, opens};
 
+use super::menu::ContextAt;
 use super::rename::RenameCell;
+use super::row::{RowCell, Takes};
 use crate::edge::Zone;
 use crate::rows::{Column, cursor_of, direction_of, modifier_of, order_of, selection_of};
 use crate::state::Browse;
-use crate::words::{entry_size_words, kind_words};
+use crate::words::{NONE, entry_size_words, kind_words};
 
 /// A column of the table: its header and width.
-fn column(id: Column) -> TableColumn<Column> {
+fn column(id: Column, location: &Location) -> TableColumn<Column> {
     let width = match id {
         Column::Name => Px(280.0),
+        Column::WhereFrom => Px(200.0),
         Column::Modified => Px(160.0),
         Column::Size => Px(96.0),
         Column::Kind => Px(140.0),
     };
-    let base = TableColumn::new(id, id.title(), width);
+    let base = TableColumn::new(id, id.title_in(location), width);
     match id {
         Column::Size => base.aligned(CellAlign::Trailing),
+        Column::WhereFrom => base.sorting(Sorting::Fixed),
         Column::Name | Column::Modified | Column::Kind => base,
     }
 }
@@ -54,24 +58,41 @@ fn name_cell(browse: Browse, state: &Browser, entry: &Entry) -> Element {
     }
     rsx! {
         IconView { source: IconSource::from(icon_of(entry)) }
-        Label { text: entry.name.display().into_owned() }
+        Label { text: entry.shown_name().display().into_owned() }
     }
 }
 
-/// `content` that opens the selection when it is double-clicked: the table reports presses and
-/// keys but not a double click.
-fn openable(browse: Browse, content: Element) -> Element {
+/// Where a trashed item was before it was thrown away; a dash for anything else.
+fn origin_words(entry: &Entry) -> String {
+    match &entry.trashed {
+        Some(item) => item.original.folder.as_path().display().to_string(),
+        None => NONE.to_owned(),
+    }
+}
+
+/// `content` in the shell every cell of the row shares (double click, context menu, drops).
+fn shell(
+    browse: Browse,
+    menu: Signal<Option<ContextAt>>,
+    entry: &Entry,
+    content: Element,
+) -> Element {
+    let takes = match opens(entry) {
+        Opens::Folder => Takes::Drops,
+        Opens::File | Opens::Nothing => Takes::Nothing,
+    };
+    let name = entry.name.clone();
     rsx! {
-        div { ondoubleclick: move |_| browse.send(Input::Open), {content} }
+        RowCell { browse, menu, name, takes, content }
     }
 }
 
 /// The folder's rows as a striped table (Finder's list view): Name pinned, the others scrolling
 /// sideways under it; a header press sorts, a click selects, Shift extends, Command toggles.
 #[component]
-pub(super) fn FolderTable(browse: Browse, zone: Zone) -> Element {
+pub(super) fn FolderTable(browse: Browse, menu: Signal<Option<ContextAt>>, zone: Zone) -> Element {
     let scroller = use_scroller();
-    let (count, sort, cursor, selection) = {
+    let (count, sort, cursor, selection, location) = {
         let state = browse.state.read();
         let prefs = state.prefs();
         let sort = TableSort {
@@ -83,11 +104,13 @@ pub(super) fn FolderTable(browse: Browse, zone: Zone) -> Element {
             sort,
             cursor_of(&state),
             selection_of(&state),
+            state.location().clone(),
         )
     };
     let cell = use_callback(move |(row, at): (usize, usize)| -> Element {
         let state = browse.state.read();
-        let (Some(entry), Some(id)) = (state.rows().get(row), Column::ALL.get(at).copied()) else {
+        let columns = Column::of_location(state.location());
+        let (Some(entry), Some(id)) = (state.rows().get(row), columns.get(at).copied()) else {
             return rsx! {};
         };
         let content = match id {
@@ -104,13 +127,20 @@ pub(super) fn FolderTable(browse: Browse, zone: Zone) -> Element {
                 let words = kind_words(entry);
                 rsx! { "{words}" }
             }
+            Column::WhereFrom => {
+                let words = origin_words(entry);
+                rsx! { "{words}" }
+            }
         };
-        openable(browse, content)
+        shell(browse, menu, entry, content)
     });
     rsx! {
         VirtualTable::<Column> {
             label: "Folder".to_owned(),
-            columns: Column::ALL.map(column).to_vec(),
+            columns: Column::of_location(&location)
+                .iter()
+                .map(|id| column(*id, &location))
+                .collect::<Vec<_>>(),
             rows: count,
             cell,
             scroller,

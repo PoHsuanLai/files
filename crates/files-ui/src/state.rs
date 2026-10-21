@@ -6,12 +6,14 @@ use std::time::Instant;
 
 use dioxus::prelude::*;
 use ds::prelude::use_toasts;
+use ds::stack::toast_hub::UndoToken;
 use ds_blitz::use_window_handle;
 use files_model::{Browser, Input, Rename};
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::edge::{self, Edge, Heard};
 use crate::launch::Launch;
+use crate::words::announce_words;
 
 /// One window's browser. `Copy`: hand it to any handler. The views read [`Browse::state`]; every
 /// change goes through [`Browse::send`].
@@ -117,15 +119,27 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
             }
         })
     });
+    // The toast's Undo takes back the newest change, which is the one it announced. The handler
+    // belongs to this component, which outlives every toast.
+    let on_undo = EventHandler::new(move |_: UndoToken| browse.send(Input::Undo));
     use_hook(move || {
         spawn(async move {
             let Some(mut inbox) = setup.inbox.borrow_mut().take() else {
                 return;
             };
+            let mut announced: u64 = 0;
             while let Some(heard) = inbox.recv().await {
                 match heard {
                     Heard::Input(input) => browse.send(input),
                     Heard::Told(text) => toasts.push(text, None),
+                    Heard::Announced(summary) => {
+                        announced += 1;
+                        toasts.push_undoable(
+                            announce_words(&summary),
+                            UndoToken(announced),
+                            on_undo,
+                        );
+                    }
                 }
             }
         })

@@ -3,14 +3,21 @@
 use dioxus::prelude::*;
 use ds::components::chrome::split_view::model::{Collapsing, PaneSize, PaneSpec, SplitPane};
 use ds::components::chrome::split_view::view::SplitView;
+use ds::file_drop::drag::FileDrop;
+use ds::file_drop::hook::use_file_drop;
 use ds::focus::soon::focus_soon;
 use ds::prelude::{ActionTaken, Px, Shown};
 use ds::window::host::use_window_title;
 
+use super::busy::Busy;
+use super::menu::{ContextAt, ContextMenu, point_of};
 use super::pane::FolderPane;
+use super::questions::Questions;
+use super::row::dropped;
 use super::sidebar::PlacesPane;
 use crate::keys::{pressed, use_registered};
 use crate::launch::Launch;
+use crate::menu::Over;
 use crate::places::title_words;
 use crate::state::use_browse;
 
@@ -29,6 +36,9 @@ pub(super) fn Window() -> Element {
     let browse = use_browse(&launch);
     let keys = use_registered();
     let mut sidebar = use_signal(|| Shown::Visible);
+    let mut menu = use_signal(|| None::<ContextAt>);
+    // Files dropped from outside on the window (not on a folder row) land in the folder shown.
+    let drop = use_file_drop(move |files: FileDrop| browse.send(dropped(files, None)));
     let title = title_words(browse.state.read().location());
     use_window_title(title);
     let shown = sidebar();
@@ -44,7 +54,19 @@ pub(super) fn Window() -> Element {
         div {
             class: "files-app",
             tabindex: "0",
-            onmounted: move |event: MountedEvent| focus_soon(event.data()),
+            "data-drop": drop.drop_attr(),
+            onmounted: move |event: MountedEvent| {
+                drop.mounted(event.clone());
+                focus_soon(event.data());
+            },
+            // A press on a row asks for its own menu and keeps the press from reaching here.
+            oncontextmenu: move |event: MouseEvent| {
+                event.prevent_default();
+                menu.set(Some(ContextAt {
+                    at: point_of(&event),
+                    over: Over::Background,
+                }));
+            },
             onkeydown: move |event: KeyboardEvent| {
                 if pressed(keys, browse, sidebar, &event) == ActionTaken::Yes {
                     event.prevent_default();
@@ -55,8 +77,11 @@ pub(super) fn Window() -> Element {
                 label: "Files",
                 panes: vec![SplitPane::new(SIDEBAR, side_body).shown(shown)],
                 on_shown: move |(_, now): (usize, Shown)| sidebar.set(now),
-                FolderPane { browse, sidebar, zone: launch.zone }
+                FolderPane { browse, sidebar, menu, zone: launch.zone }
             }
+            ContextMenu { browse, menu }
+            Questions { browse }
+            Busy { browse }
         }
     }
 }

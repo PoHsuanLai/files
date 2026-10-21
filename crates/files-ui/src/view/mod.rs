@@ -1,8 +1,12 @@
 //! The window: `Ds` over a `SplitView` of the sidebar and the folder, drawn only with quire's
 //! components. The views read the browser and map it; nothing here decides anything.
 
+mod busy;
+mod menu;
 mod pane;
+mod questions;
 mod rename;
+mod row;
 mod sidebar;
 mod table;
 mod toolbar;

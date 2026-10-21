@@ -5,7 +5,10 @@ use std::time::SystemTime;
 use chrono::{TimeZone, Utc};
 use files_core::{ByteSize, Entry, EntryKind, FileName, LinkTo, Special};
 use files_ui::Zone;
-use files_ui::words::{NONE, date_words, entry_size_words, kind_words, size_words};
+use files_ui::words::{
+    NONE, announce_words, busy_words, conflict_words, date_words, entry_size_words, erase_words,
+    kind_words, size_words,
+};
 
 fn entry(name: &str, kind: EntryKind) -> Entry {
     Entry::new(FileName::new(name).unwrap(), kind)
@@ -132,4 +135,73 @@ fn dates_are_written_in_full_and_a_missing_one_is_a_dash() {
     let system: SystemTime = at.into();
     assert_eq!(Zone::Utc.words(Some(system)), "2026-10-21 14:03");
     assert_eq!(Zone::Utc.words(None), NONE);
+}
+
+fn summary(kind: files_core::OpKind, count: usize, first: &str) -> files_core::Summary {
+    let first = (count > 0).then(|| FileName::new(first).unwrap());
+    files_core::Summary::new(kind, count, first)
+}
+
+#[test]
+fn a_move_to_the_trash_is_announced_as_finder_does() {
+    use files_core::OpKind::Trash;
+    assert_eq!(
+        announce_words(&summary(Trash, 1, "report.pdf")),
+        "Moved \u{201c}report.pdf\u{201d} to the Trash"
+    );
+    assert_eq!(
+        announce_words(&summary(Trash, 3, "report.pdf")),
+        "Moved 3 items to the Trash"
+    );
+}
+
+#[test]
+fn work_in_progress_says_what_it_is() {
+    use files_core::OpKind::{Copy, Erase, Trash};
+    let table = [
+        (summary(Copy, 1, "a.txt"), "Copying \u{201c}a.txt\u{201d}"),
+        (summary(Copy, 12, "a.txt"), "Copying 12 items"),
+        (summary(Trash, 2, "a"), "Moving 2 items to the Trash"),
+        (summary(Erase, 0, ""), "Erasing"),
+    ];
+    for (given, want) in table {
+        assert_eq!(busy_words(&given), want);
+    }
+}
+
+#[test]
+fn a_taken_name_is_asked_in_finders_words() {
+    use files_core::{Conflict, ConflictKind};
+    let here = files_core::FolderPath::new("/d").unwrap();
+    let ask = |kind| Conflict::new(FileName::new("a.txt").unwrap(), here.clone(), kind, 0);
+    let (title, message) = conflict_words(&ask(ConflictKind::Move));
+    assert_eq!(
+        title,
+        "An item named \u{201c}a.txt\u{201d} already exists in this location."
+    );
+    assert_eq!(
+        message,
+        "Do you want to replace it with the one you're moving?"
+    );
+    let (_, copying) = conflict_words(&ask(ConflictKind::Copy));
+    assert_eq!(
+        copying,
+        "Do you want to replace it with the one you're copying?"
+    );
+}
+
+#[test]
+fn erasing_asks_about_what_it_erases() {
+    assert_eq!(
+        erase_words(None),
+        "Are you sure you want to permanently erase the items in the Trash?"
+    );
+    assert_eq!(
+        erase_words(Some((1, "a.txt".to_owned()))),
+        "Are you sure you want to permanently erase \u{201c}a.txt\u{201d}?"
+    );
+    assert_eq!(
+        erase_words(Some((4, "a.txt".to_owned()))),
+        "Are you sure you want to permanently erase these 4 items?"
+    );
 }

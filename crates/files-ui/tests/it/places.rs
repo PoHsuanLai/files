@@ -21,7 +21,7 @@ fn person() -> Places {
 }
 
 #[test]
-fn the_sidebar_lists_the_favorites_that_have_a_folder_then_the_computer() {
+fn the_sidebar_lists_the_favorites_that_have_a_folder_then_the_computer_and_the_trash() {
     assert_eq!(
         groups(&person()),
         vec![
@@ -36,19 +36,19 @@ fn the_sidebar_lists_the_favorites_that_have_a_folder_then_the_computer() {
             },
             Group {
                 heading: Heading::Locations,
-                rows: vec![PlaceKind::Computer],
+                rows: vec![PlaceKind::Computer, PlaceKind::Trash],
             },
         ]
     );
 }
 
 #[test]
-fn a_person_with_no_favorites_still_has_the_computer() {
+fn a_person_with_no_favorites_still_has_the_computer_and_the_trash() {
     assert_eq!(
         groups(&Places::default()),
         vec![Group {
             heading: Heading::Locations,
-            rows: vec![PlaceKind::Computer],
+            rows: vec![PlaceKind::Computer, PlaceKind::Trash],
         }]
     );
 }
@@ -71,6 +71,7 @@ fn a_row_goes_to_its_folder_and_the_computer_to_the_root() {
     );
     assert_eq!(places.location_of(PlaceKind::Pictures), None);
     assert_eq!(places.location_of(PlaceKind::Computer), Some(place("/")));
+    assert_eq!(places.location_of(PlaceKind::Trash), Some(Location::Trash));
 }
 
 #[test]
@@ -105,7 +106,11 @@ fn the_cursor_is_on_the_place_the_window_is_in() {
             place("/home/p/Music/Album"),
             None,
         ),
-        ("the trash is none", Location::Trash, None),
+        (
+            "the trash",
+            Location::Trash,
+            Some(PlaceKey::Place(PlaceKind::Trash)),
+        ),
     ];
     for (name, location, want) in cases {
         assert_eq!(places.key_of(&location), want, "{name}");

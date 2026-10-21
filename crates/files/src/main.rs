@@ -32,11 +32,12 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let start = match args.start {
-        Start::Given(path) => absolute(path, std::env::current_dir().ok()),
-        Start::Home => dirs::home_dir(),
+    let folder = match args.start {
+        Start::Trash => Some(Location::Trash),
+        Start::Given(path) => folder_at(absolute(path, std::env::current_dir().ok())),
+        Start::Home => folder_at(dirs::home_dir()),
     };
-    let Some(folder) = start.and_then(|path| FolderPath::new(path).ok()) else {
+    let Some(start) = folder else {
         eprintln!("files: there is no folder to open; give one: files FOLDER");
         return ExitCode::FAILURE;
     };
@@ -53,7 +54,7 @@ fn main() -> ExitCode {
     };
     let role = runtime.block_on(join(
         args.started,
-        folder.clone(),
+        start.clone(),
         launch_token(),
         runtime.handle().clone(),
     ));
@@ -61,13 +62,10 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     };
     let launcher = Arc::new(launcher::launcher(&launcher::xdg_dirs(), running.activate));
-    let launch = Launch::new(
-        Location::Folder(folder),
-        Arc::new(DesktopOpener::new(launcher)),
-    )
-    .with_places(places::found())
-    .with_requests(running.requests)
-    .with_runtime(runtime.handle().clone());
+    let launch = Launch::new(start, Arc::new(DesktopOpener::new(launcher)))
+        .with_places(places::found())
+        .with_requests(running.requests)
+        .with_runtime(runtime.handle().clone());
     match files_ui::run(launch) {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
@@ -75,6 +73,11 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// The folder place `path` names, when there is a path and it is absolute.
+fn folder_at(path: Option<std::path::PathBuf>) -> Option<Location> {
+    FolderPath::new(path?).ok().map(Location::Folder)
 }
 
 /// `path` made absolute against the working folder `cwd`; a relative path with no working folder

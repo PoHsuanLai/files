@@ -2,10 +2,12 @@
 
 mod date;
 mod kind;
+mod ops;
 mod size;
 
 pub use date::date_words;
 pub use kind::kind_words;
+pub use ops::{CANNOT_UNDO, announce_words, busy_words, conflict_words, erase_words};
 pub use size::{entry_size_words, size_words};
 
 /// What a column shows for something an entry does not have: a folder's size, an unknown date.

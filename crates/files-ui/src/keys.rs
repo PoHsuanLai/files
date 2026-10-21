@@ -34,6 +34,14 @@ enum Own {
     ShowHidden,
     /// Rename the selected item in place (Return).
     Rename,
+    /// Make a new folder here (Command+Shift+N).
+    NewFolder,
+    /// Move the selection to the Trash (Command+Backspace).
+    MoveToTrash,
+    /// Move what was copied here instead of copying it (Command+Option+V).
+    PasteMove,
+    /// Empty the Trash, after asking (Command+Shift+Backspace).
+    EmptyTrash,
 }
 
 /// Each action with its id and its default chords. `Primary` is Command or Ctrl. A symbol typed
@@ -49,6 +57,18 @@ const OWN: &[(Own, &str, &[&str])] = &[
         &["Primary+Shift+.", "Primary+Shift+>"],
     ),
     (Own::Rename, "files.rename", &["Return"]),
+    (Own::NewFolder, "files.new-folder", &["Primary+Shift+N"]),
+    (
+        Own::MoveToTrash,
+        "files.move-to-trash",
+        &["Primary+Backspace"],
+    ),
+    (Own::PasteMove, "files.paste-move", &["Primary+Alt+V"]),
+    (
+        Own::EmptyTrash,
+        "files.empty-trash",
+        &["Primary+Shift+Backspace"],
+    ),
 ];
 
 /// The action an id names.
@@ -139,6 +159,9 @@ fn act(
             send(Input::SelectAll)
         }
         Action::Standard(standard) if *standard == StandardAction::Open => send(Input::Open),
+        Action::Standard(standard) if *standard == StandardAction::Copy => send(Input::Copy),
+        Action::Standard(standard) if *standard == StandardAction::Paste => send(Input::Paste),
+        Action::Standard(standard) if *standard == StandardAction::Undo => send(Input::Undo),
         Action::Standard(standard) if *standard == StandardAction::ToggleSidebar => {
             let next = sidebar().flipped();
             sidebar.set(next);
@@ -159,6 +182,10 @@ fn act(
             }
             Some(Own::ShowHidden) => send(Input::ToggleHidden),
             Some(Own::Rename) => send(Input::BeginRename),
+            Some(Own::NewFolder) => send(Input::NewFolder),
+            Some(Own::MoveToTrash) => send(Input::MoveToTrash),
+            Some(Own::PasteMove) => send(Input::PasteMove),
+            Some(Own::EmptyTrash) => send(Input::EmptyTrash),
             None => ActionTaken::No,
         },
         // A standard action the window does not offer, or one chordkit adds later.

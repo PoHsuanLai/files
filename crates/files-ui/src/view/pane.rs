@@ -5,8 +5,10 @@ use ds::components::chrome::column::model::{ColumnExtent, ColumnGap};
 use ds::components::chrome::column::view::Column;
 use ds::components::overlays::empty_state::EmptyForm;
 use ds::prelude::{EmptyState, Shown};
+use files_core::Location;
 use files_model::{Input, ListFailure, Listing};
 
+use super::menu::ContextAt;
 use super::table::FolderTable;
 use super::toolbar::FolderBar;
 use crate::edge::Zone;
@@ -35,13 +37,26 @@ fn body_of(browse: Browse) -> Body {
     }
 }
 
+/// What an empty place says.
+fn empty_words(location: &Location) -> &'static str {
+    match location {
+        Location::Trash => "Trash is empty",
+        _ => "This folder is empty.",
+    }
+}
+
 /// The folder pane.
 #[component]
-pub(super) fn FolderPane(browse: Browse, sidebar: Signal<Shown>, zone: Zone) -> Element {
+pub(super) fn FolderPane(
+    browse: Browse,
+    sidebar: Signal<Shown>,
+    menu: Signal<Option<ContextAt>>,
+    zone: Zone,
+) -> Element {
     let body = match body_of(browse) {
-        Body::Table => rsx! { FolderTable { browse, zone } },
+        Body::Table => rsx! { FolderTable { browse, menu, zone } },
         Body::Empty => rsx! {
-            EmptyState { form: EmptyForm::Empty, title: "This folder is empty." }
+            EmptyState { form: EmptyForm::Empty, title: empty_words(browse.state.read().location()) }
         },
         Body::Failed(failure) => rsx! {
             EmptyState {

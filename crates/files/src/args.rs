@@ -1,6 +1,7 @@
 //! The command line: `files [--dbus-activated] [FOLDER]`.
 //!
-//! `FOLDER` is a path or a `file://` address (the desktop launches `files %U`). More than one is
+//! `FOLDER` is a path, a `file://` address (the desktop launches `files %U`) or `trash:///`, the
+//! Trash. More than one is
 //! allowed and only the first is opened: one window shows one folder. `--dbus-activated` is what
 //! the session bus's service files pass: the bus started Files to answer a call, which then moves
 //! the window, so nothing else is asked of an app that is already running.
@@ -15,6 +16,8 @@ pub enum Start {
     Home,
     /// This folder (a relative path is relative to the working folder).
     Given(PathBuf),
+    /// The Trash (`trash:///`, which the dock's Open Trash uses).
+    Trash,
 }
 
 /// Who started this launch.
@@ -54,11 +57,20 @@ impl Args {
             folders.push(arg);
         }
         let start = match folders.into_iter().next() {
+            Some(first) if is_trash(&first) => Start::Trash,
             Some(first) => Start::Given(path_of(&first)),
             None => Start::Home,
         };
         Ok(Args { start, started })
     }
+}
+
+/// Whether the argument is the address of the Trash: `trash:///`, or `trash:` with no path.
+fn is_trash(arg: &OsString) -> bool {
+    matches!(
+        arg.to_string_lossy().as_ref(),
+        "trash:///" | "trash://" | "trash:/" | "trash:"
+    )
 }
 
 /// The path an argument names: a `file://` address is decoded, anything else is the path itself.
@@ -153,6 +165,22 @@ mod tests {
                 given("/a%zzb"),
             ),
             ("a lone dash is a name", parse(&["-"]), given("-")),
+            (
+                "the trash",
+                parse(&["trash:///"]),
+                Ok(Args {
+                    start: Start::Trash,
+                    started: Started::ByPerson,
+                }),
+            ),
+            (
+                "the trash, first of several",
+                parse(&["trash:///", "/tmp"]),
+                Ok(Args {
+                    start: Start::Trash,
+                    started: Started::ByPerson,
+                }),
+            ),
         ];
         for (name, got, want) in cases {
             assert_eq!(got, want, "{name}");

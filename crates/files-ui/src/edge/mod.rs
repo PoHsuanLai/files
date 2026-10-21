@@ -5,12 +5,16 @@
 //! of their own and answer on a channel as [`Heard`]; the window's loop (`state`) feeds them back
 //! to the browser. Everything ambient is read here and in [`Zone`], once, and handed down as values.
 //!
+//! Changes to the files (`Effect::Run`, `Undo`, `Answer`, `Cancel`) go to a [`files_ops::Worker`],
+//! one queue on a thread of its own; its events come back as `Input::Op`, and each finished
+//! change is followed by a rescan of the places it touched. The Trash is listed from
+//! [`files_trash::Trash`].
+//!
 //! Not built yet: persisting a folder's view (`Effect::LoadPrefs` answers the defaults and
-//! `Effect::SavePrefs` is dropped until the prefs lane lands) and the Trash listing (its
-//! sidebar row is left out, so nothing asks for it).
+//! `Effect::SavePrefs` is dropped until the prefs lane lands).
 
 mod opener;
-mod rename;
+mod ops;
 mod zone;
 
 use std::cell::RefCell;
@@ -20,13 +24,16 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use ds::base::time::clock;
-use files_core::{FileName, FolderPath, FolderPrefs, Location};
+use files_core::{
+    FileName, FolderPath, FolderPrefs, ItemRef, Location, OpFailure, OpPlan, Summary,
+};
 use files_fs::{DiskLister, FolderEvent, ListError, Lister, NotifyWatcher, WatchHandle, Watcher};
 use files_model::{Change, Effect, Input, ListFailure, Now, OpenTarget};
+use files_ops::{Job, Worker};
+use files_trash::{SystemTrash, Trash};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
 pub use opener::Opener;
-pub use rename::{DiskRenamer, RenameError, Renamer};
 pub use zone::Zone;
 
 /// The window's seams to the outside, each behind a trait so a test gives its own.
@@ -38,18 +45,18 @@ pub struct Seams {
     pub watcher: Arc<dyn Watcher + Send + Sync>,
     /// Hands files to the apps that open them.
     pub opener: Arc<dyn Opener>,
-    /// Renames files.
-    pub renamer: Arc<dyn Renamer>,
+    /// The Trash: moving to it, listing it, putting back, erasing.
+    pub trash: Arc<dyn Trash>,
 }
 
 impl Seams {
-    /// The real disk, with `opener` to open files.
+    /// The real disk and Trash, with `opener` to open files.
     pub fn disk(opener: Arc<dyn Opener>) -> Seams {
         Seams {
             lister: Arc::new(DiskLister),
             watcher: Arc::new(NotifyWatcher),
             opener,
-            renamer: Arc::new(DiskRenamer),
+            trash: Arc::new(SystemTrash),
         }
     }
 }
@@ -67,6 +74,8 @@ pub enum Heard {
     Input(Input),
     /// Something the person should read, in plain words.
     Told(String),
+    /// A change was made that can be undone (a move to the Trash): said with an Undo button.
+    Announced(Summary),
 }
 
 /// Carries out effects. Lives on the window's thread; its workers answer on the channel it made.
@@ -74,6 +83,8 @@ pub struct Edge {
     seams: Seams,
     heard: UnboundedSender<Heard>,
     watches: RefCell<HashMap<Location, WatchHandle>>,
+    /// The queue of changes; `None` when the system would not start its thread.
+    ops: Option<Worker>,
 }
 
 impl fmt::Debug for Edge {
@@ -88,10 +99,12 @@ impl Edge {
     /// An edge over `seams`, and the end where its answers arrive.
     pub fn new(seams: Seams) -> (Edge, UnboundedReceiver<Heard>) {
         let (heard, inbox) = unbounded_channel();
+        let ops = Worker::start(Arc::clone(&seams.trash), ops::sink(heard.clone())).ok();
         let edge = Edge {
             seams,
             heard,
             watches: RefCell::new(HashMap::new()),
+            ops,
         };
         (edge, inbox)
     }
@@ -117,6 +130,20 @@ impl Edge {
                 }
             }
             Effect::Rename { folder, from, to } => self.rename(folder, from, to),
+            Effect::Run(plan) => self.submit(Job::Run(plan)),
+            Effect::Undo => self.submit(Job::Undo),
+            Effect::Answer(resolution) => {
+                if let Some(queue) = &self.ops {
+                    queue.answer(resolution);
+                }
+            }
+            Effect::Cancel => {
+                if let Some(queue) = &self.ops {
+                    queue.cancel();
+                }
+            }
+            Effect::Tell(failure) => self.say(Heard::Told(failure.to_string())),
+            Effect::Announce(summary) => self.say(Heard::Announced(summary)),
             // Folders are not remembered yet: every folder opens with the defaults.
             Effect::LoadPrefs(at) => {
                 self.say(Heard::Input(Input::PrefsLoaded(at, FolderPrefs::default())));
@@ -142,12 +169,15 @@ impl Edge {
 
     fn list(&self, at: Location) {
         let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
+        let trash = Arc::clone(&self.seams.trash);
         let failed = at.clone();
         let started = Edge::work("files-list", move || {
             let result = match &at {
                 Location::Folder(folder) => lister.list(folder).map_err(failure_of),
-                // The Trash is not listed yet; nothing asks for it.
-                Location::Trash => Err(ListFailure::Other),
+                Location::Trash => trash
+                    .list()
+                    .map(|items| items.into_iter().filter_map(ops::row_of).collect())
+                    .map_err(ops::failure_of),
                 _ => Err(ListFailure::Other),
             };
             let _ = heard.send(Heard::Input(Input::Listed(at, result)));
@@ -177,18 +207,17 @@ impl Edge {
         }
     }
 
+    /// A rename is a change like any other, so it can be undone.
     fn rename(&self, folder: FolderPath, from: FileName, to: FileName) {
-        let (heard, renamer) = (self.heard.clone(), Arc::clone(&self.seams.renamer));
-        let started = Edge::work("files-rename", move || {
-            let heard_back = match renamer.rename(&folder, &from, &to) {
-                // The watcher usually says so first; this makes sure the listing catches up.
-                Ok(()) => Heard::Input(Input::Changed(Location::Folder(folder), Change::Rescan)),
-                Err(err) => Heard::Told(err.to_string()),
-            };
-            let _ = heard.send(heard_back);
-        });
-        if started.is_err() {
-            self.say(Heard::Told(RenameError::Other.to_string()));
+        let item = ItemRef::new(folder, from);
+        self.submit(Job::Run(OpPlan::Rename { item, to }));
+    }
+
+    /// Puts `job` on the queue of changes, or says the queue could not be started.
+    fn submit(&self, job: Job) {
+        match &self.ops {
+            Some(queue) => queue.submit(job),
+            None => self.say(Heard::Told(OpFailure::Other.to_string())),
         }
     }
 }

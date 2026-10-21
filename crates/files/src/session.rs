@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use files_core::{FolderPath, Location};
+use files_core::Location;
 use files_desktop::{
     Activate, ActivationToken, BusActivate, Claim, InstanceError, Served, Show, ShowRequest, Sink,
     StartupId, claim, forward, session,
@@ -40,11 +40,11 @@ pub fn launch_token() -> Option<ActivationToken> {
         .and_then(ActivationToken::new)
 }
 
-/// Becomes the running Files, or hands `folder` to the one that is. When the bus cannot be used
+/// Becomes the running Files, or hands `place` to the one that is. When the bus cannot be used
 /// the launch is a plain window with no services, and says so on stderr.
 pub async fn join(
     started: Started,
-    folder: FolderPath,
+    place: Location,
     token: Option<ActivationToken>,
     runtime: Handle,
 ) -> Role {
@@ -73,7 +73,7 @@ pub async fn join(
             activate,
             _served: Some(served),
         }),
-        Ok(Claim::Running) => match hand_over(&connection, started, folder, token).await {
+        Ok(Claim::Running) => match hand_over(&connection, started, place, token).await {
             Ok(()) => Role::Handed,
             Err(said) => {
                 eprintln!("files: {said}");
@@ -88,19 +88,19 @@ pub async fn join(
     }
 }
 
-/// Tells the running Files to show `folder`, with `token` to raise itself. A launch the bus made
+/// Tells the running Files to show `place`, with `token` to raise itself. A launch the bus made
 /// carries no request of its own: the call that started it follows.
 async fn hand_over(
     connection: &files_desktop::Bus,
     started: Started,
-    folder: FolderPath,
+    place: Location,
     token: Option<ActivationToken>,
 ) -> Result<(), InstanceError> {
     match started {
         Started::ByBus => Ok(()),
         Started::ByPerson => {
             let show = Show {
-                request: ShowRequest::Folders(vec![Location::Folder(folder)]),
+                request: ShowRequest::Folders(vec![place]),
                 startup: token.and_then(|token| StartupId::new(token.as_str())),
             };
             forward(connection, &show).await

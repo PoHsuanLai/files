@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use ds::base::selection::{PickHow, RowSelection};
 use ds::components::lists::table::model::SortDirection;
-use files_core::{FileName, SortKey, SortOrder};
+use files_core::{FileName, Location, SortKey, SortOrder};
 use files_model::{Browser, Modifier};
 
 /// The table's columns, left to right.
@@ -19,11 +19,31 @@ pub enum Column {
     Size,
     /// What the entry is.
     Kind,
+    /// Where a trashed item was before it was thrown away. Only in the Trash; its header does not
+    /// sort.
+    WhereFrom,
 }
 
 impl Column {
-    /// Every column, in order.
+    /// Every column of a folder, in order.
     pub const ALL: [Column; 4] = [Column::Name, Column::Modified, Column::Size, Column::Kind];
+
+    /// Every column of the Trash, in order.
+    pub const TRASH: [Column; 5] = [
+        Column::Name,
+        Column::WhereFrom,
+        Column::Modified,
+        Column::Size,
+        Column::Kind,
+    ];
+
+    /// The columns `location` is shown with.
+    pub fn of_location(location: &Location) -> &'static [Column] {
+        match location {
+            Location::Trash => &Column::TRASH,
+            _ => &Column::ALL,
+        }
+    }
 
     /// The header's words.
     pub fn title(self) -> &'static str {
@@ -32,6 +52,15 @@ impl Column {
             Column::Modified => "Date Modified",
             Column::Size => "Size",
             Column::Kind => "Kind",
+            Column::WhereFrom => "Where From",
+        }
+    }
+
+    /// The header's words in `location`: the date in the Trash is when the item was thrown away.
+    pub fn title_in(self, location: &Location) -> &'static str {
+        match (self, location) {
+            (Column::Modified, Location::Trash) => "Date Deleted",
+            _ => self.title(),
         }
     }
 
@@ -54,6 +83,8 @@ impl Column {
             Column::Modified => SortKey::Modified,
             Column::Size => SortKey::Size,
             Column::Kind => SortKey::Kind,
+            // Not sortable (its header is a plain title); the name is a harmless answer.
+            Column::WhereFrom => SortKey::Name,
         }
     }
 }

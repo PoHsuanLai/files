@@ -21,6 +21,7 @@ fn icon_of(kind: PlaceKind) -> Icon {
         PlaceKind::Music => Icon::Music,
         PlaceKind::Videos => Icon::Play,
         PlaceKind::Computer => Icon::Window,
+        PlaceKind::Trash => Icon::Trash,
     }
 }
 

@@ -3,6 +3,7 @@
 
 mod coherence;
 mod edge;
+mod menu;
 mod places;
 mod requests;
 mod rows;

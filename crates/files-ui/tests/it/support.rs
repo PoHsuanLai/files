@@ -7,7 +7,8 @@ use ds::prelude::SystemPrefs;
 use ds_harness::{Harness, HarnessConfig, Viewport};
 use files_core::{FolderPath, Location};
 use files_fs::{DiskLister, FakeWatcher};
-use files_ui::edge::{DiskRenamer, Seams};
+use files_trash::FakeTrash;
+use files_ui::edge::Seams;
 use files_ui::{AppearanceSource, Launch, OpenFailure, Opener, Zone};
 use tempfile::TempDir;
 
@@ -70,16 +71,28 @@ pub fn at(path: &Path) -> Location {
     Location::Folder(FolderPath::new(path).unwrap())
 }
 
-/// A window on `start` over the real disk of the scratch folder, a watcher that watches nothing,
-/// UTC dates and a look read from nowhere.
+/// A window on `start` over the real disk of the scratch folder, a Trash kept in `config`'s
+/// folder (the same disk, so a move to it is a rename), a watcher that watches nothing, UTC dates
+/// and a look read from nowhere.
 pub fn launch(start: &Path, config: &Path, opener: &Arc<RecordingOpener>) -> Launch {
+    let trash = Arc::new(FakeTrash::new(config.join("trash")));
+    launch_with(at(start), config, opener, trash)
+}
+
+/// The same, starting at `start` over the given `trash`, which the test keeps hold of.
+pub fn launch_with(
+    start: Location,
+    config: &Path,
+    opener: &Arc<RecordingOpener>,
+    trash: Arc<FakeTrash>,
+) -> Launch {
     let seams = Seams {
         lister: Arc::new(DiskLister),
         watcher: Arc::new(FakeWatcher::new()),
         opener: Arc::clone(opener) as Arc<dyn Opener>,
-        renamer: Arc::new(DiskRenamer),
+        trash,
     };
-    Launch::new(at(start), Arc::clone(opener) as Arc<dyn Opener>)
+    Launch::new(start, Arc::clone(opener) as Arc<dyn Opener>)
         .with_seams(seams)
         .with_appearance(AppearanceSource::scratch(
             config.to_path_buf(),

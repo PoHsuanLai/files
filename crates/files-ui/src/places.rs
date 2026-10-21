@@ -24,6 +24,8 @@ pub enum PlaceKind {
     Videos,
     /// The whole filesystem, `/`.
     Computer,
+    /// The Trash.
+    Trash,
 }
 
 impl PlaceKind {
@@ -49,6 +51,7 @@ impl PlaceKind {
             PlaceKind::Music => "Music",
             PlaceKind::Videos => "Videos",
             PlaceKind::Computer => "Computer",
+            PlaceKind::Trash => "Trash",
         }
     }
 }
@@ -101,6 +104,7 @@ impl Places {
     pub fn location_of(&self, kind: PlaceKind) -> Option<Location> {
         match kind {
             PlaceKind::Computer => FolderPath::new("/").ok().map(Location::Folder),
+            PlaceKind::Trash => Some(Location::Trash),
             PlaceKind::Home
             | PlaceKind::Desktop
             | PlaceKind::Documents
@@ -120,7 +124,7 @@ impl Places {
     pub fn key_of(&self, location: &Location) -> Option<PlaceKey> {
         PlaceKind::FAVORITES
             .into_iter()
-            .chain([PlaceKind::Computer])
+            .chain([PlaceKind::Computer, PlaceKind::Trash])
             .find(|kind| self.location_of(*kind).as_ref() == Some(location))
             .map(PlaceKey::Place)
     }
@@ -135,9 +139,10 @@ pub struct Group {
     pub rows: Vec<PlaceKind>,
 }
 
-/// What the sidebar lists: the favourites that have a folder (none, no group), then the computer.
+/// What the sidebar lists: the favourites that have a folder (none, no group), then the computer
+/// and the Trash.
 ///
-/// Recents and the Trash are left out until the places behind them are built.
+/// Recents is left out until the place behind it is built.
 pub fn groups(places: &Places) -> Vec<Group> {
     let favorites: Vec<PlaceKind> = PlaceKind::FAVORITES
         .into_iter()
@@ -152,7 +157,7 @@ pub fn groups(places: &Places) -> Vec<Group> {
     }
     groups.push(Group {
         heading: Heading::Locations,
-        rows: vec![PlaceKind::Computer],
+        rows: vec![PlaceKind::Computer, PlaceKind::Trash],
     });
     groups
 }
