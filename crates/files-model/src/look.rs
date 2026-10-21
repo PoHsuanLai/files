@@ -4,7 +4,7 @@ use files_core::{Entry, FileName, FolderPath, Info, ItemRef};
 
 use crate::browser::Browser;
 use crate::effect::Effect;
-use crate::listing::ListFailure;
+use crate::error::ListFailure;
 
 type Stepped = (Browser, Vec<Effect>);
 

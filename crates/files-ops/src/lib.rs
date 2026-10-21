@@ -9,7 +9,9 @@
 //! putting back. Nothing here follows a symbolic link: a link is copied as a link.
 //!
 //! A [`Worker`] runs a queue of plans on a thread of its own and reports [`Event`]s to a [`Sink`];
-//! it is plain `std` threads and channels, so the caller owns the runtime.
+//! every job is submitted with a tag of the caller's choosing (the tab that asked, say) and every
+//! event of that job comes back with it. It is plain `std` threads and channels, so the caller owns
+//! the runtime.
 //!
 //! ```
 //! use std::sync::Arc;

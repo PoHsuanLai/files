@@ -5,6 +5,8 @@ use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
+use super::StartError;
+
 /// A program to start: argument list (program first), extra environment and folder.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SpawnCommand {
@@ -14,23 +16,6 @@ pub struct SpawnCommand {
     pub env: Vec<(String, String)>,
     /// The folder to start it in; the app's own when none.
     pub work_dir: Option<PathBuf>,
-}
-
-/// Why something could not be started, in a few plain words.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[error("{reason}")]
-pub struct StartError {
-    /// What went wrong.
-    pub reason: String,
-}
-
-impl StartError {
-    /// An error that says `reason`.
-    pub fn new(reason: impl Into<String>) -> StartError {
-        StartError {
-            reason: reason.into(),
-        }
-    }
 }
 
 /// Starts programs.

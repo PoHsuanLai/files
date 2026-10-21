@@ -10,22 +10,11 @@ use zbus::Connection;
 use zbus::fdo::{DBusProxy, RequestNameFlags, RequestNameReply};
 use zbus::names::BusName;
 
+pub use crate::error::InstanceError;
 use crate::file_manager::{self, Show, Sink};
 
 /// The name the app owns while it runs.
 pub const APP_NAME: &str = "org.quire.Files";
-
-/// Why the bus could not be used.
-#[derive(Debug, thiserror::Error)]
-#[non_exhaustive]
-pub enum InstanceError {
-    /// The bus did not answer.
-    #[error("Files couldn\u{2019}t reach the desktop: {0}")]
-    Bus(#[from] zbus::Error),
-    /// The other window closed before it could be asked.
-    #[error("Files is not open any more.")]
-    NotRunning,
-}
 
 /// Whether this app owns the file manager name.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

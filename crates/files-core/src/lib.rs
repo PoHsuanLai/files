@@ -18,6 +18,7 @@
 
 mod conflict;
 mod entry;
+mod error;
 mod failure;
 mod info;
 mod item;
@@ -35,17 +36,18 @@ mod volume;
 
 pub use conflict::{Answer, Conflict, ConflictKind, Reach, Resolution};
 pub use entry::{Entry, EntryKind, LinkTo, Special, Visibility};
+pub use error::{ItemError, MimeError, NameError, PathError, TagError};
 pub use failure::OpFailure;
 pub use info::{Info, ItemCount};
-pub use item::{ItemError, ItemRef};
+pub use item::ItemRef;
 pub use keep_both::{Split, keep_both};
-pub use location::{FolderPath, Location, PathError};
-pub use mime::{MimeError, MimeType};
-pub use name::{FileName, NameError};
+pub use location::{FolderPath, Location};
+pub use mime::MimeType;
+pub use name::FileName;
 pub use plan::{OpKind, OpPlan, Summary, Transfer};
 pub use progress::Progress;
 pub use size::ByteSize;
-pub use tag::{Tag, TagColour, TagError, Tags};
+pub use tag::{Tag, TagColour, Tags};
 pub use trashed::{TrashId, TrashedItem};
 pub use view::{FolderPrefs, HiddenFiles, Sort, SortKey, SortOrder, ViewMode};
 pub use volume::{

@@ -17,21 +17,6 @@ pub struct ItemRef {
     pub name: FileName,
 }
 
-/// Why a path is not an item.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum ItemError {
-    /// Not an absolute path.
-    #[error("That is not a full path.")]
-    Path(#[from] PathError),
-    /// The last part is not a usable name.
-    #[error("{0}")]
-    Name(#[from] NameError),
-    /// The path has no last part (`/`, or one that ends in `..`).
-    #[error("That path names no item.")]
-    NoName,
-}
-
 impl ItemRef {
     /// The item `name` in `folder`.
     pub fn new(folder: FolderPath, name: FileName) -> ItemRef {

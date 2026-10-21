@@ -2,30 +2,28 @@
 
 ## 1. Layers
 
-Every crate is a library except `files`, the binary, which only parses its arguments, builds the one
-runtime and launches the window. Dependencies point down; `scripts/check-boundary.sh` holds the table
+Every crate is a library except `files`, the binary, which parses its arguments, builds the one
+runtime, adapts the desktop crate to the window's seams and launches the window. Dependencies point down; `scripts/check-boundary.sh` holds the table
 below and fails on any edge it does not allow, or on a crate it does not list.
 
 | Layer | Crate | Holds |
 |---|---|---|
 | 0, data | `files-core` | The vocabulary: names, entries, locations, views, sort, conflicts, progress and plans of work (`OpPlan`), trashed items, as plain data. Names no other workspace crate and does no I/O. |
 | 0, library | `files-mime` | shared-mime-info, `mimeapps.list` and `mimeinfo.cache`: a file's type, the apps that open it, the default one, its icon name. Parsers take text; a thin loader reads the XDG folders. |
-| 0, library | `files-fs` | The disk behind traits: listing a folder and the facts of one item (Get Info), watching it, the remembered view of each folder (`PrefsStore`, kept as TOML in the app's state folder by quire's `ds-helpers` file helpers), tags (`user.xdg.tags`), volumes. Fakes behind the `testing` feature. |
+| 0, library | `files-fs` | The disk behind traits: listing a folder and the facts of one item (Get Info), watching it, the remembered view of each folder (`PrefsStore`, kept as TOML in the app's state folder by quire's `ds-helpers` file helpers), tags (`user.xdg.tags`) and the walk that finds a colour's files. Fakes behind the `testing` feature. |
 | 0, library | `files-trash` | The freedesktop.org Trash behind a trait: move to it, list it, put back, delete now, empty, the per-volume `.Trash-$uid` folders. A fake keeps a Trash in a scratch folder. |
-| 0, library | `files-ops` | Copy, move, trash and rename as a queue: progress, cancel, conflict questions (keep both, replace, skip, stop), an undo journal. Plain threads and channels; links are copied as links. |
-| 1, logic | `files-model` | Pure state machines, `step(state, input, now) -> (state, effects)`: the browser (history, selection, rename, views per folder), tabs, the sidebar, the queue as shown, Quick Look and Get Info. No I/O. |
+| 0, library | `files-ops` | Copy, move, trash and rename as a queue: progress, cancel, conflict questions (keep both, replace, skip, stop), an undo journal. Each job is submitted with a caller's tag (`Worker<T>`) that comes back with every event of it. Plain threads and channels; links are copied as links. |
+| 1, logic | `files-model` | Pure state machines, `step(state, input, now) -> (state, effects)`: the browser (history, selection, rename, Go to Folder, type-to-select, sort and view per folder, tags, disks), tabs (`tabs/`), the queue as shown (work and questions), Quick Look and Get Info. No I/O. |
 | 2, desktop | `files-desktop` | The only crate that names a bus, docket or porter: `org.freedesktop.FileManager1`, the app's intents (`IntentProvider1`), UDisks2 on the system bus, launching apps with an activation token, one instance. |
-| 3, UI | `files-ui` | The window, drawn only with quire's components. `edge/` carries out the model's effects against the layer 0 traits, and runs anyview's peek worker for Quick Look (its `Card` is drawn inside quire's `Peek`). |
-| 4, binary | `files` | `main`: arguments, the runtime, `ds_blitz::launch`. Nothing else. |
-
-Crates are added in the phase that needs them; the table already names them all.
+| 3, UI | `files-ui` | The window, drawn only with quire's components, and the seams it is given (`Opener`, `Apps`, `Volumes`, `Requests`). `edge/` carries out the model's effects against the layer 0 traits and those seams, one module per family (`read`, `ops`, `prefs`, `tagging`, `search`, `volumes`, `look`), and runs anyview's peek worker for Quick Look (its `Card` is drawn inside quire's `Peek`). The sidebar's sections are `places`. |
+| 4, binary | `files` | `main`: arguments, the runtime, `ds_blitz::launch`, and the glue between layers 2 and 3: `files-desktop`'s launcher, disks and intents adapted to `files-ui`'s seams, the XDG folders, the session bus. Each file is one adapter. |
 
 ## 2. Data and logic
 
 State is data (`files-core` types); logic is `files-model`'s step functions, which take the time as an
 argument and return effects as values instead of doing them. The UI renders the state and feeds inputs;
-`files-ui/src/edge` turns effects into calls on `files-fs`, `files-trash`, `files-ops` and
-`files-desktop`, and feeds their answers back as inputs. A change to the files is an `OpPlan` in
+`files-ui/src/edge` turns effects into calls on `files-fs`, `files-trash`, `files-ops` and the seams
+(opener, apps, disks) the binary fills from `files-desktop`, and feeds their answers back as inputs. A change to the files is an `OpPlan` in
 `Effect::Run`; the edge's one queue does it off the UI thread and reports back as `Input::Op`. A test of behaviour is a table of inputs and
 the state and effects they give, with no disk.
 
@@ -88,18 +86,23 @@ only if it is that one. Emptying the Trash only puts up the window's own questio
 `files-model::Tabs` holds the window's browsers as a non-empty row with one in front. Each tab has a
 stable `TabId` (never reused). `Tabs::step` gives an input to the front tab, or opens (`NewTab`,
 `OpenInNewTab`), closes (`CloseTab`) and switches (`NextTab`, `PreviousTab`, `ShowTab`) tabs; every
-effect it returns is a `Tabbed`, the effect and the tab that asked. The edge carries the tag through:
-its listing, watch, prefs, Get Info, folder check and mount threads answer as `Heard::Tab(tab, input)`,
-and the window feeds that to `Tabs::heard`, so a listing asked for by a tab in the background lands in
-that tab, and an answer for a closed tab is dropped. A watch belongs to a tab and a place, so two tabs
-on one folder each follow it. What is no tab's goes to every tab (`Heard::All`, `Tabs::broadcast`): the
-disks changing, and the rescans after a change. The queue of changes reports to the tab that last put
-work on it; the clipboard and what Undo would take back are the window's, copied to every tab when one
-changes them. Closing the last tab is `Effect::CloseWindow`, which the edge says as `Heard::CloseWindow`
-and the window turns into the window handle's `close`. The tab bar is quire's `SegmentedControl` (the
-strip `TabView` is made of), drawn only from two tabs on; ⌘T, ⇧⌘] and ⇧⌘[ are files' actions, ⌘W is
-chordkit's standard Close. Requests from outside (FileManager1, the intents) act on the front tab. Folder
-views and Quick Look are per tab.
+effect it returns is a `Tabbed`, the effect and the tab that asked. The edge carries the tag
+through: its listing, watch, prefs, Get Info, folder check and mount threads answer as
+`Heard::Tab(tab, input)`, and the window feeds that to `Tabs::heard`, so a listing asked for by a
+tab in the background lands in that tab, and an answer for a closed tab is dropped. A watch belongs
+to a tab and a place, so two tabs on one folder each follow it. What is no tab's goes to every tab
+(`Heard::All`, `Tabs::broadcast`): the disks changing, and the rescans after a change. The queue of
+changes tags every job with the tab that asked for it (`Worker<TabId>`), so its started, progress,
+question and finished reports all go to that tab whatever other tabs queue in the meantime, and the
+rescans of the places it touched go to every tab. If the asking tab was closed since, `Tabs::heard`
+drops the progress, answers a question Stop (the queue would wait for ever), tells a failure as a
+toast in the front tab, and still updates what Undo would take back. The clipboard and what Undo
+would take back are the window's, copied to every tab when one changes them. Closing the last tab is
+`Effect::CloseWindow`, which the edge says as `Heard::CloseWindow` and the window turns into the
+window handle's `close`. The tab bar is quire's `SegmentedControl` (the strip `TabView` is made of),
+drawn only from two tabs on; ⌘T, ⇧⌘] and ⇧⌘[ are files' actions, ⌘W is chordkit's standard Close.
+Requests from outside (FileManager1, the intents) act on the front tab. Folder views and Quick Look
+are per tab.
 
 ## 9. Tags
 

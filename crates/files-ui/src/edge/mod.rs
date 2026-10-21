@@ -15,8 +15,8 @@
 //! Changes to the files (`Effect::Run`, `Undo`, `Answer`, `Cancel`) go to a [`files_ops::Worker`],
 //! one queue on a thread of its own (`ops`). Each job is tagged with the tab that asked for it, and
 //! all its events (started, progress, a question, finished) come back to that tab as `Input::Op`;
-//! each finished change is followed by a rescan of the places it touched, told to every tab. The Trash is listed from
-//! [`files_trash::Trash`].
+//! each finished change is followed by a rescan of the places it touched, told to every tab. The
+//! Trash is listed from [`files_trash::Trash`].
 //!
 //! A folder's view and sort are remembered through [`files_fs::PrefsStore`] on a thread of their own
 //! (`prefs`); Quick Look's previews come from anyview's peek worker (`look`) and arrive as

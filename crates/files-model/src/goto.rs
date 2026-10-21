@@ -6,21 +6,9 @@ use files_core::{FolderPath, Location};
 
 use crate::browser::Browser;
 use crate::effect::Effect;
-use crate::listing::ListFailure;
+use crate::error::{GoToProblem, ListFailure};
 
 type Stepped = (Browser, Vec<Effect>);
-
-/// Why a typed path can't be gone to, in the words under the field.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum GoToProblem {
-    /// It isn't a folder that exists (or isn't a full path at all).
-    #[error("The folder can't be found.")]
-    NotFound,
-    /// It exists, and the person may not look inside.
-    #[error("You don't have permission to open that folder.")]
-    NoPermission,
-}
 
 /// The Go to Folder sheet: away, or asking for a path.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

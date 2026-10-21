@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::TagColour;
+use crate::{PathError, TagColour};
 
 /// A place a window shows. Grows with the app (Recents, searches, volumes), one variant per
 /// place that is built.
@@ -22,15 +22,6 @@ pub enum Location {
 /// shows the way they came).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct FolderPath(PathBuf);
-
-/// Why a path is not a folder location.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum PathError {
-    /// A relative path, which means nothing without a current folder.
-    #[error("not an absolute path")]
-    Relative,
-}
 
 impl FolderPath {
     /// `path`, when it is absolute.

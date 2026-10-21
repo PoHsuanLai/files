@@ -9,7 +9,7 @@ use files_core::{
 
 use crate::app::AppPick;
 use crate::asked::Bring;
-use crate::listing::ListFailure;
+use crate::error::ListFailure;
 use crate::ops::{DropHow, OpEvent};
 use crate::tabs::TabId;
 

@@ -2,25 +2,8 @@
 
 use files_core::Entry;
 
+use crate::error::ListFailure;
 use crate::input::Change;
-
-/// Why a folder could not be read, in terms a person understands.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum ListFailure {
-    /// It isn't there any more.
-    #[error("That folder can't be found.")]
-    NotFound,
-    /// You're not allowed to look inside.
-    #[error("You don't have permission to open that folder.")]
-    NoPermission,
-    /// It's a file, not a folder.
-    #[error("That isn't a folder.")]
-    NotAFolder,
-    /// Anything else.
-    #[error("That folder can't be opened.")]
-    Other,
-}
 
 /// The folder's contents as last loaded.
 #[derive(Debug, Clone, PartialEq, Eq)]

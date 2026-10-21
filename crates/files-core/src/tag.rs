@@ -6,6 +6,8 @@
 
 use std::fmt;
 
+use crate::TagError;
+
 /// One of Finder's seven tag colours.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[non_exhaustive]
@@ -57,21 +59,6 @@ impl TagColour {
             .into_iter()
             .find(|colour| colour.label().eq_ignore_ascii_case(name))
     }
-}
-
-/// Why a name is not a tag, in the words a person reads.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum TagError {
-    /// Nothing was typed.
-    #[error("A tag can't be empty.")]
-    Empty,
-    /// A comma, which separates tags.
-    #[error("A tag can't contain a comma.")]
-    Comma,
-    /// A control character, such as a line break.
-    #[error("A tag can't contain a line break or other control character.")]
-    Control,
 }
 
 /// One tag: a name with no comma and no control character, trimmed.

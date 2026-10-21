@@ -2,7 +2,8 @@
 
 use crate::browser::Browser;
 use crate::effect::Effect;
-use crate::rename::{Decision, Rename, RenameProblem, decide};
+use crate::error::RenameProblem;
+use crate::rename::{Decision, Rename, decide};
 
 type Stepped = (Browser, Vec<Effect>);
 

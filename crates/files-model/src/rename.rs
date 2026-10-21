@@ -1,18 +1,8 @@
 //! Renaming one entry in place.
 
-use files_core::{Entry, FileName, NameError};
+use files_core::{Entry, FileName};
 
-/// Why a rename can't go through yet, in words a person reads.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum RenameProblem {
-    /// The text isn't a name.
-    #[error("{0}")]
-    Invalid(NameError),
-    /// Something in the folder already has that name.
-    #[error("That name is taken.")]
-    Taken,
-}
+use crate::error::RenameProblem;
 
 /// Whether a name is being edited.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

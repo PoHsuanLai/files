@@ -4,8 +4,9 @@ use files_core::{Entry, FolderPrefs, HiddenFiles, Sort, ViewMode};
 
 use crate::browser::Browser;
 use crate::effect::Effect;
+use crate::error::ListFailure;
 use crate::input::{Change, Input, Now};
-use crate::listing::{ListFailure, Listing};
+use crate::listing::Listing;
 use crate::selection::Selection;
 use crate::typeselect::TypeSelect;
 

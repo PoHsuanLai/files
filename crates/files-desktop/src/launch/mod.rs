@@ -3,16 +3,18 @@
 mod activate;
 mod desktop;
 mod entry;
+mod error;
 mod exec;
 mod offer;
 mod spawn;
 
 pub use activate::{Activate, BusActivate};
 pub use desktop::DesktopLauncher;
-pub use entry::{AppEntry, EntryError, Start, Terminal, installed_check, load_apps};
-pub use exec::{ExecError, ExecLine, Expand, Takes};
+pub use entry::{AppEntry, Start, Terminal, installed_check, load_apps};
+pub use error::{EntryError, ExecError, LaunchError, StartError};
+pub use exec::{ExecLine, Expand, Takes};
 pub use offer::{AppOffer, Standing};
-pub use spawn::{Spawn, SpawnCommand, StartError, SystemSpawn};
+pub use spawn::{Spawn, SpawnCommand, SystemSpawn};
 
 #[cfg(feature = "testing")]
 pub use activate::{ActivateCall, FakeActivate};
@@ -32,26 +34,6 @@ pub enum AppChoice {
     Default,
     /// This app, for all of them.
     App(DesktopId),
-}
-
-/// Why files were not opened, in the words a person reads.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum LaunchError {
-    /// Nothing opens this file. Holds the file's name.
-    #[error("There is no app set to open \u{201c}{0}\u{201d}.")]
-    NoApp(String),
-    /// The app runs in a terminal window, which files cannot open yet. Holds the app's name.
-    #[error("\u{201c}{0}\u{201d} runs in a terminal window, which Files can\u{2019}t open yet.")]
-    NeedsTerminal(String),
-    /// The app could not be started.
-    #[error("\u{201c}{app}\u{201d} couldn\u{2019}t be opened. {reason}")]
-    Failed {
-        /// The app's name.
-        app: String,
-        /// What went wrong.
-        reason: String,
-    },
 }
 
 /// Opens files with apps.

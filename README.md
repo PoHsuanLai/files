@@ -1,12 +1,11 @@
 # files
 
 files is a file manager for Linux desktops, built on the [quire](https://github.com/PoHsuanLai/quire)
-design system. It follows the Mac's Finder: a sidebar of places, list, icon, column and gallery views,
+design system. It follows the Mac's Finder: a sidebar of places, list and icon views, tabs,
 Quick Look on Space, tags, undo for every change, and the freedesktop.org standards that make it the
-desktop's file manager (the `org.freedesktop.FileManager1` service, the Trash, shared thumbnails,
-`mimeapps.list`).
+desktop's file manager (the `org.freedesktop.FileManager1` service, the Trash, `mimeapps.list`).
 
-It is early: this is the scaffold. `ARCHITECTURE.md` is the map, `CONVENTIONS.md` the rules.
+It is early. `ARCHITECTURE.md` is the map, `CONVENTIONS.md` the rules.
 
 ## Build
 

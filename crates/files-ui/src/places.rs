@@ -94,7 +94,7 @@ pub enum PlaceKey {
 }
 
 /// The row of the disk mounted exactly at `location`, for the sidebar's cursor.
-pub fn volume_key(volumes: &[Volume], location: &Location) -> Option<PlaceKey> {
+pub(crate) fn volume_key(volumes: &[Volume], location: &Location) -> Option<PlaceKey> {
     let Location::Folder(folder) = location else {
         return None;
     };

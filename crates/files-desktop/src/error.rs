@@ -1,4 +1,4 @@
-//! The errors of this crate that are not about launching.
+//! The errors of this crate that are not about launching (those are in `launch/error.rs`).
 
 use files_core::{EjectFailure, MountFailure};
 
@@ -99,4 +99,40 @@ pub enum Refusal {
     /// Anything else, in words.
     #[error("{0}")]
     Failed(String),
+}
+
+/// Why the bus could not be used.
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
+pub enum InstanceError {
+    /// The bus did not answer.
+    #[error("Files couldn\u{2019}t reach the desktop: {0}")]
+    Bus(#[from] zbus::Error),
+    /// The other window closed before it could be asked.
+    #[error("Files is not open any more.")]
+    NotRunning,
+}
+
+/// Why an address was refused, in the words a person reads.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum UriError {
+    /// Not an address at all: no `scheme:` in front.
+    #[error("That isn\u{2019}t an address.")]
+    NoScheme,
+    /// An address of a kind files does not open, such as `https:`.
+    #[error("Files can\u{2019}t open \u{201c}{0}:\u{201d} addresses.")]
+    Scheme(String),
+    /// A `file:` address on another computer.
+    #[error("That file is on another computer, \u{201c}{0}\u{201d}.")]
+    Remote(String),
+    /// A `file:` address whose path does not start at the root.
+    #[error("That address doesn\u{2019}t say where the file is.")]
+    Relative,
+    /// A `%` not followed by two hexadecimal digits.
+    #[error("That address has a broken \u{201c}%\u{201d} code.")]
+    BadEscape,
+    /// A NUL byte, which no Linux path may hold.
+    #[error("That address has a null character.")]
+    Nul,
 }

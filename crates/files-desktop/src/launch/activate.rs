@@ -8,7 +8,7 @@ use tokio::runtime::Handle;
 use zbus::Connection;
 use zbus::zvariant::Value;
 
-use super::spawn::StartError;
+use super::StartError;
 use crate::token::ActivationToken;
 
 /// How long the app has to answer.

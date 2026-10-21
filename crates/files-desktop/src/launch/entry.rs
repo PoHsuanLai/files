@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 use ds_helpers::{ApplicationEntry, DESKTOP_ENTRY_CAP, DesktopFile};
 use files_mime::{DesktopId, Installed};
 
+use super::EntryError;
+
 /// Whether the app wants a terminal window (`Terminal=true`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Terminal {
@@ -22,24 +24,6 @@ pub enum Start {
     Command,
     /// By asking its bus name to open the files (`DBusActivatable=true`).
     Bus,
-}
-
-/// Why a desktop entry is not an app.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum EntryError {
-    /// The text could not be read as a desktop entry.
-    #[error("That isn\u{2019}t an app\u{2019}s description.")]
-    Unreadable,
-    /// No `[Desktop Entry]` group.
-    #[error("That isn\u{2019}t an app\u{2019}s description.")]
-    NoEntry,
-    /// Its `Type` is not `Application`.
-    #[error("\u{201c}{0}\u{201d} isn\u{2019}t an app.")]
-    NotAnApp(String),
-    /// It is started by a command and has none.
-    #[error("\u{201c}{0}\u{201d} has no command to run.")]
-    NoCommand(String),
 }
 
 /// What launching needs to know about one app.

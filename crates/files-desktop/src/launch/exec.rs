@@ -4,6 +4,7 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
+use super::ExecError;
 use crate::uri::file_uri;
 
 /// A `%` code.
@@ -41,27 +42,6 @@ struct Arg(Vec<Piece>);
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecLine {
     args: Vec<Arg>,
-}
-
-/// Why an `Exec` value was refused.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum ExecError {
-    /// Nothing to run.
-    #[error("The app has no command to run.")]
-    Empty,
-    /// A quote is never closed.
-    #[error("The app\u{2019}s command has a quote that is never closed.")]
-    UnclosedQuote,
-    /// A `%` code the specification does not have.
-    #[error("The app\u{2019}s command uses an unknown code, \u{201c}%{0}\u{201d}.")]
-    UnknownCode(char),
-    /// A `%` at the very end.
-    #[error("The app\u{2019}s command ends with a stray \u{201c}%\u{201d}.")]
-    TrailingPercent,
-    /// A code where the program's name should be.
-    #[error("The app\u{2019}s command starts with a code instead of a program.")]
-    CodeInProgram,
 }
 
 /// How many files a command takes.

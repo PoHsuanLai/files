@@ -2,18 +2,11 @@
 
 use std::fmt;
 
+use crate::MimeError;
+
 /// A MIME type in lower case, `type/subtype`: `application/pdf`, `inode/directory`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct MimeType(String);
-
-/// Why a text is not a MIME type.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum MimeError {
-    /// It is not one `type/subtype` pair of non-empty parts.
-    #[error("not a type/subtype pair")]
-    Shape,
-}
 
 impl MimeType {
     /// A folder's type.

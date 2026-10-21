@@ -89,8 +89,8 @@ impl Edge {
         self.submit(tab, Job::Run(OpPlan::Rename { item, to }));
     }
 
-    /// Puts `job` on the queue of changes for `tab`, which then hears every report of it, or says the
-    /// queue could not be started.
+    /// Puts `job` on the queue of changes for `tab`, which then hears every report of it, or says
+    /// the queue could not be started.
     pub(super) fn submit(&self, tab: TabId, job: Job) {
         match &self.ops {
             Some(queue) => {

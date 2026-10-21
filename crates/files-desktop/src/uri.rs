@@ -18,6 +18,8 @@ use std::ffi::OsString;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::path::{Path, PathBuf};
 
+pub use crate::error::UriError;
+
 /// Where an address points.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
@@ -26,30 +28,6 @@ pub enum Uri {
     File(PathBuf),
     /// The Trash.
     Trash,
-}
-
-/// Why an address was refused, in the words a person reads.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum UriError {
-    /// Not an address at all: no `scheme:` in front.
-    #[error("That isn\u{2019}t an address.")]
-    NoScheme,
-    /// An address of a kind files does not open, such as `https:`.
-    #[error("Files can\u{2019}t open \u{201c}{0}:\u{201d} addresses.")]
-    Scheme(String),
-    /// A `file:` address on another computer.
-    #[error("That file is on another computer, \u{201c}{0}\u{201d}.")]
-    Remote(String),
-    /// A `file:` address whose path does not start at the root.
-    #[error("That address doesn\u{2019}t say where the file is.")]
-    Relative,
-    /// A `%` not followed by two hexadecimal digits.
-    #[error("That address has a broken \u{201c}%\u{201d} code.")]
-    BadEscape,
-    /// A NUL byte, which no Linux path may hold.
-    #[error("That address has a null character.")]
-    Nul,
 }
 
 /// What `text` points at.
