@@ -64,3 +64,61 @@ pub struct FolderPrefs {
     /// The sort.
     pub sort: Sort,
 }
+
+impl ViewMode {
+    /// The word a stored preference writes for this view.
+    pub fn slug(self) -> &'static str {
+        match self {
+            ViewMode::List => "list",
+            ViewMode::Icons => "icons",
+        }
+    }
+
+    /// The view a stored word names; `None` for a word this version does not know.
+    pub fn from_slug(slug: &str) -> Option<ViewMode> {
+        [ViewMode::List, ViewMode::Icons]
+            .into_iter()
+            .find(|view| view.slug() == slug)
+    }
+}
+
+impl SortKey {
+    /// The word a stored preference writes for this key.
+    pub fn slug(self) -> &'static str {
+        match self {
+            SortKey::Name => "name",
+            SortKey::Modified => "modified",
+            SortKey::Size => "size",
+            SortKey::Kind => "kind",
+        }
+    }
+
+    /// The key a stored word names; `None` for a word this version does not know.
+    pub fn from_slug(slug: &str) -> Option<SortKey> {
+        [
+            SortKey::Name,
+            SortKey::Modified,
+            SortKey::Size,
+            SortKey::Kind,
+        ]
+        .into_iter()
+        .find(|key| key.slug() == slug)
+    }
+}
+
+impl SortOrder {
+    /// The word a stored preference writes for this order.
+    pub fn slug(self) -> &'static str {
+        match self {
+            SortOrder::Ascending => "ascending",
+            SortOrder::Descending => "descending",
+        }
+    }
+
+    /// The order a stored word names; `None` for a word this version does not know.
+    pub fn from_slug(slug: &str) -> Option<SortOrder> {
+        [SortOrder::Ascending, SortOrder::Descending]
+            .into_iter()
+            .find(|order| order.slug() == slug)
+    }
+}

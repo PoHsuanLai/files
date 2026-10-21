@@ -13,9 +13,11 @@ publish.workspace = true
 testing = []
 
 [dependencies]
+ds-helpers = { workspace = true }
 files-core = { workspace = true }
 notify = { workspace = true }
 thiserror = { workspace = true }
+toml = { workspace = true }
 
 [dev-dependencies]
 files-fs = { path = ".", features = ["testing"] }

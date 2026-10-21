@@ -53,3 +53,18 @@ pub enum WatchError {
     #[error("Changes to this folder can't be followed.")]
     Other,
 }
+
+/// Why how a folder is shown could not be remembered.
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
+pub enum PrefsError {
+    /// The saved file is there but can't be read or understood, so nothing is written over it.
+    #[error("How folders are shown can't be remembered right now.")]
+    Unusable,
+    /// The folder the file lives in can't be made.
+    #[error("How folders are shown can't be saved.")]
+    Folder(#[source] io::Error),
+    /// The file can't be written.
+    #[error("How folders are shown can't be saved.")]
+    Write(#[source] ds_helpers::WriteError),
+}

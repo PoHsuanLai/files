@@ -19,6 +19,7 @@
 mod conflict;
 mod entry;
 mod failure;
+mod info;
 mod item;
 mod keep_both;
 mod location;
@@ -33,6 +34,7 @@ mod view;
 pub use conflict::{Answer, Conflict, ConflictKind, Reach, Resolution};
 pub use entry::{Entry, EntryKind, LinkTo, Special, Visibility};
 pub use failure::OpFailure;
+pub use info::{Info, ItemCount};
 pub use item::{ItemError, ItemRef};
 pub use keep_both::{Split, keep_both};
 pub use location::{FolderPath, Location, PathError};

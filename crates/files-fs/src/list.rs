@@ -5,7 +5,9 @@ use std::os::unix::fs::FileTypeExt;
 use std::path::Path;
 use std::time::SystemTime;
 
-use files_core::{ByteSize, Entry, EntryKind, FileName, FolderPath, LinkTo, Special};
+use files_core::{
+    ByteSize, Entry, EntryKind, FileName, FolderPath, Info, ItemRef, LinkTo, Special,
+};
 
 use crate::error::ListError;
 
@@ -17,6 +19,10 @@ pub trait Lister: Send + Sync {
 
     /// The one entry `name` of `folder`, as [`Lister::list`] would give it.
     fn entry(&self, folder: &FolderPath, name: &FileName) -> Result<Entry, ListError>;
+
+    /// What Get Info says of `item`: its kind, size, dates and, for a folder, how many items it
+    /// holds. A link is described, not followed.
+    fn info(&self, item: &ItemRef) -> Result<Info, ListError>;
 }
 
 /// How many entries a listing left out because they could not be read or named.
@@ -69,6 +75,10 @@ impl Lister for DiskLister {
         let path = folder.as_path().join(name.as_os_str());
         stat(&path, name.clone()).map_err(|e| ListError::from_io(&e))
     }
+
+    fn info(&self, item: &ItemRef) -> Result<Info, ListError> {
+        crate::info::describe(item)
+    }
 }
 
 /// The entry at `path`, named `name`: links are described, not followed, except to say where they
@@ -86,7 +96,7 @@ fn with_time(entry: Entry, modified: Option<SystemTime>) -> Entry {
     }
 }
 
-fn kind_of(path: &Path, file_type: FileType, size: ByteSize) -> EntryKind {
+pub(crate) fn kind_of(path: &Path, file_type: FileType, size: ByteSize) -> EntryKind {
     if file_type.is_symlink() {
         EntryKind::Link(link_to(path))
     } else if file_type.is_dir() {

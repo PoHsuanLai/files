@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
-use files_core::{Entry, FileName, FolderPath};
+use files_core::{Entry, EntryKind, FileName, FolderPath, Info, ItemCount, ItemRef, Visibility};
 
 use crate::error::{ListError, WatchError};
 use crate::list::Lister;
@@ -44,6 +44,26 @@ impl Lister for FakeLister {
             .into_iter()
             .find(|entry| &entry.name == name)
             .ok_or(ListError::NotFound)
+    }
+
+    /// The entry's facts; a folder that was itself set is counted (hidden entries left out).
+    fn info(&self, item: &ItemRef) -> Result<Info, ListError> {
+        let entry = self.entry(&item.folder, &item.name)?;
+        let mut info = Info::new(item.clone(), entry.kind.clone());
+        if let Some(at) = entry.modified {
+            info = info.modified_at(at);
+        }
+        let inside = locked(&self.folders).get(&item.as_folder()).cloned();
+        if entry.kind == EntryKind::Folder
+            && let Some(Ok(inside)) = inside
+        {
+            let shown = inside
+                .iter()
+                .filter(|child| child.visibility() == Visibility::Shown)
+                .count();
+            info = info.holding(ItemCount(u32::try_from(shown).unwrap_or(u32::MAX)));
+        }
+        Ok(info)
     }
 }
 

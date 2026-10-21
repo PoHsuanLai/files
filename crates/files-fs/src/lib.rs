@@ -1,4 +1,5 @@
-//! The disk behind traits: listing a folder and following its changes.
+//! The disk behind traits: listing a folder, following its changes, and remembering how each
+//! folder is shown.
 //!
 //! [`Lister`] turns a folder into [`files_core::Entry`] values and [`Watcher`] reports which names
 //! in a folder were added, removed or changed. The real implementations are [`DiskLister`] and
@@ -21,11 +22,16 @@
 mod error;
 #[cfg(any(test, feature = "testing"))]
 mod fake;
+mod info;
 mod list;
+mod prefs;
 mod watch;
 
-pub use error::{ListError, WatchError};
+pub use error::{ListError, PrefsError, WatchError};
 #[cfg(any(test, feature = "testing"))]
 pub use fake::{FakeLister, FakeWatcher};
 pub use list::{DiskLister, Lister, Listing, Skipped};
+#[cfg(any(test, feature = "testing"))]
+pub use prefs::FakePrefs;
+pub use prefs::{KEPT, PrefBook, PrefsStore, TomlPrefs};
 pub use watch::{FolderEvent, NotifyWatcher, WatchHandle, Watcher};
