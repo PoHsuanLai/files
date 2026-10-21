@@ -18,6 +18,8 @@ pub fn opens(entry: &Entry) -> Opens {
     match &entry.kind {
         EntryKind::Folder | EntryKind::Link(LinkTo::Folder) => Opens::Folder,
         EntryKind::File(_) | EntryKind::Link(LinkTo::File(_)) => Opens::File,
+        EntryKind::Link(_) | EntryKind::Special(_) => Opens::Nothing,
+        // A kind files-core adds later opens nothing until this names it.
         _ => Opens::Nothing,
     }
 }

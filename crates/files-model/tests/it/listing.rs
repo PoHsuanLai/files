@@ -7,7 +7,9 @@ use crate::common::*;
 #[test]
 fn an_answer_for_a_place_already_left_is_ignored() {
     let (browser, _) = run(loaded(vec![]), vec![Input::Go(dir("/x"))]);
-    let (after, effects) = browser.clone().step(Input::Listed(home(), Ok(vec![file("old")])), at(0));
+    let (after, effects) = browser
+        .clone()
+        .step(Input::Listed(home(), Ok(vec![file("old")])), at(0));
     assert_eq!(after, browser);
     assert!(effects.is_empty());
     assert_eq!(after.listing(), &Listing::Loading);
@@ -17,7 +19,10 @@ fn an_answer_for_a_place_already_left_is_ignored() {
 fn a_failed_listing_is_kept_with_its_reason_and_clears_the_rows() {
     let browser = loaded(vec![file("a")]);
     let (browser, _) = browser.step(Input::Listed(home(), Err(ListFailure::NoPermission)), at(0));
-    assert_eq!(browser.listing(), &Listing::Failed(ListFailure::NoPermission));
+    assert_eq!(
+        browser.listing(),
+        &Listing::Failed(ListFailure::NoPermission)
+    );
     assert!(browser.rows().is_empty());
     assert_eq!(
         ListFailure::NoPermission.to_string(),
@@ -55,13 +60,19 @@ fn live_changes_add_update_and_remove_rows_and_keep_the_selection() {
     let steps: Vec<(Change, Vec<&str>, Vec<&str>)> = vec![
         (Change::Added(file("a")), vec!["a", "b", "c"], vec!["c"]),
         (Change::Added(file("a")), vec!["a", "b", "c"], vec!["c"]),
-        (Change::Updated(file("b").modified_at(std::time::UNIX_EPOCH)), vec!["a", "b", "c"], vec!["c"]),
+        (
+            Change::Updated(file("b").modified_at(std::time::UNIX_EPOCH)),
+            vec!["a", "b", "c"],
+            vec!["c"],
+        ),
         (Change::Removed(name("a")), vec!["b", "c"], vec!["c"]),
         (Change::Removed(name("c")), vec!["b"], vec![]),
     ];
     let mut browser = browser;
     for (change, rows, chosen) in steps {
-        browser = browser.step(Input::Changed(home(), change.clone()), at(0)).0;
+        browser = browser
+            .step(Input::Changed(home(), change.clone()), at(0))
+            .0;
         assert_eq!(shown(&browser), rows, "{change:?}");
         assert_eq!(selected(&browser), chosen, "{change:?}");
     }
@@ -71,7 +82,10 @@ fn live_changes_add_update_and_remove_rows_and_keep_the_selection() {
 fn an_update_replaces_the_entry_it_names() {
     let stamp = std::time::UNIX_EPOCH + std::time::Duration::from_secs(5);
     let browser = loaded(vec![file("a")]);
-    let (browser, _) = browser.step(Input::Changed(home(), Change::Updated(file("a").modified_at(stamp))), at(0));
+    let (browser, _) = browser.step(
+        Input::Changed(home(), Change::Updated(file("a").modified_at(stamp))),
+        at(0),
+    );
     assert_eq!(browser.rows().len(), 1);
     assert_eq!(browser.rows()[0].modified, Some(stamp));
 }
@@ -85,9 +99,13 @@ fn rescan_asks_to_list_again() {
 #[test]
 fn changes_for_another_place_or_before_the_first_listing_are_ignored() {
     let (loading, _) = files_model::Browser::new(home());
-    let (after, _) = loading.clone().step(Input::Changed(home(), Change::Added(file("a"))), at(0));
+    let (after, _) = loading
+        .clone()
+        .step(Input::Changed(home(), Change::Added(file("a"))), at(0));
     assert_eq!(after, loading);
     let browser = loaded(vec![]);
-    let (after, _) = browser.clone().step(Input::Changed(dir("/x"), Change::Added(file("a"))), at(0));
+    let (after, _) = browser
+        .clone()
+        .step(Input::Changed(dir("/x"), Change::Added(file("a"))), at(0));
     assert_eq!(after, browser);
 }

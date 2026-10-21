@@ -9,7 +9,11 @@ fn a_new_browser_asks_to_list_watch_and_load_prefs() {
     let (browser, effects) = Browser::new(home());
     assert_eq!(
         effects,
-        vec![Effect::List(home()), Effect::Watch(home()), Effect::LoadPrefs(home())]
+        vec![
+            Effect::List(home()),
+            Effect::Watch(home()),
+            Effect::LoadPrefs(home())
+        ]
     );
     assert_eq!(browser.location(), &home());
     assert_eq!(browser.can_go_back(), Availability::Unavailable);
@@ -99,7 +103,10 @@ fn arriving_forgets_the_old_listing_and_selection_but_keeps_the_hidden_choice() 
     let browser = loaded(vec![file("a"), file(".h")]);
     let (browser, _) = run(
         browser,
-        vec![Input::ToggleHidden, Input::Click(name("a"), files_model::Modifier::None)],
+        vec![
+            Input::ToggleHidden,
+            Input::Click(name("a"), files_model::Modifier::None),
+        ],
     );
     let (browser, _) = browser.step(Input::Go(dir("/x")), at(0));
     assert_eq!(browser.listing(), &files_model::Listing::Loading);

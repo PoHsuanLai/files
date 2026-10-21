@@ -38,27 +38,37 @@ pub fn loaded(entries: Vec<Entry>) -> Browser {
 
 /// Step through `inputs` at time zero, collecting every effect.
 pub fn run(browser: Browser, inputs: Vec<Input>) -> (Browser, Vec<Effect>) {
-    inputs.into_iter().fold((browser, Vec::new()), |(b, mut all), input| {
-        let (b, effects) = b.step(input, at(0));
-        all.extend(effects);
-        (b, all)
-    })
+    inputs
+        .into_iter()
+        .fold((browser, Vec::new()), |(b, mut all), input| {
+            let (b, effects) = b.step(input, at(0));
+            all.extend(effects);
+            (b, all)
+        })
 }
 
 /// The shown rows' names, in order.
 pub fn shown(browser: &Browser) -> Vec<String> {
-    browser.rows().iter().map(|e| e.name.display().into_owned()).collect()
+    browser
+        .rows()
+        .iter()
+        .map(|e| e.name.display().into_owned())
+        .collect()
 }
 
 /// The selected names, in name order.
 pub fn selected(browser: &Browser) -> Vec<String> {
-    browser.selection().names().map(|n| n.display().into_owned()).collect()
+    browser
+        .selection()
+        .names()
+        .map(|n| n.display().into_owned())
+        .collect()
 }
 
 /// The path of a folder location.
 pub fn path_of(location: &Location) -> String {
     match location {
         Location::Folder(p) => p.as_path().display().to_string(),
-        other => format!("{other:?}"),
+        other @ (Location::Trash | _) => format!("{other:?}"),
     }
 }

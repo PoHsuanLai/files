@@ -143,9 +143,7 @@ impl Selection {
             .as_ref()
             .and_then(|a| position(rows, a))
             .unwrap_or(at);
-        let span = rows
-            .get(from.min(at)..=from.max(at))
-            .unwrap_or_default();
+        let span = rows.get(from.min(at)..=from.max(at)).unwrap_or_default();
         Selection {
             names: span.iter().map(|e| e.name.clone()).collect(),
             anchor: rows.get(from).map(|e| e.name.clone()),

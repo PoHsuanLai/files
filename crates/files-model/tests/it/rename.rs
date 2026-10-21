@@ -9,7 +9,11 @@ fn editing(draft: &str) -> Browser {
     let browser = loaded(vec![file("a.txt"), file("b.txt")]);
     let (browser, _) = run(
         browser,
-        vec![Input::Click(name("a.txt"), Modifier::None), Input::BeginRename, Input::EditDraft(draft.into())],
+        vec![
+            Input::Click(name("a.txt"), Modifier::None),
+            Input::BeginRename,
+            Input::EditDraft(draft.into()),
+        ],
     );
     browser
 }
@@ -23,11 +27,18 @@ fn beginning_a_rename_opens_the_field_on_the_selected_name() {
     let browser = loaded(vec![file("a.txt"), file("b.txt")]);
     let (browser, _) = run(
         browser,
-        vec![Input::Click(name("a.txt"), Modifier::None), Input::BeginRename],
+        vec![
+            Input::Click(name("a.txt"), Modifier::None),
+            Input::BeginRename,
+        ],
     );
     assert_eq!(
         browser.rename(),
-        &Rename::Editing { name: name("a.txt"), draft: "a.txt".into(), problem: None }
+        &Rename::Editing {
+            name: name("a.txt"),
+            draft: "a.txt".into(),
+            problem: None
+        }
     );
 }
 
@@ -106,7 +117,11 @@ fn typing_in_the_field_clears_the_complaint() {
     let (browser, _) = browser.step(Input::EditDraft("c.txt".into()), at(0));
     assert_eq!(
         browser.rename(),
-        &Rename::Editing { name: name("a.txt"), draft: "c.txt".into(), problem: None }
+        &Rename::Editing {
+            name: name("a.txt"),
+            draft: "c.txt".into(),
+            problem: None
+        }
     );
 }
 
@@ -128,7 +143,9 @@ fn committing_with_nothing_open_does_nothing() {
 #[test]
 fn the_selection_is_frozen_while_a_name_is_edited() {
     let browser = editing("a.txt");
-    let (after, _) = browser.clone().step(Input::Click(name("b.txt"), Modifier::None), at(0));
+    let (after, _) = browser
+        .clone()
+        .step(Input::Click(name("b.txt"), Modifier::None), at(0));
     assert_eq!(after, browser);
 }
 
@@ -153,6 +170,9 @@ fn a_name_taken_by_a_hidden_entry_is_still_taken() {
     );
     assert!(matches!(
         browser.rename(),
-        Rename::Editing { problem: Some(RenameProblem::Taken), .. }
+        Rename::Editing {
+            problem: Some(RenameProblem::Taken),
+            ..
+        }
     ));
 }

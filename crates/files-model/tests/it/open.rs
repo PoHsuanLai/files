@@ -10,7 +10,10 @@ fn kinds() -> Vec<Entry> {
         folder("dir"),
         file("doc.txt"),
         Entry::new(name("folder-link"), EntryKind::Link(LinkTo::Folder)),
-        Entry::new(name("file-link"), EntryKind::Link(LinkTo::File(ByteSize(3)))),
+        Entry::new(
+            name("file-link"),
+            EntryKind::Link(LinkTo::File(ByteSize(3))),
+        ),
         Entry::new(name("dead-link"), EntryKind::Link(LinkTo::Broken)),
         Entry::new(name("pipe"), EntryKind::Special(Special::Fifo)),
     ]
@@ -27,14 +30,21 @@ fn opening_one_entry_goes_in_or_hands_it_over_or_does_nothing() {
         ("dir", vec![Effect::Unwatch(home())]),
         ("folder-link", vec![Effect::Unwatch(home())]),
         ("doc.txt", vec![Effect::OpenFiles(vec![target("doc.txt")])]),
-        ("file-link", vec![Effect::OpenFiles(vec![target("file-link")])]),
+        (
+            "file-link",
+            vec![Effect::OpenFiles(vec![target("file-link")])],
+        ),
         ("dead-link", vec![]),
         ("pipe", vec![]),
     ];
     for (chosen, want) in table {
         let (browser, _) = loaded(kinds()).step(Input::Click(name(chosen), Modifier::None), at(0));
         let (_, effects) = browser.step(Input::Open, at(0));
-        assert_eq!(effects.first().cloned().into_iter().collect::<Vec<_>>(), want, "{chosen}");
+        assert_eq!(
+            effects.first().cloned().into_iter().collect::<Vec<_>>(),
+            want,
+            "{chosen}"
+        );
     }
 }
 
@@ -50,16 +60,13 @@ fn opening_a_folder_or_a_link_to_one_enters_it() {
 
 #[test]
 fn opening_several_files_hands_over_the_files_in_shown_order() {
-    let (browser, effects) = run(
-        loaded(kinds()),
-        vec![
-            Input::SelectAll,
-            Input::Open,
-        ],
-    );
+    let (browser, effects) = run(loaded(kinds()), vec![Input::SelectAll, Input::Open]);
     assert_eq!(
         effects,
-        vec![Effect::OpenFiles(vec![target("doc.txt"), target("file-link")])]
+        vec![Effect::OpenFiles(vec![
+            target("doc.txt"),
+            target("file-link")
+        ])]
     );
     assert_eq!(path_of(browser.location()), "/home/p");
 }
@@ -72,7 +79,10 @@ fn opening_with_nothing_selected_does_nothing() {
 
 #[test]
 fn an_open_target_knows_its_path() {
-    assert_eq!(target("doc.txt").path(), std::path::Path::new("/home/p/doc.txt"));
+    assert_eq!(
+        target("doc.txt").path(),
+        std::path::Path::new("/home/p/doc.txt")
+    );
 }
 
 #[test]
@@ -80,6 +90,13 @@ fn what_opening_does_follows_the_kind() {
     let got: Vec<Opens> = kinds().iter().map(opens).collect();
     assert_eq!(
         got,
-        vec![Opens::Folder, Opens::File, Opens::Folder, Opens::File, Opens::Nothing, Opens::Nothing]
+        vec![
+            Opens::Folder,
+            Opens::File,
+            Opens::Folder,
+            Opens::File,
+            Opens::Nothing,
+            Opens::Nothing
+        ]
     );
 }

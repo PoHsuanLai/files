@@ -6,7 +6,7 @@ use std::time::{Duration, UNIX_EPOCH};
 use files_core::{
     ByteSize, Entry, EntryKind, FolderPrefs, HiddenFiles, MimeType, Sort, SortKey, SortOrder,
 };
-use files_model::{arrange, compare, Input};
+use files_model::{Input, arrange, compare};
 
 use crate::common::*;
 
@@ -33,7 +33,14 @@ fn mime(entry: Entry, text: &str) -> Entry {
 
 #[test]
 fn names_sort_naturally_and_ignoring_case() {
-    let entries = [file("file10"), file("file2"), file("File1"), file("file02"), file("Zed"), file("apple")];
+    let entries = [
+        file("file10"),
+        file("file2"),
+        file("File1"),
+        file("file02"),
+        file("Zed"),
+        file("apple"),
+    ];
     let ascending = sort(SortKey::Name, SortOrder::Ascending);
     assert_eq!(
         order(&entries, ascending),
@@ -90,7 +97,11 @@ fn size_sort_counts_folders_as_nothing() {
 #[test]
 fn modified_sort_puts_unknown_dates_first_then_oldest_to_newest() {
     let at = |s| UNIX_EPOCH + Duration::from_secs(s);
-    let entries = [file("new").modified_at(at(9)), file("unknown"), file("old").modified_at(at(1))];
+    let entries = [
+        file("new").modified_at(at(9)),
+        file("unknown"),
+        file("old").modified_at(at(1)),
+    ];
     assert_eq!(
         order(&entries, sort(SortKey::Modified, SortOrder::Ascending)),
         vec!["unknown", "old", "new"]

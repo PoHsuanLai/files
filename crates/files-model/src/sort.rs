@@ -35,6 +35,8 @@ fn by_name(a: &Entry, b: &Entry) -> Ordering {
 fn size(entry: &Entry) -> ByteSize {
     match &entry.kind {
         EntryKind::File(size) | EntryKind::Link(LinkTo::File(size)) => *size,
+        EntryKind::Folder | EntryKind::Link(_) | EntryKind::Special(_) => ByteSize(0),
+        // A kind files-core adds later sorts as no size until this names it.
         _ => ByteSize(0),
     }
 }

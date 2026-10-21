@@ -5,7 +5,11 @@ use files_model::{Input, Modifier};
 use crate::common::*;
 
 fn names() -> files_model::Browser {
-    loaded(["apple", "Avocado", "banana", "blueberry"].map(file).to_vec())
+    loaded(
+        ["apple", "Avocado", "banana", "blueberry"]
+            .map(file)
+            .to_vec(),
+    )
 }
 
 fn types(browser: files_model::Browser, keys: &[(char, u64)]) -> files_model::Browser {
@@ -23,7 +27,10 @@ fn keys_within_a_second_extend_the_word_and_a_pause_starts_a_new_one() {
         (vec![('b', 0), ('l', 1000)], "blueberry"),
         (vec![('b', 0), ('a', 1001)], "apple"),
         (vec![('b', 0), ('a', 400), ('n', 800)], "banana"),
-        (vec![('b', 0), ('l', 600), ('u', 1500), ('a', 3100)], "apple"),
+        (
+            vec![('b', 0), ('l', 600), ('u', 1500), ('a', 3100)],
+            "apple",
+        ),
         (vec![('B', 0), ('L', 100)], "blueberry"),
     ];
     for (keys, want) in table {
