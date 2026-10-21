@@ -31,12 +31,16 @@
 //! # Ok::<(), files_desktop::ExecError>(())
 //! ```
 
+pub mod disks;
+mod error;
 pub mod file_manager;
 pub mod instance;
 pub mod launch;
 mod token;
 pub mod uri;
 
+pub use disks::{Changes, DiskUsers, Disks, NoUsers, ProcUsers};
+pub use error::{DiskError, IntentError};
 pub use file_manager::{Reveal, Show, ShowKind, ShowRequest, Sink, StartupId};
 pub use instance::{Bus, Claim, FileManagerName, InstanceError, Served, claim, forward, session};
 pub use launch::{

@@ -4,8 +4,11 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)] // tests may unwrap (CONVENTIONS)
 
 mod bus;
+mod disks;
 mod exec;
 mod file_manager;
 mod instance;
 mod launch;
+mod udisks;
 mod uri;
+mod users;

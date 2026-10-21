@@ -9,13 +9,14 @@ repository.workspace = true
 publish.workspace = true
 
 [features]
-# `FakeSpawn` and `FakeActivate`, for tests of the crates above.
+# `FakeSpawn`, `FakeActivate` and `FakeUsers`, for tests of the crates above.
 testing = []
 
 [dependencies]
 ds-helpers = { workspace = true }
 files-core = { workspace = true }
 files-mime = { workspace = true }
+futures-util = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 zbus = { workspace = true }
