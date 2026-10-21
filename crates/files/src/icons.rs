@@ -45,11 +45,6 @@ impl ThemeIcons {
         .or_else(|| key_in(&read("kdeglobals"), "Icons", "Theme"));
         ThemeIcons::new(named.as_deref().unwrap_or_default())
     }
-
-    /// The name of the theme looked in.
-    pub fn theme(&self) -> &str {
-        &self.theme
-    }
 }
 
 impl IconLookup for ThemeIcons {
@@ -135,7 +130,7 @@ mod tests {
             if let Some(text) = kde {
                 std::fs::write(home.path().join("kdeglobals"), text).unwrap();
             }
-            assert_eq!(ThemeIcons::from_settings(home.path()).theme(), want);
+            assert_eq!(ThemeIcons::from_settings(home.path()).theme, want);
         }
     }
 
