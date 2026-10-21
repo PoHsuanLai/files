@@ -49,6 +49,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "files-mime"
+version = "0.1.0"
+dependencies = [
+ "files-core",
+ "thiserror",
+]
+
+[[package]]
 name = "files-model"
 version = "0.1.0"
 dependencies = [
