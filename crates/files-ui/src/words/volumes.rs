@@ -1,6 +1,6 @@
 //! What is said when a disk would not eject or open, in Finder's words. Pure.
 
-use files_core::{EjectFailure, MountFailure, VolumeName, VolumeTrouble};
+use files_core::{EjectFailure, MountFailure, ProgramName, VolumeName, VolumeTrouble};
 
 /// The sentence for a disk that did not eject or open.
 ///
@@ -36,4 +36,20 @@ pub fn volume_trouble_words(name: &VolumeName, trouble: &VolumeTrouble) -> Strin
         // A trouble files-core adds later is a plain failure until this names it.
         _ => format!("{disk} couldn\u{2019}t be used."),
     }
+}
+
+/// Finder's question for a disk that is in use: the title, and the programs found as the
+/// informative text (a line about forcing when none could be found).
+pub fn force_eject_words(name: &VolumeName, programs: &[ProgramName]) -> (String, String) {
+    let title = format!(
+        "The disk \u{201c}{name}\u{201d} wasn\u{2019}t ejected because one or more programs may be \
+         using it."
+    );
+    let message = if programs.is_empty() {
+        "To eject the disk immediately, click Force Eject.".to_owned()
+    } else {
+        let names: Vec<&str> = programs.iter().map(|p| p.as_str()).collect();
+        format!("Programs using it: {}.", names.join(", "))
+    };
+    (title, message)
 }

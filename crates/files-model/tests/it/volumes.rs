@@ -4,7 +4,7 @@ use files_core::{
     EjectFailure, FolderPath, Location, MountFailure, ProgramName, Volume, VolumeId, VolumeKind,
     VolumeName, VolumeTrouble,
 };
-use files_model::{Effect, Input};
+use files_model::{BusyDisk, Effect, Input, Question};
 
 use crate::common::*;
 
@@ -36,6 +36,10 @@ fn told(name: &str, trouble: VolumeTrouble) -> Effect {
         name: VolumeName::new(name),
         trouble,
     }
+}
+
+fn busy_with_vlc() -> EjectFailure {
+    EjectFailure::InUse(vec![ProgramName::new("vlc")])
 }
 
 fn with_volumes() -> files_model::Browser {
@@ -91,7 +95,7 @@ fn opening_and_ejecting_ask_the_caller_only_when_they_make_sense() {
 
 #[test]
 fn answers_go_to_the_disk_or_say_what_failed() {
-    let busy = EjectFailure::InUse(vec![ProgramName::new("vlc")]);
+    let busy = busy_with_vlc();
     let cases: Vec<(&str, Input, Vec<Effect>)> = vec![
         (
             "mounted: go there",
@@ -117,9 +121,27 @@ fn answers_go_to_the_disk_or_say_what_failed() {
             vec![],
         ),
         (
-            "busy: told with the programs",
-            Input::Ejected(id("stick"), Err(busy.clone())),
-            vec![told("STICK", VolumeTrouble::NotEjected(busy))],
+            "busy: asked about, not told",
+            Input::Ejected(id("stick"), Err(busy)),
+            vec![],
+        ),
+        (
+            "not allowed: told",
+            Input::Ejected(id("stick"), Err(EjectFailure::NotAllowed)),
+            vec![told(
+                "STICK",
+                VolumeTrouble::NotEjected(EjectFailure::NotAllowed),
+            )],
+        ),
+        (
+            "forced and failed busy again: told, never asked again",
+            Input::ForceEjected(id("stick"), Err(busy_with_vlc())),
+            vec![told("STICK", VolumeTrouble::NotEjected(busy_with_vlc()))],
+        ),
+        (
+            "forced: nothing to do",
+            Input::ForceEjected(id("stick"), Ok(())),
+            vec![],
         ),
         (
             "a failure for a disk that left is not told",
@@ -153,4 +175,31 @@ fn a_window_inside_a_disk_that_went_goes_home() {
         .step(Input::Volumes(ejected), at(0));
     assert_eq!(browser.location(), &home());
     assert_eq!(effects, vec![]);
+}
+
+#[test]
+fn a_busy_disk_asks_whether_to_force_it_and_only_a_yes_does() {
+    let (asked, effects) =
+        with_volumes().step(Input::Ejected(id("stick"), Err(busy_with_vlc())), at(0));
+    assert_eq!(effects, vec![]);
+    let want = BusyDisk::new(
+        id("stick"),
+        VolumeName::new("STICK"),
+        vec![ProgramName::new("vlc")],
+    );
+    assert_eq!(asked.question(), &Question::ForceEject(want));
+
+    // (answer, effects, the question left)
+    let table = [
+        (Input::Confirm, vec![Effect::ForceEjectVolume(id("stick"))]),
+        (Input::Dismiss, vec![]),
+    ];
+    for (answer, want_effects) in table {
+        let (after, effects) = asked.clone().step(answer.clone(), at(0));
+        assert_eq!(effects, want_effects, "{answer:?}");
+        assert_eq!(after.question(), &Question::None, "{answer:?}");
+    }
+    // A disk that left the list in the meantime is not asked about.
+    let (unasked, _) = with_volumes().step(Input::Ejected(id("gone"), Err(busy_with_vlc())), at(0));
+    assert_eq!(unasked.question(), &Question::None);
 }

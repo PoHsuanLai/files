@@ -12,7 +12,7 @@ pub use info::{InfoRow, exact_size_words, info_failure_words, info_rows, items_w
 pub use kind::kind_words;
 pub use ops::{CANNOT_UNDO, announce_words, busy_words, conflict_words, erase_words};
 pub use size::{entry_size_words, size_words};
-pub use volumes::volume_trouble_words;
+pub use volumes::{force_eject_words, volume_trouble_words};
 
 /// What a column shows for something an entry does not have: a folder's size, an unknown date.
 pub const NONE: &str = "\u{2014}";

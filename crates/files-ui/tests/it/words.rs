@@ -321,3 +321,36 @@ fn a_disk_that_would_not_eject_or_open_says_so_as_finder_does() {
         assert_eq!(volume_trouble_words(&name, &trouble), want, "{label}");
     }
 }
+
+#[test]
+fn the_force_eject_question_names_the_disk_and_the_programs_using_it() {
+    use files_core::{ProgramName, VolumeName};
+    use files_ui::words::force_eject_words;
+
+    let name = VolumeName::new("STICK");
+    let programs = |names: &[&str]| -> Vec<ProgramName> {
+        names.iter().map(|n| ProgramName::new(*n)).collect()
+    };
+    let title = "The disk \u{201c}STICK\u{201d} wasn\u{2019}t ejected because one or more programs may be using it.";
+    let cases = [
+        (
+            "programs found",
+            programs(&["vlc", "bash"]),
+            "Programs using it: vlc, bash.",
+        ),
+        ("one program", programs(&["vlc"]), "Programs using it: vlc."),
+        (
+            "none found",
+            programs(&[]),
+            "To eject the disk immediately, click Force Eject.",
+        ),
+    ];
+    for (label, found, message) in cases {
+        let (got_title, got_message) = force_eject_words(&name, &found);
+        assert_eq!(
+            (got_title.as_str(), got_message.as_str()),
+            (title, message),
+            "{label}"
+        );
+    }
+}

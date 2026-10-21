@@ -46,7 +46,11 @@ fn shown(tabs: &Tabs, tab: TabId) -> (Option<OpKind>, Option<FileName>) {
     };
     let asking = match browser.question() {
         Question::Conflict(conflict) => Some(conflict.item.clone()),
-        Question::None | Question::EmptyTrash | Question::DeleteForGood(_) | _ => None,
+        Question::None
+        | Question::EmptyTrash
+        | Question::DeleteForGood(_)
+        | Question::ForceEject(_)
+        | _ => None,
     };
     (kind, asking)
 }

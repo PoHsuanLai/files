@@ -45,6 +45,10 @@ impl Volumes for DesktopVolumes {
         self.runtime.block_on(self.disks.eject(id))
     }
 
+    fn force_eject(&self, id: &VolumeId) -> Result<(), EjectFailure> {
+        self.runtime.block_on(self.disks.force_eject(id))
+    }
+
     fn watch(&self, changed: Changed) -> Result<WatchGuard, VolumeError> {
         // Subscribed before this returns, so a list made after it misses nothing.
         let mut changes = self

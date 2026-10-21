@@ -202,6 +202,8 @@ pub enum Input {
     Eject(VolumeId),
     /// The answer to `Effect::EjectVolume`.
     Ejected(VolumeId, Result<(), EjectFailure>),
+    /// The answer to `Effect::ForceEjectVolume`. A failure is only told, never asked again.
+    ForceEjected(VolumeId, Result<(), EjectFailure>),
     /// Move these items to the Trash, wherever they are (another program asked).
     TrashItems(Vec<ItemRef>),
     /// Make a folder in `parent`, called `name` or, when none is given, `untitled folder` (another

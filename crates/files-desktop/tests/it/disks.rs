@@ -238,6 +238,17 @@ async fn a_busy_disk_stays_and_the_programs_using_it_come_with_the_failure() {
 }
 
 #[tokio::test]
+async fn forcing_a_busy_disk_unmounts_it_with_the_force_option_then_switches_the_drive_off() {
+    let Some(rig) = rig(Arc::new(NoUsers)).await else {
+        return;
+    };
+    rig.world.lock().unwrap().busy = true;
+    within(rig.disks.force_eject(&id("sdb1"))).await.unwrap();
+    let calls = rig.world.lock().unwrap().calls.clone();
+    assert_eq!(calls, ["unmount sdb1 force", "power_off stick"]);
+}
+
+#[tokio::test]
 async fn a_disk_plugged_in_or_taken_out_is_heard() {
     let Some(rig) = rig(Arc::new(NoUsers)).await else {
         return;

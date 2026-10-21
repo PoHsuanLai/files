@@ -109,6 +109,7 @@ impl Browser {
             Input::Mounted(id, result) => self.mounted(id, result),
             Input::Eject(id) => self.eject(id),
             Input::Ejected(id, result) => self.ejected(id, result),
+            Input::ForceEjected(id, result) => self.force_ejected(id, result),
             Input::TrashItems(items) => self.trash_items(items),
             Input::MakeFolder { parent, name } => self.make_folder(parent, name),
             Input::Bring {

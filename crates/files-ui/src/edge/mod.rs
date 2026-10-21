@@ -190,6 +190,7 @@ impl Edge {
             Effect::CloseWindow => self.say(Heard::CloseWindow),
             Effect::MountVolume(id) => self.disks.mount(tab, id),
             Effect::EjectVolume(id) => self.disks.eject(tab, id),
+            Effect::ForceEjectVolume(id) => self.disks.force_eject(tab, id),
             Effect::TellVolume { name, trouble } => {
                 self.say(Heard::Told(volume_trouble_words(&name, &trouble)));
             }

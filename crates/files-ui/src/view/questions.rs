@@ -5,10 +5,10 @@ use dioxus::prelude::*;
 use ds::components::overlays::alert_model::{AlertButton, AlertRole, AlertStyle, Suppression};
 use ds::prelude::{Alert, Check, TextLine};
 use files_core::{Answer, Conflict, Resolution};
-use files_model::{Input, Question};
+use files_model::{BusyDisk, Input, Question};
 
 use crate::state::Browse;
-use crate::words::{CANNOT_UNDO, conflict_words, erase_words};
+use crate::words::{CANNOT_UNDO, conflict_words, erase_words, force_eject_words};
 
 /// The question that is up, if any.
 #[component]
@@ -28,6 +28,7 @@ pub(super) fn Questions(browse: Browse) -> Element {
         Question::Conflict(conflict) => rsx! {
             ConflictAlert { browse, conflict }
         },
+        Question::ForceEject(busy) => force_eject(browse, &busy),
         // A question files-model adds later is not asked until this names it.
         _ => rsx! {},
     }
@@ -44,6 +45,24 @@ fn erase(browse: Browse, title: String, action: &str) -> Element {
             style: AlertStyle::Warning,
             buttons: vec![
                 AlertButton::new(action, AlertRole::Destructive, confirm),
+                AlertButton::new("Cancel", AlertRole::Cancel, cancel),
+            ],
+        }
+    }
+}
+
+/// A disk in use: Force Eject (destructive) or Cancel, which is the default.
+fn force_eject(browse: Browse, busy: &BusyDisk) -> Element {
+    let confirm = EventHandler::new(move |()| browse.send(Input::Confirm));
+    let cancel = EventHandler::new(move |()| browse.send(Input::Dismiss));
+    let (title, message) = force_eject_words(&busy.name, &busy.programs);
+    rsx! {
+        Alert {
+            title,
+            message: Some(TextLine::from(message)),
+            style: AlertStyle::Warning,
+            buttons: vec![
+                AlertButton::new("Force Eject", AlertRole::Destructive, confirm),
                 AlertButton::new("Cancel", AlertRole::Cancel, cancel),
             ],
         }

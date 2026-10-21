@@ -53,6 +53,10 @@ pub trait Volumes: Send + Sync {
     /// Ejects the disk: unmounts it and, when it can be, powers it off.
     fn eject(&self, id: &VolumeId) -> Result<(), EjectFailure>;
 
+    /// Ejects the disk although programs may be using it: unmounts it by force, then powers it off
+    /// as `eject` does. The person has been asked.
+    fn force_eject(&self, id: &VolumeId) -> Result<(), EjectFailure>;
+
     /// Calls `changed` whenever a disk came, went, was opened or closed, until the guard drops.
     fn watch(&self, changed: Changed) -> Result<WatchGuard, VolumeError>;
 }
@@ -74,6 +78,10 @@ impl Volumes for NoVolumes {
         Err(EjectFailure::Gone)
     }
 
+    fn force_eject(&self, _id: &VolumeId) -> Result<(), EjectFailure> {
+        Err(EjectFailure::Gone)
+    }
+
     fn watch(&self, _changed: Changed) -> Result<WatchGuard, VolumeError> {
         Err(VolumeError::Unavailable)
     }
@@ -84,6 +92,7 @@ enum Ask {
     Refresh,
     Mount(TabId, VolumeId),
     Eject(TabId, VolumeId),
+    ForceEject(TabId, VolumeId),
     Stop,
 }
 
@@ -127,6 +136,11 @@ impl Disks {
                             tell(Heard::Tab(tab, Input::Ejected(id, result)));
                             relist();
                         }
+                        Ask::ForceEject(tab, id) => {
+                            let result = volumes.force_eject(&id);
+                            tell(Heard::Tab(tab, Input::ForceEjected(id, result)));
+                            relist();
+                        }
                         Ask::Stop => break,
                     }
                 }
@@ -143,6 +157,11 @@ impl Disks {
     /// Ejects the disk and tells the browser how it went.
     pub(super) fn eject(&self, tab: TabId, id: VolumeId) {
         let _ = self.asks.send(Ask::Eject(tab, id));
+    }
+
+    /// Ejects the disk by force and tells the browser how it went.
+    pub(super) fn force_eject(&self, tab: TabId, id: VolumeId) {
+        let _ = self.asks.send(Ask::ForceEject(tab, id));
     }
 }
 

@@ -108,6 +108,9 @@ pub enum Effect {
     MountVolume(VolumeId),
     /// Eject this disk and answer with `Input::Ejected`.
     EjectVolume(VolumeId),
+    /// Eject this disk even though programs may be using it (the person said so), and answer with
+    /// `Input::ForceEjected`.
+    ForceEjectVolume(VolumeId),
     /// Put the tag of `colour` on these items, or take it off them. The listings follow when the
     /// disk does.
     Tag {

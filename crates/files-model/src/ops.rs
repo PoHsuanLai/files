@@ -1,6 +1,8 @@
 //! Work in progress, questions waiting for an answer, and what the workers report.
 
-use files_core::{Conflict, OpFailure, Progress, Summary, TrashedItem};
+use files_core::{
+    Conflict, OpFailure, ProgramName, Progress, Summary, TrashedItem, VolumeId, VolumeName,
+};
 
 /// How a drop was meant, as the window says it (the model never reads modifier keys).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -40,6 +42,27 @@ pub enum Question {
     DeleteForGood(Vec<TrashedItem>),
     /// A name is taken: keep both, replace, skip or stop.
     Conflict(Conflict),
+    /// A disk could not be ejected because programs may be using it: whether to eject it anyway.
+    ForceEject(BusyDisk),
+}
+
+/// A disk that would not eject because it is in use.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BusyDisk {
+    /// Which disk.
+    pub id: VolumeId,
+    /// Its name, as the sidebar shows it.
+    pub name: VolumeName,
+    /// The programs found using it; none when they could not be found.
+    pub programs: Vec<ProgramName>,
+}
+
+impl BusyDisk {
+    /// The disk `id`, shown as `name`, with the `programs` found using it.
+    pub fn new(id: VolumeId, name: VolumeName, programs: Vec<ProgramName>) -> BusyDisk {
+        BusyDisk { id, name, programs }
+    }
 }
 
 /// How a piece of work ended.

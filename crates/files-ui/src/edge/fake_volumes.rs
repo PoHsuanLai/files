@@ -15,6 +15,8 @@ pub enum VolumeCall {
     Mounted(VolumeId),
     /// The disk was ejected.
     Ejected(VolumeId),
+    /// The disk was ejected by force.
+    ForceEjected(VolumeId),
 }
 
 #[derive(Default)]
@@ -106,16 +108,28 @@ impl Volumes for FakeVolumes {
         if let Some(failure) = state.eject_fails.clone() {
             return Err(failure);
         }
-        match state.volumes.iter().find(|volume| volume.id == *id) {
-            Some(volume) if volume.eject == Eject::Allowed => {}
-            Some(_) | None => return Err(EjectFailure::Gone),
-        }
-        state.volumes.retain(|volume| volume.id != *id);
-        Ok(())
+        take_away(&mut state, id)
+    }
+
+    /// Force gets past a busy disk, which is what a failing eject stands for here.
+    fn force_eject(&self, id: &VolumeId) -> Result<(), EjectFailure> {
+        let mut state = self.lock();
+        state.calls.push(VolumeCall::ForceEjected(id.clone()));
+        take_away(&mut state, id)
     }
 
     fn watch(&self, changed: Changed) -> Result<WatchGuard, VolumeError> {
         self.lock().changed = Some(changed);
         Ok(WatchGuard::new(()))
     }
+}
+
+/// Takes the disk out of the list if it can be ejected, else says it is gone.
+fn take_away(state: &mut State, id: &VolumeId) -> Result<(), EjectFailure> {
+    match state.volumes.iter().find(|volume| volume.id == *id) {
+        Some(volume) if volume.eject == Eject::Allowed => {}
+        Some(_) | None => return Err(EjectFailure::Gone),
+    }
+    state.volumes.retain(|volume| volume.id != *id);
+    Ok(())
 }

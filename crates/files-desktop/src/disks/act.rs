@@ -5,6 +5,8 @@ use std::path::PathBuf;
 
 use files_core::{EjectFailure, FolderPath, MountFailure, ProgramName, VolumeId};
 
+use zbus::zvariant::Value;
+
 use super::proxies::{DriveProxy, FilesystemProxy};
 use super::{BLOCK, DRIVE, Disks, FILESYSTEM, drive_of, mount_points, text_path};
 use crate::error::Said;
@@ -49,9 +51,20 @@ impl Disks {
     /// Ejects the disk: unmounts it, then switches its drive off or ejects its media. A disk
     /// something has open is left alone, and the programs that were found come with the failure.
     pub async fn eject(&self, id: &VolumeId) -> Result<(), EjectFailure> {
+        self.eject_with(id, Unmount::Gently).await
+    }
+
+    /// Ejects the disk although programs may be using it: the service unmounts it with its
+    /// `force` option (a lazy unmount of what is still open), then the drive is taken away as
+    /// [`eject`](Disks::eject) does. Ask the person first.
+    pub async fn force_eject(&self, id: &VolumeId) -> Result<(), EjectFailure> {
+        self.eject_with(id, Unmount::Forced).await
+    }
+
+    async fn eject_with(&self, id: &VolumeId, how: Unmount) -> Result<(), EjectFailure> {
         let filesystem = self.filesystem(id).await.map_err(|_| EjectFailure::Gone)?;
         let mounts = self.mounts_of(id).await;
-        match filesystem.unmount(HashMap::new()).await {
+        match filesystem.unmount(how.options()).await {
             Ok(()) => {}
             Err(error) => match Said::from_error(&error) {
                 Said::NotMounted => {}
@@ -140,4 +153,23 @@ struct DriveAt {
     path: String,
     can_power_off: bool,
     ejectable: bool,
+}
+
+/// How hard to unmount.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Unmount {
+    /// Refuse while anything has the disk open.
+    Gently,
+    /// Unmount even so (`force`).
+    Forced,
+}
+
+impl Unmount {
+    /// The options of `Filesystem.Unmount`.
+    fn options(self) -> HashMap<&'static str, Value<'static>> {
+        match self {
+            Unmount::Gently => HashMap::new(),
+            Unmount::Forced => HashMap::from([("force", Value::from(true))]),
+        }
+    }
 }

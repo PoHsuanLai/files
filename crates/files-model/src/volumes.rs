@@ -7,6 +7,7 @@ use files_core::{
 
 use crate::browser::Browser;
 use crate::effect::Effect;
+use crate::ops::{BusyDisk, Question};
 
 type Stepped = (Browser, Vec<Effect>);
 
@@ -76,7 +77,26 @@ impl Browser {
 
     /// A disk was ejected, or could not be. The list follows from the caller's next
     /// `Input::Volumes`.
+    ///
+    /// A disk in use is not just told: the person is asked whether to eject it anyway.
     pub(crate) fn ejected(self, id: VolumeId, result: Result<(), EjectFailure>) -> Stepped {
+        match result {
+            Ok(()) => (self, Vec::new()),
+            Err(EjectFailure::InUse(programs)) => {
+                let name = self.volume(&id).map(|volume| volume.name.clone());
+                match name {
+                    Some(name) => {
+                        self.asking(Question::ForceEject(BusyDisk::new(id, name, programs)))
+                    }
+                    None => (self, Vec::new()),
+                }
+            }
+            Err(failure) => self.tell_volume(&id, VolumeTrouble::NotEjected(failure)),
+        }
+    }
+
+    /// A disk was ejected by force, or could not be: a failure is told, whatever it is.
+    pub(crate) fn force_ejected(self, id: VolumeId, result: Result<(), EjectFailure>) -> Stepped {
         match result {
             Ok(()) => (self, Vec::new()),
             Err(failure) => self.tell_volume(&id, VolumeTrouble::NotEjected(failure)),

@@ -154,3 +154,73 @@ fn the_sidebar_lists_the_disks_under_locations_and_the_eject_button_ejects() {
     assert_eq!(fake.calls(), vec![VolumeCall::Ejected(id("stick"))]);
     assert!(harness.html().contains("CARD"));
 }
+
+#[test]
+fn forcing_an_eject_goes_to_the_seam_and_takes_the_disk_off_the_list() {
+    let fake = Arc::new(FakeVolumes::with(vec![stick(), card()]));
+    let mut rig = rig_over(fake.clone());
+    let _ = next(&mut rig.inbox);
+    rig.edge
+        .run_in(TabId::FIRST, vec![Effect::ForceEjectVolume(id("stick"))]);
+    assert_eq!(
+        next(&mut rig.inbox),
+        Heard::Tab(TabId::FIRST, Input::ForceEjected(id("stick"), Ok(())))
+    );
+    assert_eq!(names(&next(&mut rig.inbox)), ["CARD"]);
+    assert_eq!(fake.calls(), vec![VolumeCall::ForceEjected(id("stick"))]);
+}
+
+/// The destructive button of an alert, which comes first in the markup.
+const FIRST_BUTTON: &str = ".ds-alert-slot:nth-child(1) > .ds-button";
+
+#[test]
+fn a_busy_disk_asks_in_an_alert_and_force_eject_ejects_it_anyway() {
+    let busy = EjectFailure::InUse(vec![ProgramName::new("vlc"), ProgramName::new("bash")]);
+    let fake = Arc::new(FakeVolumes::with(vec![stick(), card()]).failing_eject(busy));
+    let (mut harness, _dir, _config) = window_over(fake.clone(), "STICK");
+    let press = |harness: &mut ds_harness::Harness, selector: &str| {
+        let at: Point = harness
+            .centre(selector)
+            .unwrap_or_else(|| panic!("no {selector}:\n{}", harness.html()));
+        harness.send(Click::click(at));
+        harness.advance(Duration::from_millis(50));
+    };
+    press(&mut harness, "[aria-label=\"Eject STICK\"]");
+    settle_until(&mut harness, |h| h.html().contains("Programs using it"));
+    let html = harness.html();
+    for text in [
+        "wasn",
+        "ejected because one or more programs",
+        "vlc, bash.",
+        "Force Eject",
+        "Cancel",
+    ] {
+        assert!(html.contains(text), "{text} is not in the alert:\n{html}");
+    }
+    assert_eq!(fake.calls(), vec![VolumeCall::Ejected(id("stick"))]);
+
+    press(&mut harness, FIRST_BUTTON);
+    settle_until(&mut harness, |h| !h.html().contains("Eject STICK"));
+    assert_eq!(
+        fake.calls(),
+        vec![
+            VolumeCall::Ejected(id("stick")),
+            VolumeCall::ForceEjected(id("stick"))
+        ]
+    );
+    assert!(!harness.html().contains("Programs using it"));
+}
+
+#[test]
+fn cancelling_the_force_eject_question_leaves_the_disk() {
+    let busy = EjectFailure::InUse(vec![ProgramName::new("vlc")]);
+    let fake = Arc::new(FakeVolumes::with(vec![stick()]).failing_eject(busy));
+    let (mut harness, _dir, _config) = window_over(fake.clone(), "STICK");
+    let at: Point = harness.centre("[aria-label=\"Eject STICK\"]").unwrap();
+    harness.send(Click::click(at));
+    settle_until(&mut harness, |h| h.html().contains("Programs using it"));
+    harness.send(Click::key(ds::prelude::ShortcutKey::Escape));
+    settle_until(&mut harness, |h| !h.html().contains("Programs using it"));
+    assert_eq!(fake.calls(), vec![VolumeCall::Ejected(id("stick"))]);
+    assert!(harness.html().contains("Eject STICK"));
+}

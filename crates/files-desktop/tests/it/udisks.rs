@@ -121,13 +121,23 @@ impl Filesystem {
 
     async fn unmount(
         &self,
-        _options: HashMap<String, OwnedValue>,
+        options: HashMap<String, OwnedValue>,
         #[zbus(signal_emitter)] emitter: SignalEmitter<'_>,
     ) -> Result<(), Refused> {
         {
             let mut world = locked(&self.world);
-            world.calls.push(format!("unmount {}", self.node));
-            if world.busy {
+            // The `force` option, as UDisks2 reads it: a boolean, false when absent.
+            let forced = options
+                .get("force")
+                .and_then(|value| bool::try_from(value).ok())
+                .unwrap_or(false);
+            let call = if forced {
+                format!("unmount {} force", self.node)
+            } else {
+                format!("unmount {}", self.node)
+            };
+            world.calls.push(call);
+            if world.busy && !forced {
                 return Err(Refused::DeviceBusy("busy".to_owned()));
             }
             world.mounted.insert(self.node, None);

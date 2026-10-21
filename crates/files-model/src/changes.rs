@@ -115,6 +115,13 @@ impl Browser {
                 ..self
             }
             .run(OpPlan::DeleteForGood { items }),
+            Question::ForceEject(busy) => (
+                Browser {
+                    question: Question::None,
+                    ..self
+                },
+                vec![Effect::ForceEjectVolume(busy.id)],
+            ),
             Question::None | Question::Conflict(_) => (self, Vec::new()),
         }
     }
@@ -123,7 +130,10 @@ impl Browser {
     pub(crate) fn dismiss(self) -> Stepped {
         let effects = match &self.question {
             Question::Conflict(_) => vec![Effect::Answer(Resolution::once(Answer::Stop))],
-            Question::None | Question::EmptyTrash | Question::DeleteForGood(_) => Vec::new(),
+            Question::None
+            | Question::EmptyTrash
+            | Question::DeleteForGood(_)
+            | Question::ForceEject(_) => Vec::new(),
         };
         (
             Browser {
@@ -144,9 +154,10 @@ impl Browser {
                 },
                 vec![Effect::Answer(resolution)],
             ),
-            Question::None | Question::EmptyTrash | Question::DeleteForGood(_) => {
-                (self, Vec::new())
-            }
+            Question::None
+            | Question::EmptyTrash
+            | Question::DeleteForGood(_)
+            | Question::ForceEject(_) => (self, Vec::new()),
         }
     }
 
@@ -290,7 +301,8 @@ impl Browser {
                     Question::Conflict(_) => Question::None,
                     ref kept @ (Question::None
                     | Question::EmptyTrash
-                    | Question::DeleteForGood(_)) => kept.clone(),
+                    | Question::DeleteForGood(_)
+                    | Question::ForceEject(_)) => kept.clone(),
                 };
                 let starting = match outcome.end {
                     End::Done if outcome.summary.kind == OpKind::NewFolder => self.starting,

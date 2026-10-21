@@ -66,7 +66,7 @@ pub use input::{Change, Direction, Input, Modifier, Now};
 pub use listing::Listing;
 pub use look::{InfoView, Looking};
 pub use open::{Opens, opens};
-pub use ops::{DropHow, End, OpEvent, Outcome, Question, Work};
+pub use ops::{BusyDisk, DropHow, End, OpEvent, Outcome, Question, Work};
 pub use rename::Rename;
 pub use selection::Selection;
 pub use sort::compare;
