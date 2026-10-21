@@ -2,7 +2,9 @@
 
 use std::path::{Path, PathBuf};
 
-/// A place a window shows. Grows with the app (Recents, Tags, searches, volumes), one variant per
+use crate::TagColour;
+
+/// A place a window shows. Grows with the app (Recents, searches, volumes), one variant per
 /// place that is built.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
@@ -11,6 +13,9 @@ pub enum Location {
     Folder(FolderPath),
     /// The Trash: every trashed item of every volume.
     Trash,
+    /// Every file under the home folder that carries this colour's tag: a search, listed as it is
+    /// found.
+    Tag(TagColour),
 }
 
 /// An absolute path to a folder, as the person reached it (links not resolved, so the path bar

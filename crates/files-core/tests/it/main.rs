@@ -4,5 +4,6 @@
 mod info;
 mod name;
 mod plans;
+mod tags;
 mod vocab;
 mod volumes;

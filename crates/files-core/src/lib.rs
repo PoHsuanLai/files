@@ -28,6 +28,7 @@ mod name;
 mod plan;
 mod progress;
 mod size;
+mod tag;
 mod trashed;
 mod view;
 mod volume;
@@ -44,6 +45,7 @@ pub use name::{FileName, NameError};
 pub use plan::{OpKind, OpPlan, Summary, Transfer};
 pub use progress::Progress;
 pub use size::ByteSize;
+pub use tag::{Tag, TagColour, TagError, Tags};
 pub use trashed::{TrashId, TrashedItem};
 pub use view::{FolderPrefs, HiddenFiles, Sort, SortKey, SortOrder, ViewMode};
 pub use volume::{
