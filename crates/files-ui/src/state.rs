@@ -119,10 +119,10 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
             }
         })
     });
-    // The toast's Undo takes back the newest change, which is the one it announced. The handler
-    // belongs to this component, which outlives every toast.
-    let on_undo = EventHandler::new(move |_: UndoToken| browse.send(Input::Undo));
     use_hook(move || {
+        // The toast's Undo takes back the newest change, which is the one it announced. Made
+        // once, in the hook, so the handler belongs to this component, which outlives every toast.
+        let on_undo = EventHandler::new(move |_: UndoToken| browse.send(Input::Undo));
         spawn(async move {
             let Some(mut inbox) = setup.inbox.borrow_mut().take() else {
                 return;

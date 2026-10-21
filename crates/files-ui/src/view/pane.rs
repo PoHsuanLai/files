@@ -41,7 +41,7 @@ fn body_of(browse: Browse) -> Body {
 fn empty_words(location: &Location) -> &'static str {
     match location {
         Location::Trash => "Trash is empty",
-        _ => "This folder is empty.",
+        Location::Folder(_) | _ => "This folder is empty.",
     }
 }
 

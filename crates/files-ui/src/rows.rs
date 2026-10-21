@@ -41,7 +41,7 @@ impl Column {
     pub fn of_location(location: &Location) -> &'static [Column] {
         match location {
             Location::Trash => &Column::TRASH,
-            _ => &Column::ALL,
+            Location::Folder(_) | _ => &Column::ALL,
         }
     }
 

@@ -272,12 +272,20 @@ fn copying_needs_a_selection_and_pasting_needs_a_folder() {
     assert!(effects.is_empty());
 }
 
+/// Why, onto, how, the sources, and the plan wanted.
+type DropCase<'a> = (
+    &'a str,
+    Option<&'a str>,
+    DropHow,
+    Vec<ItemRef>,
+    Option<OpPlan>,
+);
+
 #[test]
 fn a_drop_moves_or_copies_to_the_folder_row_or_the_window() {
     let q = |text: &str| ItemRef::new(FolderPath::new("/home/q").unwrap(), name(text));
     let into = |folder: &str| FolderPath::new(folder).unwrap();
-    // (why, onto, how, sources, wanted plan)
-    let table: Vec<(&str, Option<&str>, DropHow, Vec<ItemRef>, Option<OpPlan>)> = vec![
+    let table: Vec<DropCase> = vec![
         (
             "onto the window",
             None,

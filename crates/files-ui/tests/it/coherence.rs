@@ -11,13 +11,16 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use ds::base::press::PointerButton;
 use ds::prelude::ShortcutKey;
 use ds_harness::harness::settle_until;
 use ds_harness::{Harness, Input};
 use ds_lint::{LintConfig, Profile, Rule, assert_clean, markup};
+use files_core::{FileName, FolderPath, ItemRef, Location};
+use files_trash::{FakeTrash, Trash};
 use files_ui::STYLE;
 
-use super::support::{RecordingOpener, harness, launch, scratch_folder};
+use super::support::{RecordingOpener, harness, launch_with, scratch_folder};
 
 /// What `markup` needs to know is styled: quire's own stylesheet, plus the window's.
 fn window_css() -> String {

@@ -292,7 +292,9 @@ impl Browser {
                 };
                 let question = match self.question {
                     Question::Conflict(_) => Question::None,
-                    ref kept => kept.clone(),
+                    ref kept @ (Question::None
+                    | Question::EmptyTrash
+                    | Question::DeleteForGood(_)) => kept.clone(),
                 };
                 let starting = match outcome.end {
                     End::Done if outcome.summary.kind == OpKind::NewFolder => self.starting,

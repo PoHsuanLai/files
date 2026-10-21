@@ -271,6 +271,8 @@ fn moving_to_the_trash_leaves_the_folder_and_the_toast_undoes_it() {
         rig.harness.html()
     );
     assert_eq!(rig.harness.count(".ds-toast-action"), 1);
+    // Let the toast finish sliding in before pressing its button.
+    rig.harness.advance(Duration::from_millis(500));
     press_at(&mut rig.harness, ".ds-toast-action");
     settle_until(&mut rig.harness, |_| notes.exists());
     assert_eq!(std::fs::read_to_string(&notes).unwrap(), "hello");
