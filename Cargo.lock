@@ -1870,7 +1870,11 @@ version = "0.1.0"
 dependencies = [
  "dirs",
  "files-core",
+ "files-desktop",
+ "files-mime",
+ "files-model",
  "files-ui",
+ "tokio",
 ]
 
 [[package]]
