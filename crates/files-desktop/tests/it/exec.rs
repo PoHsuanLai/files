@@ -24,9 +24,12 @@ fn expand(text: &str, files: &[&str], icon: Option<&str>) -> Vec<String> {
     .collect()
 }
 
+/// One row: the Exec line, the files, the icon, and the argv it expands to.
+type ExpandRow<'a> = (&'a str, &'a [&'a str], Option<&'a str>, &'a [&'a str]);
+
 #[test]
 fn field_codes_expand() {
-    let rows: [(&str, &[&str], Option<&str>, &[&str]); 18] = [
+    let rows: [ExpandRow; 18] = [
         (
             "gedit %F",
             &["/a/1", "/a/2"],
