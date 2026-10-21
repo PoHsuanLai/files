@@ -45,3 +45,14 @@ picture is not something the pure model holds. Get Info is `InfoView` (closed, l
 with `Effect::SavePrefs` and loaded with `Effect::LoadPrefs`; the edge serves both from one thread so a
 save and the load after it keep their order. The store is a seam (`PrefsStore`); the binary is the only
 place that says where its file is.
+
+## 5. Open With, Go to Folder and Copy as Pathname
+
+Open With is a submenu of the row's context menu. The window asks the `Apps` seam (`files-ui`) which
+apps open the selected paths; the binary answers it from `DesktopLauncher::apps_for` (the default
+first, marked, then the rest by name), and "Other…" puts up a sheet of `all_apps`. A pick is
+`Input::OpenWith(AppPick)`, which becomes `Effect::OpenFilesWith`, and the edge hands the paths and
+an `OpenAs` to the `Opener` seam. Go to Folder is browser state (`GoTo`): the typed text is expanded
+against the home folder the binary passed in (`~`), `Effect::CheckFolder` asks the lister whether it
+is a folder, and `Input::FolderChecked` either visits it or leaves the sheet up with its words.
+Copy as Pathname is `Effect::CopyText`, written to quire's clipboard by the edge.

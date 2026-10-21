@@ -184,3 +184,24 @@ fn the_row_menu_now_offers_quick_look_get_info_and_copy_as_pathname() {
     ];
     assert!(order.windows(2).all(|pair| pair[0] < pair[1]), "{order:?}");
 }
+
+#[test]
+fn option_command_c_puts_the_full_paths_on_the_clipboard() {
+    let mut rig = open();
+    let at: Point = rig
+        .harness
+        .centre(".ds-vtable-item[*|data-row=\"2\"]")
+        .unwrap();
+    rig.harness.send(Input::click(at));
+    rig.harness.advance(Duration::from_millis(50));
+    rig.harness.send(Input::chord(
+        &[ShortcutKey::Super, ShortcutKey::Alt],
+        ShortcutKey::Char('c'),
+    ));
+    settle_until(&mut rig.harness, |h| h.clipboard_text().is_some());
+    let want = rig.dir.path().join("report.pdf");
+    assert_eq!(
+        rig.harness.clipboard_text(),
+        Some(want.to_string_lossy().into_owned())
+    );
+}
