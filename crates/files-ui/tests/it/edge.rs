@@ -6,7 +6,8 @@ use std::time::{Duration, Instant};
 
 use files_core::{ByteSize, Entry, EntryKind, FileName, FolderPath, ItemRef, Location};
 use files_fs::{
-    FakeLister, FakePrefs, FakeWatcher, FolderEvent, ListError, Lister, NoPrefs, PrefsStore, Watcher,
+    FakeLister, FakePrefs, FakeWatcher, FolderEvent, ListError, Lister, NoPrefs, PrefsStore,
+    Watcher,
 };
 use files_model::{Change, Effect, Input, ListFailure, OpenTarget, TabId};
 use files_trash::{FakeTrash, Trash};
