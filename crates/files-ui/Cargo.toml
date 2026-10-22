@@ -15,8 +15,12 @@ testing = []
 [dependencies]
 anyview-core = { workspace = true }
 anyview-fs = { workspace = true }
+# The picture of a file for the icon view: scaled and encoded here, kept in the shared thumbnail cache below.
+anyview-image = { workspace = true }
 # The `pane` feature is the card that draws a peek (mailo's choice); no `media`, so no player.
 anyview-peek = { workspace = true, features = ["pane"] }
+# The shared thumbnail cache's trait (and its freedesktop implementation, which the binary builds).
+anyview-platform = { workspace = true }
 chordkit = { workspace = true }
 chrono = { workspace = true }
 dioxus = { workspace = true }
@@ -33,6 +37,8 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 files-ui = { path = ".", features = ["testing"] }
+# `FakeThumbnails`, the cache in memory.
+anyview-platform = { workspace = true, features = ["testing"] }
 ds-harness = { workspace = true }
 ds-lint = { workspace = true }
 files-fs = { workspace = true, features = ["testing"] }

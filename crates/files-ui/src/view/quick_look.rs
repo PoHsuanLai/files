@@ -21,12 +21,7 @@ pub(super) fn QuickLook(browse: Browse) -> Element {
         return rsx! {};
     };
     let name = item.name.display().into_owned();
-    let card = browse
-        .looked
-        .read()
-        .clone()
-        .filter(|(of, _)| *of == item)
-        .map(|(_, card)| card);
+    let card = browse.looked.read().of(&item);
     let body = match card {
         Some(peeked) => rsx! {
             Card { peeked }

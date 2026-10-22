@@ -2,25 +2,21 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Arc;
 use std::time::Instant;
 
-use anyview_peek::AnyPeeked;
 use dioxus::prelude::*;
 use ds::prelude::use_toasts;
 use ds::stack::toast_hub::UndoToken;
 use ds_blitz::{WindowHandle, use_window_handle};
-use files_core::ItemRef;
 use files_model::{Browser, Input, Rename, TabId, Tabs};
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::edge::{self, AppChoiceView, Edge, Heard};
 use crate::launch::Launch;
+use crate::looks::Looks;
 use crate::requests::Asked;
+use crate::thumbs::Thumbs;
 use crate::words::announce_words;
-
-/// The newest preview Quick Look was given, and the item it is of.
-pub(crate) type Looked = Option<(ItemRef, Arc<AnyPeeked>)>;
 
 /// The browser in front, read through the tabs: what the views draw and ask.
 pub(crate) type Front = MappedSignal<Browser, Signal<Tabs>, fn(&Tabs) -> &Browser>;
@@ -36,8 +32,10 @@ pub(crate) struct Browse {
     window: CopyValue<Option<WindowHandle>>,
     edge: CopyValue<Rc<Edge>>,
     start: Instant,
-    /// The preview Quick Look draws, once the peek worker has made it.
-    pub(crate) looked: Signal<Looked>,
+    /// The previews the peek worker has made, for Quick Look and the preview pane.
+    pub(crate) looked: Signal<Looks>,
+    /// The thumbnails the icon view has been given.
+    pub(crate) thumbs: Signal<Thumbs>,
 }
 
 impl std::fmt::Debug for Browse {
@@ -103,6 +101,11 @@ impl Browse {
         self.edge.read().all_apps()
     }
 
+    /// The edge, for a tile that wants a thumbnail while it is drawn and says so when it goes.
+    pub(crate) fn edge(&self) -> Rc<Edge> {
+        Rc::clone(&self.edge.read())
+    }
+
     /// Whether a name is being typed in place.
     pub(crate) fn renaming(&self) -> bool {
         matches!(self.state.read().rename(), Rename::Editing { .. })
@@ -129,7 +132,8 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
         }
     });
     let tabs = use_signal(|| setup.first.clone());
-    let looked = use_signal(|| None);
+    let looked = use_signal(Looks::default);
+    let thumbs = use_signal(Thumbs::default);
     let window = use_window_handle();
     let browse = Browse {
         tabs,
@@ -138,6 +142,7 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
         edge: use_hook(|| CopyValue::new(Rc::clone(&setup.edge))),
         start: setup.start,
         looked,
+        thumbs,
     };
     let toasts = use_toasts();
     let requests = launch.requests.clone();
@@ -178,7 +183,11 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
                     Heard::Told(text) => toasts.push(text, None),
                     Heard::Looked(item, card) => {
                         let mut slot = browse.looked;
-                        slot.set(Some((item, card)));
+                        slot.write().put(item, card);
+                    }
+                    Heard::Thumbed(key, thumbed) => {
+                        let mut shelf = browse.thumbs;
+                        shelf.write().put(key, thumbed);
                     }
                     Heard::Announced(summary) => {
                         announced += 1;

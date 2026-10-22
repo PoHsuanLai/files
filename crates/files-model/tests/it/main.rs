@@ -12,6 +12,7 @@ mod open;
 mod open_with;
 mod pathname;
 mod prefs;
+mod preview;
 mod rename;
 mod reveal;
 mod selection;

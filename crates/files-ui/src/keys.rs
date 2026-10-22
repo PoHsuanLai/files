@@ -47,6 +47,8 @@ enum Own {
     AsIcons,
     /// Show the folder as a list (Command+2).
     AsList,
+    /// Show the preview pane, or put it away (Command+Shift+P).
+    TogglePreview,
     /// Open a new tab on this folder (Command+T).
     NewTab,
     /// Show the next tab (Command+Shift+]).
@@ -78,6 +80,11 @@ const OWN: &[(Own, &str, &[&str])] = &[
     ),
     (Own::AsIcons, "files.as-icons", &["Primary+1"]),
     (Own::AsList, "files.as-list", &["Primary+2"]),
+    (
+        Own::TogglePreview,
+        "files.toggle-preview",
+        &["Primary+Shift+P"],
+    ),
     (Own::NewTab, "files.new-tab", &["Primary+T"]),
     (
         Own::NextTab,
@@ -112,13 +119,15 @@ fn rows(id: &str, chords: &[&str]) -> Vec<(AppAction, DefaultChord)> {
 
 /// `groups` as one registration for `app`.
 fn registration(app: &AppId, groups: &[Vec<(AppAction, DefaultChord)>]) -> Registration {
-    // Files has no text styles, no fonts and no find, so Command+I is Get Info rather than Italic,
-    // Command+T is New Tab rather than Show Fonts, and Shift+Command+G is Go to Folder rather
-    // than Find Previous, as in Finder.
+    // Files has no text styles, no fonts, no find and no printing, so Command+I is Get Info rather
+    // than Italic, Command+T is New Tab rather than Show Fonts, Shift+Command+G is Go to Folder
+    // rather than Find Previous and Shift+Command+P is Show Preview rather than Page Setup, as
+    // in Finder.
     let start = Registration::new(app).forgo_all([
         StandardAction::Italic,
         StandardAction::ShowFonts,
         StandardAction::FindPrevious,
+        StandardAction::PageSetup,
     ]);
     groups
         .iter()
@@ -225,6 +234,7 @@ fn act(action: &Action, browse: Browse, mut sidebar: Signal<Shown>) -> ActionTak
             Some(Own::CopyAsPathname) => send(Input::CopyAsPathname),
             Some(Own::AsIcons) => send(Input::SetView(ViewMode::Icons)),
             Some(Own::AsList) => send(Input::SetView(ViewMode::List)),
+            Some(Own::TogglePreview) => send(Input::TogglePreview),
             Some(Own::NewTab) => send(Input::NewTab),
             Some(Own::NextTab) => send(Input::NextTab),
             Some(Own::PreviousTab) => send(Input::PreviousTab),

@@ -16,6 +16,7 @@ mod places;
 mod port;
 mod session;
 mod state;
+mod thumbnails;
 mod volumes;
 
 use std::process::ExitCode;
@@ -75,6 +76,7 @@ fn main() -> ExitCode {
         .with_apps(Arc::new(InstalledApps::new(launcher)))
         .with_places(places::found())
         .with_prefs(state::prefs_store(&ConfigRoot::Xdg))
+        .with_thumbnails(thumbnails::shared())
         .with_requests(running.requests)
         .with_runtime(runtime.handle().clone());
     // Without the system bus the window has no disks to list.

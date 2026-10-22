@@ -33,6 +33,8 @@ chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "99eec9dd
 # the quire rev above. `anyview-core` is the vocabulary (`FilePath`), `anyview-fs` opens a path as an input.
 anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "ece5afcbcaa995ecdc25aba723cce00af6468cdf" }  # ece5afc
 anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "ece5afcbcaa995ecdc25aba723cce00af6468cdf" }  # ece5afc
+anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "ece5afcbcaa995ecdc25aba723cce00af6468cdf" }  # ece5afc
+anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "ece5afcbcaa995ecdc25aba723cce00af6468cdf" }  # ece5afc
 anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "ece5afcbcaa995ecdc25aba723cce00af6468cdf", default-features = false }  # ece5afc
 # Copied from quire/docs/workspace-deps.toml at the rev above.
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }

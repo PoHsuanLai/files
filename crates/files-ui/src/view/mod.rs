@@ -9,6 +9,7 @@ mod icons;
 mod info;
 mod menu;
 mod pane;
+mod preview;
 mod questions;
 mod quick_look;
 mod rename;
@@ -18,6 +19,7 @@ mod table;
 mod tabs;
 mod tags;
 mod toolbar;
+mod wanted;
 mod window;
 
 use std::sync::Arc;

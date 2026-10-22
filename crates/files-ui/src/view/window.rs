@@ -10,6 +10,7 @@ use ds::file_drop::hook::use_file_drop;
 use ds::focus::soon::focus_soon;
 use ds::prelude::{ActionTaken, Px, Shown};
 use ds::window::host::use_window_title;
+use files_model::Pane;
 
 use super::busy::Busy;
 use super::chooser::AppChooser;
@@ -17,6 +18,7 @@ use super::goto::GoToSheet;
 use super::info::InfoSheet;
 use super::menu::{ContextAt, ContextMenu, point_of};
 use super::pane::FolderPane;
+use super::preview::PreviewColumn;
 use super::questions::Questions;
 use super::quick_look::QuickLook;
 use super::row::dropped;
@@ -95,7 +97,18 @@ pub(super) fn Window() -> Element {
                 label: "Files",
                 panes: vec![SplitPane::new(SIDEBAR, side_body).shown(shown)],
                 on_shown: move |(_, now): (usize, Shown)| sidebar.set(now),
-                FolderPane { browse, sidebar, menu, zone: launch.zone }
+                // The folder keeps its place in the tree whether the preview pane is up or not, so
+                // putting the pane away leaves the scroll where it was.
+                div { class: "files-body",
+                    div { class: "files-main",
+                        FolderPane { browse, sidebar, menu, zone: launch.zone }
+                    }
+                    if browse.state.read().pane() == Pane::Shown {
+                        div { class: "files-preview",
+                            PreviewColumn { browse, zone: launch.zone }
+                        }
+                    }
+                }
             }
             ContextMenu { browse, menu }
             Questions { browse }

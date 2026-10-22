@@ -66,6 +66,22 @@ impl Edge {
         }
     }
 
+    /// Reads the facts of `item` for the preview pane, off the window's thread.
+    pub(super) fn read_details(&self, tab: TabId, item: ItemRef) {
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
+        let failed = item.clone();
+        let started = Edge::work("files-details", move || {
+            let result = lister.info(&item).map_err(failure_of);
+            let _ = heard.send(Heard::Tab(tab, Input::DetailsRead(item, result)));
+        });
+        if started.is_err() {
+            self.say(Heard::Tab(
+                tab,
+                Input::DetailsRead(failed, Err(ListFailure::Other)),
+            ));
+        }
+    }
+
     pub(super) fn watch(&self, tab: TabId, at: Location) {
         let Location::Folder(folder) = &at else {
             return;

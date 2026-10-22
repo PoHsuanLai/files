@@ -3,12 +3,13 @@
 use std::fmt;
 use std::sync::Arc;
 
+use anyview_platform::ThumbnailCache;
 use files_fs::{
     DiskLister, Lister, NoPrefs, NotifyWatcher, PrefsStore, Tagger, Watcher, XattrTagger,
 };
 use files_trash::{SystemTrash, Trash};
 
-use super::{Apps, NoApps, NoVolumes, Opener, Volumes};
+use super::{Apps, NoApps, NoThumbnails, NoVolumes, Opener, Volumes};
 
 /// The window's seams to the outside, each behind a trait so a test gives its own.
 #[derive(Clone)]
@@ -29,6 +30,8 @@ pub struct Seams {
     pub apps: Arc<dyn Apps>,
     /// The computer's disks: listing, opening and ejecting them.
     pub volumes: Arc<dyn Volumes>,
+    /// The thumbnails the desktop shares, which the icon view reads and adds to.
+    pub thumbnails: Arc<dyn ThumbnailCache + Send + Sync>,
 }
 
 impl Seams {
@@ -43,6 +46,7 @@ impl Seams {
             tagger: Arc::new(XattrTagger),
             apps: Arc::new(NoApps),
             volumes: Arc::new(NoVolumes),
+            thumbnails: Arc::new(NoThumbnails),
         }
     }
 
@@ -59,6 +63,11 @@ impl Seams {
     /// The same seams keeping tags with `tagger`.
     pub fn with_tagger(self, tagger: Arc<dyn Tagger>) -> Seams {
         Seams { tagger, ..self }
+    }
+
+    /// The same seams sharing thumbnails through `thumbnails`.
+    pub fn with_thumbnails(self, thumbnails: Arc<dyn ThumbnailCache + Send + Sync>) -> Seams {
+        Seams { thumbnails, ..self }
     }
 
     /// The same seams remembering folder views in `prefs`.

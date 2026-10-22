@@ -19,6 +19,7 @@ impl Browser {
     /// the keys that would move the selection do nothing.
     pub fn step(self, input: Input, now: Now) -> (Browser, Vec<Effect>) {
         let showing = self.quick_item();
+        let previewing = self.previewed_item();
         let (next, mut effects) = self.stepped(input, now);
         // Quick Look follows the cursor: whenever it lands on a new item, ask for its preview.
         if let Some(item) = next
@@ -27,6 +28,9 @@ impl Browser {
         {
             effects.push(Effect::Look(item));
         }
+        // The preview pane follows the selection the same way.
+        let (next, asked) = next.previewing(previewing);
+        effects.extend(asked);
         (next, effects)
     }
 
@@ -60,6 +64,8 @@ impl Browser {
             Input::GetInfo => self.get_info(),
             Input::InfoRead(item, result) => self.info_read(item, result),
             Input::CloseInfo => self.close_info(),
+            Input::TogglePreview => self.toggle_pane(),
+            Input::DetailsRead(item, result) => self.details_read(item, result),
             Input::Back => self.go_back(),
             Input::Forward => self.go_forward(),
             Input::Enclosing => self.go_enclosing(),

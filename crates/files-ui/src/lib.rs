@@ -10,6 +10,8 @@
 //! - [`edge`] carries out what `files-model` asks for (list this folder, watch it, change files,
 //!   open these files) against the traits of `files-fs`, `files-trash` and `files-ops` and the seams
 //!   of this crate, and feeds the answers back as inputs.
+//! - [`looks`] and [`thumbs`] hold what the edge's workers made for the window: the previews of
+//!   Quick Look and the preview pane, and the icon view's thumbnails.
 //! - [`words`] are the pure functions that say sizes, kinds and dates the way a person reads them.
 //! - [`places`], [`rows`] and [`menu`] are the pure mappings from the model to what quire draws:
 //!   the sidebar's sections, the table's selection and sort, the context menu's commands.
@@ -27,18 +29,20 @@ pub mod edge;
 mod error;
 mod keys;
 mod launch;
+pub mod looks;
 pub mod menu;
 pub mod places;
 mod requests;
 pub mod rows;
 mod run;
 mod state;
+pub mod thumbs;
 mod view;
 pub mod words;
 
 pub use edge::{
-    AppChoiceView, AppRole, Apps, Changed, NoApps, NoVolumes, OpenAs, Opener, Seams, Volumes,
-    WatchGuard, Zone,
+    AppChoiceView, AppRole, Apps, Changed, NoApps, NoThumbnails, NoVolumes, OpenAs, Opener, Seams,
+    Volumes, WatchGuard, Zone,
 };
 #[cfg(feature = "testing")]
 pub use edge::{FakeVolumes, VolumeCall};

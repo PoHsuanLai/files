@@ -9,6 +9,7 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+anyview-platform = { workspace = true }
 dirs = { workspace = true }
 ds-settings = { workspace = true }
 files-core = { workspace = true }

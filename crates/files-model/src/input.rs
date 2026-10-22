@@ -133,6 +133,10 @@ pub enum Input {
     InfoRead(ItemRef, Result<Info, ListFailure>),
     /// Put Get Info away (Escape, Done).
     CloseInfo,
+    /// Show the preview pane, or put it away (Shift+Command+P).
+    TogglePreview,
+    /// The answer to `Effect::ReadDetails`.
+    DetailsRead(ItemRef, Result<Info, ListFailure>),
     /// An arrow or jump key.
     MoveCursor(Direction, Modifier),
     /// A typed character, to jump to a name.

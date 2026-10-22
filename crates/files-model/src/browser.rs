@@ -1,7 +1,7 @@
 //! One window's view of one location.
 
 use files_core::{
-    Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, ItemRef, Location, Summary, Volume,
+    Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, Info, ItemRef, Location, Summary, Volume,
 };
 
 use crate::app::Chooser;
@@ -12,6 +12,7 @@ use crate::history::{Availability, History};
 use crate::listing::Listing;
 use crate::look::{InfoView, Looking};
 use crate::ops::{Question, Work};
+use crate::preview::Pane;
 use crate::rename::Rename;
 use crate::reveal;
 use crate::selection::Selection;
@@ -47,6 +48,10 @@ pub struct Browser {
     pub(crate) looking: Looking,
     /// The Get Info panel.
     pub(crate) info: InfoView,
+    /// Whether the preview pane is up (the window's, shared by its tabs).
+    pub(crate) pane: Pane,
+    /// The facts read for the item the pane shows, once they have arrived.
+    pub(crate) details: Option<Info>,
     /// The person's home folder, which `~` means in Go to Folder; `None` until the caller says.
     pub(crate) home: Option<FolderPath>,
     /// The Go to Folder sheet.
@@ -79,6 +84,8 @@ impl Browser {
             starting: None,
             looking: Looking::Closed,
             info: InfoView::Closed,
+            pane: Pane::Hidden,
+            details: None,
             home: None,
             goto: GoTo::Closed,
             chooser: Chooser::Closed,
@@ -235,6 +242,7 @@ impl Browser {
             home: self.home.clone(),
             hidden: self.hidden,
             volumes: self.volumes.clone(),
+            pane: self.pane,
             clipboard: self.clipboard.clone(),
             undo: self.undo.clone(),
             ..browser

@@ -12,7 +12,7 @@ use files_fs::{
 use files_model::{Change, Effect, Input, ListFailure, OpenTarget, TabId};
 use files_trash::{FakeTrash, Trash};
 use files_ui::edge::{Edge, Heard, Seams, change_of};
-use files_ui::{NoApps, NoVolumes, Opener, Volumes};
+use files_ui::{NoApps, NoThumbnails, NoVolumes, Opener, Volumes};
 use tempfile::TempDir;
 use tokio::sync::mpsc::UnboundedReceiver;
 
@@ -64,6 +64,7 @@ pub(super) fn rig_with(volumes: Arc<dyn Volumes>, tagger: Arc<FakeTagger>) -> Ri
         tagger: Arc::clone(&tagger) as Arc<dyn Tagger>,
         apps: Arc::new(NoApps),
         volumes,
+        thumbnails: Arc::new(NoThumbnails),
     };
     let (edge, inbox) = Edge::new(seams);
     Rig {
@@ -264,6 +265,7 @@ fn a_file_no_app_opens_is_told_in_words() {
         tagger: Arc::new(NoTags),
         apps: Arc::new(NoApps),
         volumes: Arc::new(NoVolumes),
+        thumbnails: Arc::new(NoThumbnails),
     };
     let (edge, mut inbox) = Edge::new(seams);
     let target = OpenTarget::new(folder("/p"), name("x.zzz"));

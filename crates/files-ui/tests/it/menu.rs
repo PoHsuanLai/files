@@ -80,14 +80,21 @@ fn a_row_in_a_folder_offers_what_the_selection_allows_in_finders_order() {
 }
 
 #[test]
-fn the_background_of_a_folder_makes_folders_shows_its_info_and_pastes() {
+fn the_background_of_a_folder_makes_folders_shows_its_info_pastes_and_toggles_the_preview() {
     let copied = step(click(folder_browser(), "a.txt"), Input::Copy);
     let want: Vec<Group> = vec![
         vec![(Command::NewFolder, Available)],
         vec![(Command::GetInfoFolder, Available)],
         vec![(Command::Paste, Available)],
+        vec![(Command::ShowPreview, Available)],
     ];
     assert_eq!(groups_for(&copied, Over::Background), want);
+    // With the pane up the same line puts it away.
+    let up = step(copied, Input::TogglePreview);
+    assert_eq!(
+        groups_for(&up, Over::Background)[3],
+        vec![(Command::HidePreview, Available)]
+    );
     assert_eq!(
         groups_for(&folder_browser(), Over::Background)[2],
         vec![(Command::Paste, Unavailable)]
@@ -139,6 +146,8 @@ fn each_command_asks_the_browser_for_its_input_and_says_its_words() {
             Input::EmptyTrash,
             "Empty Trash\u{2026}",
         ),
+        (Command::ShowPreview, Input::TogglePreview, "Show Preview"),
+        (Command::HidePreview, Input::TogglePreview, "Hide Preview"),
     ];
     for (command, input, title) in table {
         assert_eq!(command.input(), Some(input));

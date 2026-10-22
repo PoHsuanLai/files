@@ -17,7 +17,7 @@ pub struct InfoRow {
 }
 
 impl InfoRow {
-    fn new(label: &'static str, value: String) -> InfoRow {
+    pub(super) fn new(label: &'static str, value: String) -> InfoRow {
         InfoRow { label, value }
     }
 }

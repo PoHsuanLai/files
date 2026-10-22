@@ -13,9 +13,9 @@ below and fails on any edge it does not allow, or on a crate it does not list.
 | 0, library | `files-fs` | The disk behind traits: listing a folder and the facts of one item (Get Info), watching it, the remembered view of each folder (`PrefsStore`, kept as TOML in the app's state folder by quire's `ds-helpers` file helpers), tags (`user.xdg.tags`) and the walk that finds a colour's files. Fakes behind the `testing` feature. |
 | 0, library | `files-trash` | The freedesktop.org Trash behind a trait: move to it, list it, put back, delete now, empty, the per-volume `.Trash-$uid` folders. A fake keeps a Trash in a scratch folder. |
 | 0, library | `files-ops` | Copy, move, trash and rename as a queue: progress, cancel, conflict questions (keep both, replace, skip, stop), an undo journal. Each job is submitted with a caller's tag (`Worker<T>`) that comes back with every event of it. Plain threads and channels; links are copied as links. |
-| 1, logic | `files-model` | Pure state machines, `step(state, input, now) -> (state, effects)`: the browser (history, selection, rename, Go to Folder, type-to-select, sort and view per folder, tags, disks), tabs (`tabs/`), the queue as shown (work and questions), Quick Look and Get Info. No I/O. |
+| 1, logic | `files-model` | Pure state machines, `step(state, input, now) -> (state, effects)`: the browser (history, selection, rename, Go to Folder, type-to-select, sort and view per folder, tags, disks), tabs (`tabs/`), the queue as shown (work and questions), Quick Look, Get Info and the preview pane. No I/O. |
 | 2, desktop | `files-desktop` | The only crate that names a bus, docket or porter: `org.freedesktop.FileManager1`, the app's intents (`IntentProvider1`), UDisks2 on the system bus, launching apps with an activation token, one instance. |
-| 3, UI | `files-ui` | The window, drawn only with quire's components, and the seams it is given (`Opener`, `Apps`, `Volumes`, `Requests`). `edge/` carries out the model's effects against the layer 0 traits and those seams, one module per family (`read`, `ops`, `prefs`, `tagging`, `search`, `volumes`, `look`), and runs anyview's peek worker for Quick Look (its `Card` is drawn inside quire's `Peek`). The sidebar's sections are `places`. |
+| 3, UI | `files-ui` | The window, drawn only with quire's components, and the seams it is given (`Opener`, `Apps`, `Volumes`, `Requests`). `edge/` carries out the model's effects against the layer 0 traits and those seams, one module per family (`read`, `ops`, `prefs`, `tagging`, `search`, `volumes`, `look`, `thumbs`), and runs anyview's peek worker for Quick Look and the preview pane (its `Card` is drawn inside quire's `Peek` and `PreviewPane`) and the threads that make the icon view's thumbnails. The sidebar's sections are `places`. |
 | 4, binary | `files` | `main`: arguments, the runtime, `ds_blitz::launch`, and the glue between layers 2 and 3: `files-desktop`'s launcher, disks and intents adapted to `files-ui`'s seams, the XDG folders, the session bus. Each file is one adapter. |
 
 ## 2. Data and logic
@@ -136,3 +136,29 @@ home folder (`files_fs::TagWalk`, at most 20,000 entries, links not followed, do
 and streams batches as `Input::Found` and `Input::SearchDone`; `Listing::Searching` shows them while it
 walks, with a progress bar. A result row is keyed by its whole path and carries the item it stands for
 (`Entry::found`), so Open, Copy and Move to Trash act on the real file.
+
+## 10. The preview pane and thumbnails
+
+Show Preview (Shift+Command+P, or the folder background's menu) puts quire's `PreviewPane` beside the
+folder: the card anyview draws for Quick Look over the selected item's facts (Kind, Size, Created,
+Modified, and the picture's Dimensions from the card's own facts). Several items are "N items" with
+their total size; none is "No Selection". Whether the pane is up is `Browser::pane`, shared by the
+tabs through `Tabs`' `Shared` as the clipboard is (it is the window's, like the sidebar, which is not
+remembered across launches either). The pane is about `Browser::preview()`, computed from the
+selection; whenever the one item it shows changes, `Browser::step` adds `Effect::Look(item)` (the
+same peek worker as Quick Look) and `Effect::ReadDetails(item)`, answered as `Input::DetailsRead`,
+which the browser keeps only for the item still shown. Previews come back as `Heard::Looked(item,
+card)` and the window keeps the newest few by item (`looks::Looks`), so Quick Look and the pane
+each read the card of the item they are about and never take each other's.
+
+The icon view draws a picture for each file that has one. A tile that is drawn holds a `Wanted`
+(in the tile's badge slot, which quire mounts only for the tiles near the viewport) and so wants its
+thumbnail; one that scrolls away withdraws the wish. `thumbs::Queue` orders the wishes (newest first)
+and says whether an answer is still wanted; two threads of the edge (`edge/thumbs.rs`) take them. A
+thumbnail is looked up in the cache the desktop shares (`anyview_platform::ThumbnailCache`, the
+freedesktop.org layout, `normal` size, keyed by the file and its size and date), made by anyview's
+peek on a miss (`thumbs::Anyview`: only images, a PDF's first page, a video's frame and a recording's
+cover are looked at, the picture scaled to 128 px) and kept there for every program. A changed file
+has another version, so a new wish and a new thumbnail. The cache is a seam (`Seams::thumbnails`;
+the binary builds `FreedesktopThumbnails` from the environment, tests give a fake). A PDF page comes
+from the renderer's own page cache and is shown as it is.

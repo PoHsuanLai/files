@@ -1,8 +1,32 @@
 /* files' own CSS: layout only, quire's tokens only (it passes ds_lint Strict with no exceptions;
    tests/it/coherence.rs). The window's key handler needs one box of its own around the split view,
-   and that box is as tall as the window. */
+   and that box is as tall as the window. The folder pane and the preview pane beside it (Show
+   Preview) share the room left of the sidebar: the folder takes what the preview leaves, and the
+   preview is as wide as the pane quire draws (a 328 px card inside its 16 px padding). */
 
 .files-app {
   height: 100%;
   outline: none;
+}
+
+.files-body {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.files-main {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.files-preview {
+  flex: none;
+  box-sizing: border-box;
+  width: 360px;
+  min-height: 0;
+  border-left: var(--hair) solid var(--line-soft);
 }

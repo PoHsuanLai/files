@@ -7,7 +7,8 @@
 //!    every app), with the erase question up, with Quick Look up, with Get Info up and with the
 //!    Go to Folder sheet up (and its words under the field), with two tabs (the tab bar), with
 //!    the tag menu up (its colours checked), with a tag place listed (its rows, and the
-//!    sidebar's Tags section) and with the icon view listed and with a name typed on a tile.
+//!    sidebar's Tags section), with the icon view listed and with a name typed on a tile, and
+//!    with the preview pane up beside the folder.
 //! 3. Rule 3 (a missing component is added to quire first) is a review discipline, not a check;
 //!    the gaps are listed in the lane's report.
 //! 4. Rule 4 (motion only through quire's timers): the window draws no motion of its own.
@@ -66,9 +67,11 @@ enum Pose {
     Icons,
     /// The folder as icons with a name being typed on a tile.
     IconsRenaming,
+    /// The preview pane up over a file, its card and facts drawn.
+    Preview,
 }
 
-const POSES: [Pose; 15] = [
+const POSES: [Pose; 16] = [
     Pose::Listed,
     Pose::Renaming,
     Pose::Menu,
@@ -84,6 +87,7 @@ const POSES: [Pose; 15] = [
     Pose::TagPlace,
     Pose::Icons,
     Pose::IconsRenaming,
+    Pose::Preview,
 ];
 
 /// The window in `pose`.
@@ -114,7 +118,8 @@ fn page(pose: Pose) -> String {
         | Pose::TagMenu
         | Pose::TagPlace
         | Pose::Icons
-        | Pose::IconsRenaming => super::support::at(dir.path()),
+        | Pose::IconsRenaming
+        | Pose::Preview => super::support::at(dir.path()),
     };
     // The home folder is the scratch one, so the sidebar lists the tags; notes.txt carries two.
     let home = FolderPath::new(dir.path()).unwrap();
@@ -174,6 +179,18 @@ fn page(pose: Pose) -> String {
             window.send(Input::key(ShortcutKey::Space));
             settle_until(&mut window, |h| {
                 h.count(".ds-peek") > 0 && h.count(".anyview-pane") > 0
+            });
+        }
+        Pose::Preview => {
+            let at = window.centre(".ds-vtable-item[*|data-row=\"0\"]").unwrap();
+            window.send(Input::click(at));
+            window.advance(Duration::from_millis(50));
+            window.send(Input::chord(
+                &[ShortcutKey::Super, ShortcutKey::Shift],
+                ShortcutKey::Char('p'),
+            ));
+            settle_until(&mut window, |h| {
+                h.count(".ds-preview") > 0 && h.count(".anyview-pane") > 0
             });
         }
         Pose::Info => {

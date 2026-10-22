@@ -91,6 +91,8 @@ pub enum Effect {
     Look(ItemRef),
     /// Read the facts of this item for Get Info and answer with `Input::InfoRead`.
     ReadInfo(ItemRef),
+    /// Read the facts of this item for the preview pane and answer with `Input::DetailsRead`.
+    ReadDetails(ItemRef),
     /// Do this change to the files, after the ones already asked for; the browser hears how it
     /// goes as `Input::Op`.
     Run(OpPlan),

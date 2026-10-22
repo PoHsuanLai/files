@@ -188,7 +188,8 @@ fn found(rig: &mut super::edge::Rig, tab: TabId, colour: TagColour) -> Vec<Strin
             | Heard::CloseWindow
             | Heard::Told(_)
             | Heard::Announced(_)
-            | Heard::Looked(..)) => panic!("not part of a search: {other:?}"),
+            | Heard::Looked(..)
+            | Heard::Thumbed(..)) => panic!("not part of a search: {other:?}"),
         }
     }
 }
@@ -253,7 +254,8 @@ fn reports(rig: &mut super::edge::Rig, ends: usize) -> Vec<(TabId, String)> {
             | Heard::CloseWindow
             | Heard::Told(_)
             | Heard::Announced(_)
-            | Heard::Looked(..) => {}
+            | Heard::Looked(..)
+            | Heard::Thumbed(..) => {}
         }
     }
     said

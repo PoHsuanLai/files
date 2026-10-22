@@ -42,7 +42,8 @@ fn names(heard: &Heard) -> Vec<String> {
         | Heard::CloseWindow
         | Heard::Told(_)
         | Heard::Announced(_)
-        | Heard::Looked(..)) => {
+        | Heard::Looked(..)
+        | Heard::Thumbed(..)) => {
             panic!("not a list of disks: {other:?}")
         }
     }

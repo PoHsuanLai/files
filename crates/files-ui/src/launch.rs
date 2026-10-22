@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use tokio::runtime::Handle;
 
+use anyview_platform::ThumbnailCache;
 use ds::prelude::SystemPrefs;
 use ds_settings::{AppName, ConfigRoot, Store, SystemPrefsSource};
 use files_core::{FolderPath, Location};
@@ -139,6 +140,15 @@ impl Launch {
     pub fn with_tagger(self, tagger: Arc<dyn Tagger>) -> Launch {
         Launch {
             seams: self.seams.with_tagger(tagger),
+            ..self
+        }
+    }
+
+    /// The same launch showing the thumbnails `thumbnails` shares with the desktop, and adding to
+    /// them.
+    pub fn with_thumbnails(self, thumbnails: Arc<dyn ThumbnailCache + Send + Sync>) -> Launch {
+        Launch {
+            seams: self.seams.with_thumbnails(thumbnails),
             ..self
         }
     }

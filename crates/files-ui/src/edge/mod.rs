@@ -34,6 +34,7 @@ mod read;
 mod seams;
 mod search;
 mod tagging;
+mod thumbs;
 mod volumes;
 mod zone;
 
@@ -43,6 +44,7 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Instant;
 
+use crate::thumbs::{Anyview, ThumbKey, Thumbed, Thumbnailer};
 use crate::words::volume_trouble_words;
 use anyview_peek::{AnyPeeked, PeekWorker};
 use ds::base::time::clock;
@@ -59,6 +61,7 @@ pub use fake_volumes::{FakeVolumes, VolumeCall};
 pub use opener::{OpenAs, Opener};
 pub use read::change_of;
 pub use seams::Seams;
+pub use thumbs::NoThumbnails;
 pub use volumes::{Changed, NoVolumes, Volumes, WatchGuard};
 pub use zone::Zone;
 
@@ -78,8 +81,10 @@ pub enum Heard {
     Told(String),
     /// A change was made that can be undone (a move to the Trash): said with an Undo button.
     Announced(Summary),
-    /// The preview of an item, for Quick Look.
+    /// The preview of an item, for Quick Look and the preview pane.
     Looked(ItemRef, Arc<AnyPeeked>),
+    /// The thumbnail a tile of the icon view asked for, while it still wants it.
+    Thumbed(ThumbKey, Thumbed),
 }
 
 /// Carries out effects. Lives on the window's thread; its workers answer on the channel it made.
@@ -100,6 +105,8 @@ pub struct Edge {
     peek: PeekWorker,
     /// Lists, opens and ejects the disks.
     disks: volumes::Disks,
+    /// Makes the icon view's thumbnails.
+    thumbs: thumbs::Thumbnails,
 }
 
 impl fmt::Debug for Edge {
@@ -122,6 +129,9 @@ impl Edge {
         ));
         let prefs = prefs::Prefs::start(Arc::clone(&seams.prefs), heard.clone());
         let disks = volumes::Disks::start(Arc::clone(&seams.volumes), heard.clone());
+        let maker = Arc::new(Anyview::new(Arc::clone(&seams.thumbnails)));
+        let thumbnailer = Thumbnailer::new(Arc::clone(&seams.thumbnails), maker);
+        let thumbs = thumbs::Thumbnails::start(thumbnailer, heard.clone());
         let edge = Edge {
             seams,
             lister,
@@ -132,6 +142,7 @@ impl Edge {
             prefs,
             peek: look::worker(),
             disks,
+            thumbs,
         };
         (edge, inbox)
     }
@@ -186,6 +197,7 @@ impl Edge {
             Effect::SavePrefs(at, prefs) => self.prefs.save(at, prefs),
             Effect::Look(item) => look::ask(&self.peek, item, self.heard.clone()),
             Effect::ReadInfo(item) => self.read_info(tab, item),
+            Effect::ReadDetails(item) => self.read_details(tab, item),
             Effect::Tag { items, colour, how } => self.tag(items, colour, how),
             Effect::CloseWindow => self.say(Heard::CloseWindow),
             Effect::MountVolume(id) => self.disks.mount(tab, id),
@@ -197,6 +209,18 @@ impl Edge {
             // An effect files-model adds later is dropped until this names it.
             _ => {}
         }
+    }
+
+    /// A tile of the icon view that is drawn wants the thumbnail `key`; it comes back as
+    /// [`Heard::Thumbed`] if the tile still wants it by then.
+    pub fn want_thumbnail(&self, key: ThumbKey) {
+        self.thumbs.want(key);
+    }
+
+    /// The tile that wanted `key` was scrolled away or replaced; a thumbnail not yet made for it
+    /// is not made, and one being made is not told.
+    pub fn unwant_thumbnail(&self, key: &ThumbKey) {
+        self.thumbs.unwant(key);
     }
 
     /// Hands `targets` to the opener, and tells the person if it could not.

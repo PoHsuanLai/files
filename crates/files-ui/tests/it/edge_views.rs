@@ -96,7 +96,8 @@ fn quick_look_gets_a_preview_of_the_file() {
             | Heard::All(_)
             | Heard::CloseWindow
             | Heard::Told(_)
-            | Heard::Announced(_) => {}
+            | Heard::Announced(_)
+            | Heard::Thumbed(..) => {}
         }
     };
     assert_eq!(heard.0, item);
