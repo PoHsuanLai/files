@@ -17,7 +17,13 @@ cargo build --release
 
 ## Install
 
-`cargo build --release` makes `target/release/files`. Put these where the desktop looks (the
+`dist/install.sh` builds files in release and puts everything below under `/usr/local` (or
+`FILES_PREFIX`), writing the installed path into the `Exec=` lines. It asks for root only when the
+place is not yours; `--dry-run` prints every step and changes nothing, and `dist/uninstall.sh`
+takes it all out again. `FILES_BIN` installs a binary you built instead; `FILES_DESTDIR` stages
+into a scratch root.
+
+To do it by hand, `cargo build --release` makes `target/release/files`. Put these where the desktop looks (the
 prefix is `/usr` for a package, `~/.local` for one person; the `Exec=` lines of the two service
 files name `/usr/bin/files`, so change them for another prefix):
 
