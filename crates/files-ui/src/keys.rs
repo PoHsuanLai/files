@@ -35,14 +35,8 @@ enum Own {
     ShowHidden,
     /// Rename the selected item in place (Return).
     Rename,
-    /// Make a new folder here (Command+Shift+N).
-    NewFolder,
-    /// Move the selection to the Trash (Command+Backspace).
-    MoveToTrash,
     /// Move what was copied here instead of copying it (Command+Option+V).
     PasteMove,
-    /// Empty the Trash, after asking (Command+Shift+Backspace).
-    EmptyTrash,
     /// Show the properties of the selection (Command+I).
     GetInfo,
     /// Go to a folder typed by path (Command+Shift+G).
@@ -74,18 +68,7 @@ const OWN: &[(Own, &str, &[&str])] = &[
         &["Primary+Shift+.", "Primary+Shift+>"],
     ),
     (Own::Rename, "files.rename", &["Return"]),
-    (Own::NewFolder, "files.new-folder", &["Primary+Shift+N"]),
-    (
-        Own::MoveToTrash,
-        "files.move-to-trash",
-        &["Primary+Backspace"],
-    ),
     (Own::PasteMove, "files.paste-move", &["Primary+Alt+V"]),
-    (
-        Own::EmptyTrash,
-        "files.empty-trash",
-        &["Primary+Shift+Backspace"],
-    ),
     (Own::GetInfo, "files.get-info", &["Primary+I"]),
     (Own::GoToFolder, "files.go-to-folder", &["Primary+Shift+G"]),
     (
@@ -211,6 +194,17 @@ fn act(action: &Action, browse: Browse, mut sidebar: Signal<Shown>) -> ActionTak
         Action::Standard(standard) if *standard == StandardAction::QuickLook => {
             send(Input::QuickLook)
         }
+        // New Folder (Shift+Command+N), Move to Trash (Command+Backspace) and Empty Trash
+        // (Shift+Command+Backspace) are standard, as in Finder.
+        Action::Standard(standard) if *standard == StandardAction::NewFolder => {
+            send(Input::NewFolder)
+        }
+        Action::Standard(standard) if *standard == StandardAction::MoveToTrash => {
+            send(Input::MoveToTrash)
+        }
+        Action::Standard(standard) if *standard == StandardAction::EmptyTrash => {
+            send(Input::EmptyTrash)
+        }
         // Close (Command+W) closes the tab, and the window with the last one.
         Action::Standard(standard) if *standard == StandardAction::Close => send(Input::CloseTab),
         Action::Standard(standard) if *standard == StandardAction::ToggleSidebar => {
@@ -225,10 +219,7 @@ fn act(action: &Action, browse: Browse, mut sidebar: Signal<Shown>) -> ActionTak
             Some(Own::Open) => send(Input::Open),
             Some(Own::ShowHidden) => send(Input::ToggleHidden),
             Some(Own::Rename) => send(Input::BeginRename),
-            Some(Own::NewFolder) => send(Input::NewFolder),
-            Some(Own::MoveToTrash) => send(Input::MoveToTrash),
             Some(Own::PasteMove) => send(Input::PasteMove),
-            Some(Own::EmptyTrash) => send(Input::EmptyTrash),
             Some(Own::GetInfo) => send(Input::GetInfo),
             Some(Own::GoToFolder) => send(Input::GoToFolder),
             Some(Own::CopyAsPathname) => send(Input::CopyAsPathname),

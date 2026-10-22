@@ -2,19 +2,20 @@
 
 use dioxus::prelude::*;
 use ds::components::controls::chip::{Chip, ChipVariant};
+use ds::components::controls::chip_dot::ChipDot;
+use ds::style::tokens::tag_colour::TagColour as Hue;
 use files_core::{Tag, TagColour, Tags};
 
-/// The CSS colour of a tag: quire's `--tag-*` token. quire has no gray tag, so Gray is the faint
-/// ink.
-pub(super) fn tag_css(colour: TagColour) -> &'static str {
+/// quire's tag colour for a tag's: painted from its `--tag-*` token.
+fn hue(colour: TagColour) -> Hue {
     match colour {
-        TagColour::Red => "var(--tag-red)",
-        TagColour::Orange => "var(--tag-orange)",
-        TagColour::Yellow => "var(--tag-yellow)",
-        TagColour::Green => "var(--tag-green)",
-        TagColour::Blue => "var(--tag-blue)",
-        TagColour::Purple => "var(--tag-purple)",
-        TagColour::Gray | _ => "var(--ink-faint)",
+        TagColour::Red => Hue::Red,
+        TagColour::Orange => Hue::Orange,
+        TagColour::Yellow => Hue::Yellow,
+        TagColour::Green => Hue::Green,
+        TagColour::Blue => Hue::Blue,
+        TagColour::Purple => Hue::Purple,
+        TagColour::Gray | _ => Hue::Gray,
     }
 }
 
@@ -24,7 +25,7 @@ pub(super) fn dot(colour: TagColour) -> Element {
         Chip {
             variant: ChipVariant::Neutral,
             text: String::new(),
-            dot: Some(tag_css(colour).to_owned()),
+            dot: ChipDot::Tag(hue(colour)),
         }
     }
 }
