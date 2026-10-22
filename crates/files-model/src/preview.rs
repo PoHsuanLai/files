@@ -58,7 +58,7 @@ pub enum Preview {
 fn weight(entry: &Entry) -> u64 {
     match &entry.kind {
         EntryKind::File(size) | EntryKind::Link(LinkTo::File(size)) => size.0,
-        EntryKind::Folder | EntryKind::Link(_) | EntryKind::Special(_) => 0,
+        EntryKind::Folder | EntryKind::Link(_) | EntryKind::Special(_) | _ => 0,
     }
 }
 

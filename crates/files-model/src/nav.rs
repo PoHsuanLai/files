@@ -44,6 +44,8 @@ impl Browser {
             goto: GoTo::Closed,
             chooser: Chooser::Closed,
             volumes: self.volumes,
+            pane: self.pane,
+            details: None,
         };
         (browser, effects)
     }
