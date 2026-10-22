@@ -21,7 +21,7 @@ DESKTOP_DEST="$ROOTED/share/applications/org.quire.Files.desktop"
 # The two bus services: Files by its own name, and the file-manager name other programs call to
 # "show this folder". Both under $PREFIX/share, which is on XDG_DATA_DIRS for /usr and /usr/local.
 SERVICE_DEST="$ROOTED/share/dbus-1/services/org.quire.Files.service"
-FM_SERVICE_DEST="$ROOTED/share/dbus-1/services/org.freedesktop.FileManager1.service"
+FM_SERVICE_DEST="$ROOTED/share/dbus-1/services/org.quire.Files.FileManager1.service"
 # The intents manifest the desktop's router reads, beside the other apps'.
 INTENTS_DEST="$ROOTED/share/quire/intents/org.quire.Files.toml"
 # The binary to install: a release build unless FILES_BIN says otherwise.

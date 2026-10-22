@@ -31,7 +31,7 @@ files name `/usr/bin/files`, so change them for another prefix):
 | --- | --- |
 | `target/release/files` | `<prefix>/bin/files` |
 | `crates/files/dist/org.quire.Files.desktop` | `<prefix>/share/applications/` |
-| `crates/files/dist/org.freedesktop.FileManager1.service` | `<prefix>/share/dbus-1/services/` |
+| `crates/files/dist/org.quire.Files.FileManager1.service` | `<prefix>/share/dbus-1/services/` |
 | `crates/files/dist/org.quire.Files.service` | `<prefix>/share/dbus-1/services/` |
 | `dist/intents/org.quire.Files.toml` | `<prefix>/share/quire/intents/` |
 

@@ -60,7 +60,7 @@ desktop_text >"$TMP/desktop"
 put 644 "$TMP/desktop" "$DESKTOP_DEST"
 service_text "$APPDIST/org.quire.Files.service" >"$TMP/files.service"
 put 644 "$TMP/files.service" "$SERVICE_DEST"
-service_text "$APPDIST/org.freedesktop.FileManager1.service" >"$TMP/fm.service"
+service_text "$APPDIST/org.quire.Files.FileManager1.service" >"$TMP/fm.service"
 put 644 "$TMP/fm.service" "$FM_SERVICE_DEST"
 # What the desktop's intent router reads.
 put 644 "$DIST/intents/org.quire.Files.toml" "$INTENTS_DEST"
