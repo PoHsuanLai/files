@@ -14,13 +14,10 @@ use crate::rows::{click_of, cursor_of, selection_of};
 use crate::state::Browse;
 use crate::thumbs::{ThumbKey, Thumbed, Thumbs};
 
-/// Where `entry` is: where a search found it, else in the folder shown; `None` in the Trash.
+/// Where `entry` is, in the folder shown; `None` in the Trash.
 fn item_for(state: &Browser, entry: &Entry) -> Option<ItemRef> {
-    match (&entry.found, state.folder()) {
-        (Some(item), _) => Some(item.clone()),
-        (None, Some(folder)) => Some(ItemRef::new(folder.clone(), entry.name.clone())),
-        (None, None) => None,
-    }
+    let folder = state.folder()?;
+    Some(ItemRef::new(folder.clone(), entry.name.clone()))
 }
 
 /// The picture of the tile of `entry`: its thumbnail once it has one, else its icon; and, for a

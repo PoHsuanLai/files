@@ -2,7 +2,7 @@
 
 use std::time::SystemTime;
 
-use crate::{ByteSize, FileName, ItemRef, MimeType, Tags, TrashedItem};
+use crate::{ByteSize, FileName, MimeType, TrashedItem};
 
 /// One entry of a folder: its name, what it is, and what the listing knew about it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -19,12 +19,6 @@ pub struct Entry {
     /// For a row of the Trash: the trashed item it stands for. Its `name` is then the name the
     /// item has inside the Trash (unique there); [`Entry::shown_name`] is the one a person reads.
     pub trashed: Option<TrashedItem>,
-    /// The tags the file carries; none until the caller reads them.
-    pub tags: Tags,
-    /// For a row of a search: the item it stands for, wherever it is. Its `name` is then a key
-    /// made from the whole path (unique in the results); [`Entry::shown_name`] is the name a
-    /// person reads.
-    pub found: Option<ItemRef>,
 }
 
 impl Entry {
@@ -36,30 +30,6 @@ impl Entry {
             modified: None,
             mime: None,
             trashed: None,
-            tags: Tags::none(),
-            found: None,
-        }
-    }
-
-    /// The same entry carrying `tags`.
-    pub fn with_tags(self, tags: Tags) -> Entry {
-        Entry { tags, ..self }
-    }
-
-    /// The same entry as a row of a search, standing for `item`. The row is keyed by the whole
-    /// path (its slashes written as U+2215), so two files of one name in different folders are
-    /// two rows, and the key is the same every time the search is run.
-    pub fn found_at(self, item: ItemRef) -> Entry {
-        let key: String = item
-            .path()
-            .to_string_lossy()
-            .trim_start_matches('/')
-            .replace('/', "\u{2215}");
-        let name = FileName::new(key).unwrap_or_else(|_| item.name.clone());
-        Entry {
-            name,
-            found: Some(item),
-            ..self
         }
     }
 
@@ -71,13 +41,11 @@ impl Entry {
         }
     }
 
-    /// The name a person reads: the original name of a trashed item or the name of a found one, else
-    /// the entry's own.
+    /// The name a person reads: the original name of a trashed item, else the entry's own.
     pub fn shown_name(&self) -> &FileName {
-        match (&self.trashed, &self.found) {
-            (Some(item), _) => &item.original.name,
-            (None, Some(item)) => &item.name,
-            (None, None) => &self.name,
+        match &self.trashed {
+            Some(item) => &item.original.name,
+            None => &self.name,
         }
     }
 

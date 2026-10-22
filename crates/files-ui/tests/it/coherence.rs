@@ -6,9 +6,8 @@
 //!    name being typed, with the context menu up (and its Open With submenu, and the sheet of
 //!    every app), with the erase question up, with Quick Look up, with Get Info up and with the
 //!    Go to Folder sheet up (and its words under the field), with two tabs (the tab bar), with
-//!    the tag menu up (its colours checked), with a tag place listed (its rows, and the
-//!    sidebar's Tags section), with the icon view listed and with a name typed on a tile, and
-//!    with the preview pane up beside the folder.
+//!    the icon view listed and with a name typed on a tile, and with the preview pane up beside
+//!    the folder.
 //! 3. Rule 3 (a missing component is added to quire first) is a review discipline, not a check;
 //!    the gaps are listed in the lane's report.
 //! 4. Rule 4 (motion only through quire's timers): the window draws no motion of its own.
@@ -21,12 +20,12 @@ use ds::prelude::ShortcutKey;
 use ds_harness::harness::settle_until;
 use ds_harness::{Harness, Input};
 use ds_lint::{LintConfig, Profile, Rule, assert_clean, markup};
-use files_core::{FileName, FolderPath, ItemRef, Location, Tags};
-use files_fs::{FakePrefs, FakeTagger};
+use files_core::{FileName, FolderPath, ItemRef, Location};
+use files_fs::FakePrefs;
 use files_trash::{FakeTrash, Trash};
 use files_ui::{PlaceKind, Places, STYLE};
 
-use super::support::{RecordingOpener, harness, launch_tagging, scratch_folder};
+use super::support::{RecordingOpener, harness, launch_remembering, scratch_folder};
 
 /// What `markup` needs to know is styled: quire's own stylesheet, plus the window's.
 fn window_css() -> String {
@@ -59,10 +58,6 @@ enum Pose {
     GoToWrong,
     /// Two tabs: the tab bar shown over the folder.
     TwoTabs,
-    /// The context menu with its Tags submenu open.
-    TagMenu,
-    /// The Red tag place, listed.
-    TagPlace,
     /// The folder as icons.
     Icons,
     /// The folder as icons with a name being typed on a tile.
@@ -71,7 +66,7 @@ enum Pose {
     Preview,
 }
 
-const POSES: [Pose; 16] = [
+const POSES: [Pose; 14] = [
     Pose::Listed,
     Pose::Renaming,
     Pose::Menu,
@@ -83,8 +78,6 @@ const POSES: [Pose; 16] = [
     Pose::GoTo,
     Pose::GoToWrong,
     Pose::TwoTabs,
-    Pose::TagMenu,
-    Pose::TagPlace,
     Pose::Icons,
     Pose::IconsRenaming,
     Pose::Preview,
@@ -115,26 +108,18 @@ fn page(pose: Pose) -> String {
         | Pose::GoTo
         | Pose::GoToWrong
         | Pose::TwoTabs
-        | Pose::TagMenu
-        | Pose::TagPlace
         | Pose::Icons
         | Pose::IconsRenaming
         | Pose::Preview => super::support::at(dir.path()),
     };
-    // The home folder is the scratch one, so the sidebar lists the tags; notes.txt carries two.
+    // The home folder is the scratch one, so the sidebar lists it.
     let home = FolderPath::new(dir.path()).unwrap();
-    let tagger = Arc::new(FakeTagger::new());
-    tagger.put(
-        ItemRef::new(home.clone(), FileName::new("notes.txt").unwrap()),
-        Tags::parse("Red,Work"),
-    );
-    let launch = launch_tagging(
+    let launch = launch_remembering(
         start,
         config.path(),
         &opener,
         trash,
         Arc::new(FakePrefs::new()),
-        tagger,
     )
     .with_home(home.clone())
     .with_places(Places::default().with(PlaceKind::Home, home));
@@ -227,26 +212,6 @@ fn page(pose: Pose) -> String {
         Pose::TwoTabs => {
             window.send(Input::chord(&[ShortcutKey::Super], ShortcutKey::Char('t')));
             settle_until(&mut window, |h| h.html().contains("aria-label=\"Tabs\""));
-        }
-        Pose::TagMenu => {
-            let at = window.centre(".ds-vtable-item[*|data-row=\"0\"]").unwrap();
-            window.send(Input::press(at, PointerButton::Secondary));
-            settle_until(&mut window, |h| h.html().contains("Move to Trash"));
-            // Down to Tags, Right into its submenu.
-            for _ in 0..9 {
-                window.send(Input::key(ShortcutKey::Down));
-                window.advance(Duration::from_millis(50));
-            }
-            window.send(Input::key(ShortcutKey::Right));
-            settle_until(&mut window, |h| h.count(".ds-menu-item") > 12);
-        }
-        Pose::TagPlace => {
-            let red = window
-                .centre(".ds-sidebar .ds-row[*|data-leading=\"element\"]")
-                .unwrap();
-            window.send(Input::click(red));
-            window.advance(Duration::from_millis(50));
-            settle_until(&mut window, |h| !h.html().contains("zebra.png"));
         }
         Pose::GoTo | Pose::GoToWrong => {
             window.send(Input::chord(

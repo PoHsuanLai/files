@@ -4,13 +4,10 @@ use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 use files_core::{
-    ByteSize, Entry, EntryKind, FileName, FolderPath, ItemRef, Location, TagColour, Tags, TrashId,
-    TrashedItem,
+    ByteSize, Entry, EntryKind, FileName, FolderPath, ItemRef, Location, TrashId, TrashedItem,
 };
 use files_model::{AppPick, Availability, Browser, Input, Modifier, Now};
-use files_ui::menu::{
-    AppLine, Command, OTHER_APP, Over, Pick, TagMark, app_lines, app_names, groups_for, tag_mark,
-};
+use files_ui::menu::{AppLine, Command, OTHER_APP, Over, Pick, app_lines, app_names, groups_for};
 use files_ui::{AppChoiceView, AppRole};
 
 use Availability::{Available, Unavailable};
@@ -68,7 +65,6 @@ fn a_row_in_a_folder_offers_what_the_selection_allows_in_finders_order() {
             (Command::Copy, Available),
             (Command::CopyAsPathname, Available),
         ],
-        vec![(Command::Tags, Available)],
         vec![(Command::NewFolder, Available)],
     ];
     assert_eq!(groups_for(&one, Over::Row), want);
@@ -250,11 +246,6 @@ fn a_menu_pick_asks_the_browser_for_its_input() {
             Some(Input::OpenWith(AppPick::new("viewer"))),
         ),
         (Pick::OtherApp, Some(Input::ChooseApp)),
-        (
-            Pick::Tag(TagColour::Green),
-            Some(Input::Tag(TagColour::Green)),
-        ),
-        (Pick::Command(Command::Tags), None),
     ];
     for (pick, input) in table {
         assert_eq!(pick.input(), input);
@@ -267,7 +258,7 @@ fn with_folder() -> Browser {
     let (browser, _) = Browser::new(here.clone());
     let rows = vec![
         Entry::new(name("Projects"), EntryKind::Folder),
-        Entry::new(name("a.txt"), EntryKind::File(ByteSize(1))).with_tags(Tags::parse("Red")),
+        Entry::new(name("a.txt"), EntryKind::File(ByteSize(1))),
         Entry::new(name("b.txt"), EntryKind::File(ByteSize(1))),
     ];
     step(browser, Input::Listed(here, Ok(rows)))
@@ -294,30 +285,4 @@ fn open_in_new_tab_follows_open_on_a_lone_folder_and_is_left_out_otherwise() {
     // Two folders-or-more selected: not a lone folder.
     let two = step(folder, Input::Click(name("a.txt"), Modifier::Toggle));
     assert_eq!(groups_for(&two, Over::Row)[0].len(), 2);
-}
-
-#[test]
-fn the_tags_menu_marks_a_colour_every_or_some_of_the_selection_has() {
-    let red = click(with_folder(), "a.txt");
-    assert_eq!(tag_mark(&red, TagColour::Red), Some(TagMark::Every));
-    assert_eq!(tag_mark(&red, TagColour::Blue), None);
-    let both = step(red, Input::Click(name("b.txt"), Modifier::Toggle));
-    assert_eq!(tag_mark(&both, TagColour::Red), Some(TagMark::Part));
-}
-
-#[test]
-fn the_tags_menu_is_left_out_of_the_trash_and_the_background() {
-    let selected = click(trash_browser(), "a.txt");
-    let all: Vec<Command> = groups_for(&selected, Over::Row)
-        .into_iter()
-        .flatten()
-        .map(|(command, _)| command)
-        .collect();
-    assert!(!all.contains(&Command::Tags));
-    let background: Vec<Command> = groups_for(&with_folder(), Over::Background)
-        .into_iter()
-        .flatten()
-        .map(|(command, _)| command)
-        .collect();
-    assert!(!background.contains(&Command::Tags));
 }

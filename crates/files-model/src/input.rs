@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use files_core::{
     EjectFailure, Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef, Location, MountFailure,
-    Resolution, Sort, TagColour, ViewMode, Volume, VolumeId,
+    Resolution, Sort, ViewMode, Volume, VolumeId,
 };
 
 use crate::app::AppPick;
@@ -65,10 +65,6 @@ pub enum Input {
     Changed(Location, Change),
     /// The answer to `Effect::LoadPrefs`.
     PrefsLoaded(Location, FolderPrefs),
-    /// A batch of the files a search found, from `Effect::Find`.
-    Found(Location, Vec<Entry>),
-    /// The search of a place has looked everywhere it will.
-    SearchDone(Location),
     /// Go to a place.
     Go(Location),
     /// Go to a folder and select these entries in it (another program asked to show them, as
@@ -230,9 +226,6 @@ pub enum Input {
     /// Ask whether to empty the Trash, from any place (another program asked; the person
     /// answers).
     AskEmptyTrash,
-    /// Put the tag of this colour on the selection, or take it off when every selected item has
-    /// it already.
-    Tag(TagColour),
     /// Open a new tab on the place the front tab shows (⌘T). Handled by `Tabs`.
     NewTab,
     /// Open the selected folder in a new tab (the context menu). Handled by `Tabs`.

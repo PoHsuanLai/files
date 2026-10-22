@@ -4,9 +4,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use anyview_platform::ThumbnailCache;
-use files_fs::{
-    DiskLister, Lister, NoPrefs, NotifyWatcher, PrefsStore, Tagger, Watcher, XattrTagger,
-};
+use files_fs::{DiskLister, Lister, NoPrefs, NotifyWatcher, PrefsStore, Watcher};
 use files_trash::{SystemTrash, Trash};
 
 use super::{Apps, NoApps, NoThumbnails, NoVolumes, Opener, Volumes};
@@ -24,8 +22,6 @@ pub struct Seams {
     pub trash: Arc<dyn Trash>,
     /// Where each folder's view and sort are remembered.
     pub prefs: Arc<dyn PrefsStore>,
-    /// The tags of files: read with every listing, written by the tag menu.
-    pub tagger: Arc<dyn Tagger>,
     /// Which apps open what, for Open With.
     pub apps: Arc<dyn Apps>,
     /// The computer's disks: listing, opening and ejecting them.
@@ -43,7 +39,6 @@ impl Seams {
             opener,
             trash: Arc::new(SystemTrash),
             prefs: Arc::new(NoPrefs),
-            tagger: Arc::new(XattrTagger),
             apps: Arc::new(NoApps),
             volumes: Arc::new(NoVolumes),
             thumbnails: Arc::new(NoThumbnails),
@@ -58,11 +53,6 @@ impl Seams {
     /// The same seams over the disks `volumes` knows.
     pub fn with_volumes(self, volumes: Arc<dyn Volumes>) -> Seams {
         Seams { volumes, ..self }
-    }
-
-    /// The same seams keeping tags with `tagger`.
-    pub fn with_tagger(self, tagger: Arc<dyn Tagger>) -> Seams {
-        Seams { tagger, ..self }
     }
 
     /// The same seams sharing thumbnails through `thumbnails`.

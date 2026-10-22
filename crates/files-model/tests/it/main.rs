@@ -19,7 +19,6 @@ mod selection;
 mod sorting;
 mod tab_ops;
 mod tabs;
-mod tags;
 mod typeselect;
 mod volumes;
 mod work;

@@ -49,13 +49,7 @@ impl Browser {
             Input::Listed(at, result) if at == self.location => self.listed(result),
             Input::Changed(at, change) if at == self.location => self.changed(change),
             Input::PrefsLoaded(at, prefs) if at == self.location => self.with_prefs(prefs),
-            Input::Found(at, batch) if at == self.location => self.found(batch),
-            Input::SearchDone(at) if at == self.location => self.search_done(),
-            Input::Listed(..)
-            | Input::Changed(..)
-            | Input::PrefsLoaded(..)
-            | Input::Found(..)
-            | Input::SearchDone(..) => (self, Vec::new()),
+            Input::Listed(..) | Input::Changed(..) | Input::PrefsLoaded(..) => (self, Vec::new()),
             Input::Reveal { folder, names } => self.revealing(folder, names),
             Input::Go(to) => self.go(to),
             Input::Properties { folder, names } => self.properties(folder, names),
@@ -124,7 +118,6 @@ impl Browser {
                 how,
             } => self.bring(sources, destination, how),
             Input::AskEmptyTrash => self.ask_empty_trash(),
-            Input::Tag(colour) => self.tag(colour),
             // The tabs are `Tabs`'; a lone browser has none.
             Input::NewTab
             | Input::OpenInNewTab
@@ -133,27 +126,6 @@ impl Browser {
             | Input::PreviousTab
             | Input::ShowTab(_) => (self, Vec::new()),
         }
-    }
-
-    fn found(self, batch: Vec<Entry>) -> Stepped {
-        let listing = match self.listing {
-            Listing::Loading => Listing::Searching(batch),
-            Listing::Searching(mut so_far) => {
-                so_far.extend(batch);
-                Listing::Searching(so_far)
-            }
-            kept @ (Listing::Loaded(_) | Listing::Failed(_)) => kept,
-        };
-        (Browser { listing, ..self }.refreshed(), Vec::new())
-    }
-
-    fn search_done(self) -> Stepped {
-        let listing = match self.listing {
-            Listing::Loading => Listing::Loaded(Vec::new()),
-            Listing::Searching(found) => Listing::Loaded(found),
-            kept @ (Listing::Loaded(_) | Listing::Failed(_)) => kept,
-        };
-        (Browser { listing, ..self }.refreshed(), Vec::new())
     }
 
     fn listed(self, result: Result<Vec<Entry>, ListFailure>) -> Stepped {

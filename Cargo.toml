@@ -68,9 +68,6 @@ futures-util = { version = "0.3", default-features = false, features = ["std"] }
 # The remembered folder views (files-fs): a TOML file the app owns, read and written as text.
 toml = "1"
 thiserror = "2"
-# The tags of files (files-fs): the user.xdg.tags extended attribute. MIT OR Apache-2.0; already in the lock
-# through another crate.
-xattr = "1"
 # The freedesktop.org Trash (files-trash only): MIT, pure Rust on Linux.
 trash = "5"
 

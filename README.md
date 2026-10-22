@@ -2,7 +2,7 @@
 
 files is a file manager for Linux desktops, built on the [quire](https://github.com/PoHsuanLai/quire)
 design system. It follows the Mac's Finder: a sidebar of places, list and icon views (with thumbnails), tabs,
-Quick Look on Space, a preview pane (Shift+Command+P), tags, undo for every change, and the freedesktop.org standards that make it the
+Quick Look on Space, a preview pane (Shift+Command+P), undo for every change, and the freedesktop.org standards that make it the
 desktop's file manager (the `org.freedesktop.FileManager1` service, the Trash, `mimeapps.list`).
 
 It is early. `ARCHITECTURE.md` is the map, `CONVENTIONS.md` the rules.

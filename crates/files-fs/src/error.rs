@@ -68,33 +68,3 @@ pub enum PrefsError {
     #[error("How folders are shown can't be saved.")]
     Write(#[source] ds_helpers::WriteError),
 }
-
-/// Why a file could not be tagged, in the words a person reads.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum TagWriteError {
-    /// The disk keeps no extended attributes, so it keeps no tags.
-    #[error("Tags can\u{2019}t be added on this disk.")]
-    Unsupported,
-    /// The file is gone.
-    #[error("That file can\u{2019}t be found.")]
-    NotFound,
-    /// The system won't let this person change the file.
-    #[error("You don\u{2019}t have permission to tag that file.")]
-    NoPermission,
-    /// Anything else the system reported.
-    #[error("That file can\u{2019}t be tagged.")]
-    Other(io::ErrorKind),
-}
-
-impl TagWriteError {
-    /// The error `err` stands for.
-    pub fn from_io(err: &io::Error) -> TagWriteError {
-        match err.kind() {
-            io::ErrorKind::Unsupported => TagWriteError::Unsupported,
-            io::ErrorKind::NotFound => TagWriteError::NotFound,
-            io::ErrorKind::PermissionDenied => TagWriteError::NoPermission,
-            kind @ (io::ErrorKind::Other | _) => TagWriteError::Other(kind),
-        }
-    }
-}

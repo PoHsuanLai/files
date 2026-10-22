@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use ds::prelude::SystemPrefs;
 use ds_harness::{Harness, HarnessConfig, Viewport};
 use files_core::{FolderPath, Location};
-use files_fs::{DiskLister, FakePrefs, FakeTagger, FakeWatcher};
+use files_fs::{DiskLister, FakePrefs, FakeWatcher};
 use files_model::AppPick;
 use files_trash::FakeTrash;
 use files_ui::edge::Seams;
@@ -144,33 +144,12 @@ pub fn launch_remembering(
     trash: Arc<FakeTrash>,
     prefs: Arc<FakePrefs>,
 ) -> Launch {
-    launch_tagging(
-        start,
-        config,
-        opener,
-        trash,
-        prefs,
-        Arc::new(FakeTagger::new()),
-    )
-}
-
-/// The same, keeping tags in the given `tagger`, which the test keeps hold of. The tags it holds
-/// show on the rows the real disk lists.
-pub fn launch_tagging(
-    start: Location,
-    config: &Path,
-    opener: &Arc<RecordingOpener>,
-    trash: Arc<FakeTrash>,
-    prefs: Arc<FakePrefs>,
-    tagger: Arc<FakeTagger>,
-) -> Launch {
     let seams = Seams {
         lister: Arc::new(DiskLister),
         watcher: Arc::new(FakeWatcher::new()),
         opener: Arc::clone(opener) as Arc<dyn Opener>,
         trash,
         prefs,
-        tagger,
         apps: Arc::new(FakeApps),
         volumes: Arc::new(NoVolumes),
         thumbnails: Arc::new(NoThumbnails),

@@ -11,8 +11,6 @@ use crate::input::Change;
 pub enum Listing {
     /// Waiting for the first answer.
     Loading,
-    /// A search is under way: the entries found so far, in no particular order.
-    Searching(Vec<Entry>),
     /// Every entry, in no particular order.
     Loaded(Vec<Entry>),
     /// It could not be read.
@@ -23,7 +21,7 @@ impl Listing {
     /// The entries known so far; none while loading or after a failure.
     pub fn entries(&self) -> &[Entry] {
         match self {
-            Listing::Loaded(entries) | Listing::Searching(entries) => entries,
+            Listing::Loaded(entries) => entries,
             Listing::Loading | Listing::Failed(_) => &[],
         }
     }

@@ -29,14 +29,13 @@ mod name;
 mod plan;
 mod progress;
 mod size;
-mod tag;
 mod trashed;
 mod view;
 mod volume;
 
 pub use conflict::{Answer, Conflict, ConflictKind, Reach, Resolution};
 pub use entry::{Entry, EntryKind, LinkTo, Special, Visibility};
-pub use error::{ItemError, MimeError, NameError, PathError, TagError};
+pub use error::{ItemError, MimeError, NameError, PathError};
 pub use failure::OpFailure;
 pub use info::{Info, ItemCount};
 pub use item::ItemRef;
@@ -47,7 +46,6 @@ pub use name::FileName;
 pub use plan::{OpKind, OpPlan, Summary, Transfer};
 pub use progress::Progress;
 pub use size::ByteSize;
-pub use tag::{Tag, TagColour, Tags};
 pub use trashed::{TrashId, TrashedItem};
 pub use view::{FolderPrefs, HiddenFiles, Sort, SortKey, SortOrder, ViewMode};
 pub use volume::{

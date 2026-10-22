@@ -3,7 +3,7 @@
 # goes, and the helpers that print every step and honour --dry-run. The same shape as mailo's
 # dist/install-lib.sh, so one habit covers both.
 #
-# Nothing here touches the person's own files: no ~/.config, no ~/.local/share, no tags or Trash.
+# Nothing here touches the person's own files: no ~/.config, no ~/.local/share, no Trash.
 
 DIST="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$DIST/.." && pwd)"

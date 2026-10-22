@@ -8,9 +8,8 @@
 //! Every effect arrives tagged with the tab that asked for it ([`Tabbed`]), and every answer goes
 //! back tagged with that tab ([`Heard::Tab`]), so a listing asked for by a tab in the background
 //! lands in that tab; what is no tab's (the disks changing, a folder rescanned after a change) is
-//! [`Heard::All`]. Reading the disk (`read`), the queue (`ops`), tags (`tagging`), searches
-//! (`search`), the disks (`volumes`) and the seams themselves (`seams`) each have a module; this one
-//! dispatches.
+//! [`Heard::All`]. Reading the disk (`read`), the queue (`ops`), the disks (`volumes`) and the
+//! seams themselves (`seams`) each have a module; this one dispatches.
 //!
 //! Changes to the files (`Effect::Run`, `Undo`, `Answer`, `Cancel`) go to a [`files_ops::Worker`],
 //! one queue on a thread of its own (`ops`). Each job is tagged with the tab that asked for it, and
@@ -21,7 +20,7 @@
 //! A folder's view and sort are remembered through [`files_fs::PrefsStore`] on a thread of their own
 //! (`prefs`); Quick Look's previews come from anyview's peek worker (`look`) and arrive as
 //! [`Heard::Looked`], not as an input: a picture is not something the model holds. Get Info's facts
-//! are read by the [`Lister`] on a thread and come back as `Input::InfoRead`.
+//! are read by the [`files_fs::Lister`] on a thread and come back as `Input::InfoRead`.
 
 mod apps;
 #[cfg(feature = "testing")]
@@ -32,8 +31,6 @@ mod ops;
 mod prefs;
 mod read;
 mod seams;
-mod search;
-mod tagging;
 mod thumbs;
 mod volumes;
 mod zone;
@@ -50,7 +47,7 @@ use anyview_peek::{AnyPeeked, PeekWorker};
 use ds::base::time::clock;
 use ds_blitz::clipboard;
 use files_core::{ItemRef, Location, Summary};
-use files_fs::{Lister, Tagged, WatchHandle};
+use files_fs::WatchHandle;
 use files_model::{Effect, Input, Now, OpenTarget, TabId, Tabbed};
 use files_ops::{Job, Worker};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
@@ -90,12 +87,8 @@ pub enum Heard {
 /// Carries out effects. Lives on the window's thread; its workers answer on the channel it made.
 pub struct Edge {
     seams: Seams,
-    /// The lister of the seams, with every entry carrying its tags.
-    lister: Arc<dyn Lister>,
     heard: UnboundedSender<Heard>,
     watches: RefCell<HashMap<(TabId, Location), WatchHandle>>,
-    /// The searches under way, to stop the one a tab leaves.
-    searches: search::Searches,
     /// The queue of changes, each job tagged with the tab that asked for it; `None` when the
     /// system would not start its thread.
     ops: Option<Worker<TabId>>,
@@ -123,10 +116,6 @@ impl Edge {
         let (heard, inbox) = unbounded_channel();
         let sink = ops::sink(heard.clone());
         let ops = Worker::start(Arc::clone(&seams.trash), sink).ok();
-        let lister: Arc<dyn Lister> = Arc::new(Tagged::new(
-            Arc::clone(&seams.lister),
-            Arc::clone(&seams.tagger),
-        ));
         let prefs = prefs::Prefs::start(Arc::clone(&seams.prefs), heard.clone());
         let disks = volumes::Disks::start(Arc::clone(&seams.volumes), heard.clone());
         let maker = Arc::new(Anyview::new(Arc::clone(&seams.thumbnails)));
@@ -134,10 +123,8 @@ impl Edge {
         let thumbs = thumbs::Thumbnails::start(thumbnailer, heard.clone());
         let edge = Edge {
             seams,
-            lister,
             heard,
             watches: RefCell::new(HashMap::new()),
-            searches: search::Searches::default(),
             ops,
             prefs,
             peek: look::worker(),
@@ -162,10 +149,8 @@ impl Edge {
     fn carry_out(&self, tab: TabId, effect: Effect) {
         match effect {
             Effect::List(at) => self.list(tab, at),
-            Effect::Find { colour, within } => self.find(tab, colour, within),
             Effect::Watch(at) => self.watch(tab, at),
             Effect::Unwatch(at) => {
-                self.searches.stop(tab, &at);
                 self.watches.borrow_mut().remove(&(tab, at));
             }
             Effect::OpenFiles(targets) => {
@@ -198,7 +183,6 @@ impl Edge {
             Effect::Look(item) => look::ask(&self.peek, item, self.heard.clone()),
             Effect::ReadInfo(item) => self.read_info(tab, item),
             Effect::ReadDetails(item) => self.read_details(tab, item),
-            Effect::Tag { items, colour, how } => self.tag(items, colour, how),
             Effect::CloseWindow => self.say(Heard::CloseWindow),
             Effect::MountVolume(id) => self.disks.mount(tab, id),
             Effect::EjectVolume(id) => self.disks.eject(tab, id),

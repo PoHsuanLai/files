@@ -6,8 +6,7 @@ use std::time::{Duration, Instant};
 
 use files_core::{ByteSize, Entry, EntryKind, FileName, FolderPath, ItemRef, Location};
 use files_fs::{
-    FakeLister, FakePrefs, FakeTagger, FakeWatcher, FolderEvent, ListError, Lister, NoPrefs,
-    NoTags, PrefsStore, Tagger, Watcher,
+    FakeLister, FakePrefs, FakeWatcher, FolderEvent, ListError, Lister, NoPrefs, PrefsStore, Watcher,
 };
 use files_model::{Change, Effect, Input, ListFailure, OpenTarget, TabId};
 use files_trash::{FakeTrash, Trash};
@@ -31,7 +30,6 @@ pub(super) struct Rig {
     pub(super) inbox: UnboundedReceiver<Heard>,
     pub(super) lister: Arc<FakeLister>,
     pub(super) watcher: Arc<FakeWatcher>,
-    pub(super) tagger: Arc<FakeTagger>,
     pub(super) opener: Arc<RecordingOpener>,
     trash: Arc<FakeTrash>,
     pub(super) prefs: Arc<FakePrefs>,
@@ -44,11 +42,6 @@ pub(super) fn rig() -> Rig {
 
 /// A rig whose computer has the disks `volumes` holds.
 pub(super) fn rig_over(volumes: Arc<dyn Volumes>) -> Rig {
-    rig_with(volumes, Arc::new(FakeTagger::new()))
-}
-
-/// A rig whose files are tagged by `tagger`.
-pub(super) fn rig_with(volumes: Arc<dyn Volumes>, tagger: Arc<FakeTagger>) -> Rig {
     let lister = Arc::new(FakeLister::new());
     let watcher = Arc::new(FakeWatcher::new());
     let opener = Arc::new(RecordingOpener::default());
@@ -61,7 +54,6 @@ pub(super) fn rig_with(volumes: Arc<dyn Volumes>, tagger: Arc<FakeTagger>) -> Ri
         opener: Arc::clone(&opener) as Arc<dyn Opener>,
         trash: Arc::clone(&trash) as Arc<dyn Trash>,
         prefs: Arc::clone(&prefs) as Arc<dyn PrefsStore>,
-        tagger: Arc::clone(&tagger) as Arc<dyn Tagger>,
         apps: Arc::new(NoApps),
         volumes,
         thumbnails: Arc::new(NoThumbnails),
@@ -72,7 +64,6 @@ pub(super) fn rig_with(volumes: Arc<dyn Volumes>, tagger: Arc<FakeTagger>) -> Ri
         inbox,
         lister,
         watcher,
-        tagger,
         opener,
         trash,
         prefs,
@@ -262,7 +253,6 @@ fn a_file_no_app_opens_is_told_in_words() {
         opener: Arc::new(NoAppOpener),
         trash: Arc::new(FakeTrash::new("/nonexistent/never-used")),
         prefs: Arc::new(NoPrefs),
-        tagger: Arc::new(NoTags),
         apps: Arc::new(NoApps),
         volumes: Arc::new(NoVolumes),
         thumbnails: Arc::new(NoThumbnails),

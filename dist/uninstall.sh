@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Remove what dist/install.sh put in place: the desktop entry, the two bus services, the intents
-# manifest and the binary. Your files, tags and the Trash are not touched. Run as yourself; sudo
+# manifest and the binary. Your files and the Trash are not touched. Run as yourself; sudo
 # asks once when the place is not yours. Safe to run again.
 #
 #   dist/uninstall.sh --dry-run    print every step, change nothing
@@ -28,4 +28,4 @@ if [ -z "$DESTDIR" ] && command -v update-desktop-database >/dev/null && [ -d "$
 fi
 
 step "done"
-note "Kept: your files, your tags and the Trash."
+note "Kept: your files and the Trash."

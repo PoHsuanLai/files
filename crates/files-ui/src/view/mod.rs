@@ -17,7 +17,6 @@ mod row;
 mod sidebar;
 mod table;
 mod tabs;
-mod tags;
 mod toolbar;
 mod wanted;
 mod window;

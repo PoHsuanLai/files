@@ -18,7 +18,6 @@ mod requests;
 mod rows;
 mod support;
 mod tabs;
-mod tags;
 mod thumbs;
 mod volumes;
 mod window;

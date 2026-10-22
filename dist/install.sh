@@ -7,7 +7,7 @@
 #   dist/install.sh --dry-run    print every step, change nothing (not even a build)
 #   dist/install.sh              do it
 #
-# Installs to /usr/local (FILES_PREFIX redirects it). Not touched: your files, tags, the Trash,
+# Installs to /usr/local (FILES_PREFIX redirects it). Not touched: your files, the Trash,
 # ~/.config, any other session's files. dist/uninstall.sh undoes it. Next: log in again, or run
 # `xdg-mime default org.quire.Files.desktop inode/directory` to open folders in Files.
 #

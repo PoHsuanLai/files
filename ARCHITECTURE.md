@@ -10,12 +10,12 @@ below and fails on any edge it does not allow, or on a crate it does not list.
 |---|---|---|
 | 0, data | `files-core` | The vocabulary: names, entries, locations, views, sort, conflicts, progress and plans of work (`OpPlan`), trashed items, as plain data. Names no other workspace crate and does no I/O. |
 | 0, library | `files-mime` | shared-mime-info, `mimeapps.list` and `mimeinfo.cache`: a file's type, the apps that open it, the default one, its icon name. Parsers take text; a thin loader reads the XDG folders. |
-| 0, library | `files-fs` | The disk behind traits: listing a folder and the facts of one item (Get Info), watching it, the remembered view of each folder (`PrefsStore`, kept as TOML in the app's state folder by quire's `ds-helpers` file helpers), tags (`user.xdg.tags`) and the walk that finds a colour's files. Fakes behind the `testing` feature. |
+| 0, library | `files-fs` | The disk behind traits: listing a folder and the facts of one item (Get Info), watching it, the remembered view of each folder (`PrefsStore`, kept as TOML in the app's state folder by quire's `ds-helpers` file helpers). Fakes behind the `testing` feature. |
 | 0, library | `files-trash` | The freedesktop.org Trash behind a trait: move to it, list it, put back, delete now, empty, the per-volume `.Trash-$uid` folders. A fake keeps a Trash in a scratch folder. |
 | 0, library | `files-ops` | Copy, move, trash and rename as a queue: progress, cancel, conflict questions (keep both, replace, skip, stop), an undo journal. Each job is submitted with a caller's tag (`Worker<T>`) that comes back with every event of it. Plain threads and channels; links are copied as links. |
-| 1, logic | `files-model` | Pure state machines, `step(state, input, now) -> (state, effects)`: the browser (history, selection, rename, Go to Folder, type-to-select, sort and view per folder, tags, disks), tabs (`tabs/`), the queue as shown (work and questions), Quick Look, Get Info and the preview pane. No I/O. |
+| 1, logic | `files-model` | Pure state machines, `step(state, input, now) -> (state, effects)`: the browser (history, selection, rename, Go to Folder, type-to-select, sort and view per folder, disks), tabs (`tabs/`), the queue as shown (work and questions), Quick Look, Get Info and the preview pane. No I/O. |
 | 2, desktop | `files-desktop` | The only crate that names a bus, docket or porter: `org.freedesktop.FileManager1`, the app's intents (`IntentProvider1`), UDisks2 on the system bus, launching apps with an activation token, one instance. |
-| 3, UI | `files-ui` | The window, drawn only with quire's components, and the seams it is given (`Opener`, `Apps`, `Volumes`, `Requests`). `edge/` carries out the model's effects against the layer 0 traits and those seams, one module per family (`read`, `ops`, `prefs`, `tagging`, `search`, `volumes`, `look`, `thumbs`), and runs anyview's peek worker for Quick Look and the preview pane (its `Card` is drawn inside quire's `Peek` and `PreviewPane`) and the threads that make the icon view's thumbnails. The sidebar's sections are `places`. |
+| 3, UI | `files-ui` | The window, drawn only with quire's components, and the seams it is given (`Opener`, `Apps`, `Volumes`, `Requests`). `edge/` carries out the model's effects against the layer 0 traits and those seams, one module per family (`read`, `ops`, `prefs`, `volumes`, `look`, `thumbs`), and runs anyview's peek worker for Quick Look and the preview pane (its `Card` is drawn inside quire's `Peek` and `PreviewPane`) and the threads that make the icon view's thumbnails. The sidebar's sections are `places`. |
 | 4, binary | `files` | `main`: arguments, the runtime, `ds_blitz::launch`, and the glue between layers 2 and 3: `files-desktop`'s launcher, disks and intents adapted to `files-ui`'s seams, the XDG folders, the session bus. Each file is one adapter. |
 
 ## 2. Data and logic
@@ -123,21 +123,7 @@ drawn only from two tabs on; ⌘T, ⇧⌘] and ⇧⌘[ are files' actions, ⌘W 
 Requests from outside (FileManager1, the intents) act on the front tab. Folder views and Quick Look
 are per tab.
 
-## 9. Tags
-
-A file's tags are the comma-separated list in its `user.xdg.tags` extended attribute, as GNOME and KDE
-keep them. `files-core` has `Tag`, `TagColour` (Finder's seven) and `Tags`; an `Entry` carries its
-`tags`. `files-fs::Tagger` reads and writes them (`XattrTagger`, `FakeTagger`, `NoTags`), and `Tagged`
-wraps any `Lister` so every entry it gives has its tags. `Input::Tag(colour)` puts the colour on the
-selection, or takes it off when every selected item has it (`Effect::Tag`); the edge does the
-read-modify-write on a thread, rescans the folders it touched, and tells "Tags can't be added on this
-disk." when the disk keeps no attributes. `Location::Tag(colour)` is a search: `Effect::Find` walks the
-home folder (`files_fs::TagWalk`, at most 20,000 entries, links not followed, dot folders not entered)
-and streams batches as `Input::Found` and `Input::SearchDone`; `Listing::Searching` shows them while it
-walks, with a progress bar. A result row is keyed by its whole path and carries the item it stands for
-(`Entry::found`), so Open, Copy and Move to Trash act on the real file.
-
-## 10. The preview pane and thumbnails
+## 9. The preview pane and thumbnails
 
 Show Preview (Shift+Command+P, or the folder background's menu) puts quire's `PreviewPane` beside the
 folder: the card anyview draws for Quick Look over the selected item's facts (Kind, Size, Created,

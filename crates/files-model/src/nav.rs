@@ -21,7 +21,7 @@ impl Browser {
     /// is forgotten, except whether hidden files are shown.
     fn arrive(self, to: Location, history: History) -> Stepped {
         let mut effects = vec![Effect::Unwatch(self.location.clone())];
-        effects.extend(Browser::entering(&to, self.home.as_ref()));
+        effects.extend(Browser::entering(&to));
         let browser = Browser {
             location: to,
             history,
@@ -52,19 +52,8 @@ impl Browser {
 
     /// Read this place again.
     pub(crate) fn reload(self) -> Stepped {
-        let effects = vec![Browser::reading(&self.location, self.home.as_ref())];
-        match self.location {
-            // A search starts over, so what it finds again is not listed twice.
-            Location::Tag(_) => (
-                Browser {
-                    listing: Listing::Loading,
-                    ..self
-                }
-                .refreshed(),
-                effects,
-            ),
-            Location::Folder(_) | Location::Trash | _ => (self, effects),
-        }
+        let effects = vec![Effect::List(self.location.clone())];
+        (self, effects)
     }
 
     /// Go to a new place; going where it already is reads it again.

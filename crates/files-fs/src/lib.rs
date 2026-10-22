@@ -1,5 +1,5 @@
 //! The disk behind traits: listing a folder, following its changes, and remembering how each
-//! folder is shown, and the tags of files ([`Tagger`], kept in `user.xdg.tags`).
+//! folder is shown.
 //!
 //! [`Lister`] turns a folder into [`files_core::Entry`] values and [`Watcher`] reports which names
 //! in a folder were added, removed or changed. The real implementations are [`DiskLister`] and
@@ -25,19 +25,13 @@ mod fake;
 mod info;
 mod list;
 mod prefs;
-mod tag;
 mod watch;
 
-pub use error::{ListError, PrefsError, TagWriteError, WatchError};
+pub use error::{ListError, PrefsError, WatchError};
 #[cfg(any(test, feature = "testing"))]
 pub use fake::{FakeLister, FakeWatcher};
 pub use list::{DiskLister, Lister, Listing, Skipped};
 #[cfg(any(test, feature = "testing"))]
 pub use prefs::FakePrefs;
 pub use prefs::{KEPT, NoPrefs, PrefBook, PrefsStore, TomlPrefs};
-#[cfg(any(test, feature = "testing"))]
-pub use tag::FakeTagger;
-pub use tag::{
-    ATTRIBUTE, Flow, Found, NoTags, TagWalk, Tagged, Tagger, WALK_CAP, Walked, XattrTagger,
-};
 pub use watch::{FolderEvent, NotifyWatcher, WatchHandle, Watcher};

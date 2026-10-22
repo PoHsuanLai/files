@@ -1,4 +1,4 @@
-//! Why a name, a path, an item, a tag or a type is refused, in the words a person reads.
+//! Why a name, a path, an item or a type is refused, in the words a person reads.
 
 /// Why a path is not an item.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -13,21 +13,6 @@ pub enum ItemError {
     /// The path has no last part (`/`, or one that ends in `..`).
     #[error("That path names no item.")]
     NoName,
-}
-
-/// Why a name is not a tag, in the words a person reads.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub enum TagError {
-    /// Nothing was typed.
-    #[error("A tag can't be empty.")]
-    Empty,
-    /// A comma, which separates tags.
-    #[error("A tag can't contain a comma.")]
-    Comma,
-    /// A control character, such as a line break.
-    #[error("A tag can't contain a line break or other control character.")]
-    Control,
 }
 
 /// Why a path is not a folder location.

@@ -1,6 +1,6 @@
 //! Tabs: opening, closing and switching them, and an answer finding the tab that asked.
 
-use files_core::{Location, TagColour};
+use files_core::Location;
 use files_model::{Effect, Input, TabId, Tabbed, Tabs};
 
 use crate::common::{at, dir, file, folder, home, name};
@@ -263,23 +263,4 @@ fn a_tab_with_quick_look_up_asks_for_its_preview_when_it_comes_forward() {
     assert_eq!(effects.len(), 1);
     assert!(matches!(effects[0].effect, Effect::Look(_)));
     assert_eq!(effects[0].tab, TabId::FIRST);
-}
-
-#[test]
-fn a_tab_on_a_tag_is_searched_from_home() {
-    let (tabs, _) = Tabs::new(home());
-    let (tabs, _) = Tabs::with_home(tabs, files_core::FolderPath::new("/home/p").unwrap())
-        .step(Input::NewTab, at(0));
-    let (tabs, effects) = tabs.step(Input::Go(Location::Tag(TagColour::Red)), at(0));
-    let find = Effect::Find {
-        colour: TagColour::Red,
-        within: files_core::FolderPath::new("/home/p").unwrap(),
-    };
-    assert!(effects.iter().any(|e| e.effect == find));
-    assert!(effects.iter().all(|e| e.tab == tabs.front_id()));
-    assert!(
-        !effects
-            .iter()
-            .any(|e| matches!(e.effect, Effect::Watch(Location::Tag(_))))
-    );
 }

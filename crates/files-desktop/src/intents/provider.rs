@@ -214,7 +214,6 @@ fn lines(paths: &[PathBuf]) -> String {
 fn place_text(place: &Location) -> String {
     match place {
         Location::Folder(folder) => folder.as_path().to_string_lossy().into_owned(),
-        Location::Tag(colour) => format!("tag:///{}", colour.label()),
         Location::Trash | _ => "trash:///".to_owned(),
     }
 }

@@ -1,17 +1,12 @@
 //! The edge with several tabs: an answer goes back to the tab that asked, a watch belongs to one
-//! tab, and tags are written and searched for.
+//! tab.
 
-use std::sync::Arc;
-
-use files_core::{
-    Answer, Entry, FolderPath, ItemRef, Location, OpPlan, Resolution, TagColour, Tags, Transfer,
-};
-use files_fs::{FolderEvent, ListError, TagWriteError, Tagger};
-use files_model::{Change, Effect, Input, Mark, OpEvent, TabId, Tabbed};
-use files_ui::NoVolumes;
+use files_core::{Answer, FolderPath, ItemRef, Location, OpPlan, Resolution, Transfer};
+use files_fs::FolderEvent;
+use files_model::{Change, Effect, Input, OpEvent, TabId, Tabbed};
 use files_ui::edge::Heard;
 
-use super::edge::{file, folder, name, next, rig, rig_with};
+use super::edge::{file, folder, name, next, rig};
 use super::edge_ops::until;
 use super::support::scratch_folder;
 
@@ -20,10 +15,6 @@ fn tabs() -> (TabId, TabId) {
     let (tabs, _) = files_model::Tabs::new(Location::Trash);
     let (tabs, _) = tabs.step(Input::NewTab, files_model::Now(std::time::Duration::ZERO));
     (TabId::FIRST, tabs.front_id())
-}
-
-fn item(dir: &str, text: &str) -> ItemRef {
-    ItemRef::new(folder(dir), name(text))
 }
 
 #[test]
@@ -83,144 +74,6 @@ fn the_effect_that_closes_the_window_is_heard_as_such() {
     let mut rig = rig();
     rig.edge.run_in(TabId::FIRST, vec![Effect::CloseWindow]);
     assert_eq!(next(&mut rig.inbox), Heard::CloseWindow);
-}
-
-#[test]
-fn a_tag_is_put_on_and_taken_off_and_the_places_are_rescanned() {
-    let mut rig = rig();
-    let at = item("/p", "a.txt");
-    let put = |how| Effect::Tag {
-        items: vec![at.clone()],
-        colour: TagColour::Red,
-        how,
-    };
-    rig.edge.run_in(TabId::FIRST, vec![put(Mark::Add)]);
-    let rescans = [next(&mut rig.inbox), next(&mut rig.inbox)];
-    assert!(rig.tagger.tags(&at).has(TagColour::Red));
-    for place in [
-        Location::Folder(folder("/p")),
-        Location::Tag(TagColour::Red),
-    ] {
-        let want = Heard::All(Input::Changed(place, Change::Rescan));
-        assert!(rescans.contains(&want), "{want:?} is not in {rescans:?}");
-    }
-    rig.edge.run_in(TabId::FIRST, vec![put(Mark::Remove)]);
-    let _ = [next(&mut rig.inbox), next(&mut rig.inbox)];
-    assert!(rig.tagger.tags(&at).is_empty());
-}
-
-#[test]
-fn a_tag_leaves_the_other_tags_of_the_file_alone() {
-    let mut rig = rig();
-    let at = item("/p", "a.txt");
-    rig.tagger.put(at.clone(), Tags::parse("Work,Red"));
-    rig.edge.run_in(
-        TabId::FIRST,
-        vec![Effect::Tag {
-            items: vec![at.clone()],
-            colour: TagColour::Red,
-            how: Mark::Remove,
-        }],
-    );
-    let _ = [next(&mut rig.inbox), next(&mut rig.inbox)];
-    assert_eq!(rig.tagger.tags(&at).to_attribute(), "Work");
-}
-
-#[test]
-fn a_disk_that_keeps_no_tags_says_so_in_plain_words() {
-    let tagger = Arc::new(files_fs::FakeTagger::refusing(TagWriteError::Unsupported));
-    let mut rig = rig_with(Arc::new(NoVolumes), tagger);
-    rig.edge.run_in(
-        TabId::FIRST,
-        vec![Effect::Tag {
-            items: vec![item("/p", "a"), item("/p", "b")],
-            colour: TagColour::Blue,
-            how: Mark::Add,
-        }],
-    );
-    // Said once, at the first file, and the rest is not tried.
-    assert_eq!(
-        next(&mut rig.inbox),
-        Heard::Told("Tags can\u{2019}t be added on this disk.".to_owned())
-    );
-}
-
-/// A tree under /home/p: a (Red), sub/b (Red, Work), sub/c (Blue), .cache/d (Red).
-fn tree(rig: &super::edge::Rig) {
-    let dir = |text: &str| Entry::new(name(text), files_core::EntryKind::Folder);
-    rig.lister.set(
-        folder("/home/p"),
-        Ok(vec![file("a"), dir("sub"), dir(".cache")]),
-    );
-    rig.lister
-        .set(folder("/home/p/sub"), Ok(vec![file("b"), file("c")]));
-    rig.lister
-        .set(folder("/home/p/.cache"), Ok(vec![file("d")]));
-    rig.tagger.put(item("/home/p", "a"), Tags::parse("Red"));
-    rig.tagger
-        .put(item("/home/p/sub", "b"), Tags::parse("Work,Red"));
-    rig.tagger
-        .put(item("/home/p/sub", "c"), Tags::parse("Blue"));
-    rig.tagger
-        .put(item("/home/p/.cache", "d"), Tags::parse("Red"));
-}
-
-/// What the search of `colour` sent to `tab`, up to its end: the paths found, then true.
-fn found(rig: &mut super::edge::Rig, tab: TabId, colour: TagColour) -> Vec<String> {
-    let place = Location::Tag(colour);
-    let mut paths = Vec::new();
-    loop {
-        match next(&mut rig.inbox) {
-            Heard::Tab(who, Input::Found(at, rows)) => {
-                assert_eq!((who, at), (tab, place.clone()));
-                paths.extend(
-                    rows.iter()
-                        .map(|row| row.found.as_ref().unwrap().path().display().to_string()),
-                );
-            }
-            Heard::Tab(who, Input::SearchDone(at)) => {
-                assert_eq!((who, at), (tab, place));
-                paths.sort();
-                return paths;
-            }
-            other @ (Heard::Tab(..)
-            | Heard::All(_)
-            | Heard::CloseWindow
-            | Heard::Told(_)
-            | Heard::Announced(_)
-            | Heard::Looked(..)
-            | Heard::Thumbed(..)) => panic!("not part of a search: {other:?}"),
-        }
-    }
-}
-
-#[test]
-fn a_tag_place_streams_the_files_with_its_colour_to_the_tab_that_asked() {
-    let (_, second) = tabs();
-    let mut rig = rig();
-    tree(&rig);
-    let find = Effect::Find {
-        colour: TagColour::Red,
-        within: folder("/home/p"),
-    };
-    rig.edge.run(vec![Tabbed::new(second, find)]);
-    let paths = found(&mut rig, second, TagColour::Red);
-    assert_eq!(paths, vec!["/home/p/a", "/home/p/sub/b"]);
-}
-
-#[test]
-fn a_tag_search_of_a_folder_that_cannot_be_read_ends_empty() {
-    let mut rig = rig();
-    rig.lister
-        .set(folder("/home/p"), Err(ListError::NoPermission));
-    rig.edge.run_in(
-        TabId::FIRST,
-        vec![Effect::Find {
-            colour: TagColour::Green,
-            within: folder("/home/p"),
-        }],
-    );
-    assert!(found(&mut rig, TabId::FIRST, TagColour::Green).is_empty());
 }
 
 /// A rename of `from` to `to` in `dir`, asked for by `tab`.

@@ -56,8 +56,7 @@ impl Tabs {
         (tabs, Tabbed::all(TabId::FIRST, effects))
     }
 
-    /// The same tabs, each knowing the person's home folder, which `~` means in Go to Folder and
-    /// a tag search starts from.
+    /// The same tabs, each knowing the person's home folder, which `~` means in Go to Folder.
     pub fn with_home(self, home: FolderPath) -> Tabs {
         let Tabs {
             front,

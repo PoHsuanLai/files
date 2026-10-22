@@ -12,7 +12,7 @@ impl Edge {
     /// Finds out off the window's thread whether `folder` can be listed, which is what makes it
     /// somewhere to go.
     pub(super) fn check(&self, tab: TabId, folder: FolderPath) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
         let failed = folder.clone();
         let started = Edge::work("files-check", move || {
             let result = lister.list(&folder).map(|_| ()).map_err(failure_of);
@@ -27,7 +27,7 @@ impl Edge {
     }
 
     pub(super) fn list(&self, tab: TabId, at: Location) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
         let trash = Arc::clone(&self.seams.trash);
         let failed = at.clone();
         let started = Edge::work("files-list", move || {
@@ -37,8 +37,7 @@ impl Edge {
                     .list()
                     .map(|items| items.into_iter().filter_map(ops::row_of).collect())
                     .map_err(ops::failure_of),
-                // A search is asked for with `Effect::Find`, not listed.
-                Location::Tag(_) | _ => Err(ListFailure::Other),
+                _ => Err(ListFailure::Other),
             };
             let _ = heard.send(Heard::Tab(tab, Input::Listed(at, result)));
         });
@@ -52,7 +51,7 @@ impl Edge {
 
     /// Reads the facts of `item` for Get Info, off the window's thread.
     pub(super) fn read_info(&self, tab: TabId, item: ItemRef) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
         let failed = item.clone();
         let started = Edge::work("files-info", move || {
             let result = lister.info(&item).map_err(failure_of);
@@ -68,7 +67,7 @@ impl Edge {
 
     /// Reads the facts of `item` for the preview pane, off the window's thread.
     pub(super) fn read_details(&self, tab: TabId, item: ItemRef) {
-        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
+        let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
         let failed = item.clone();
         let started = Edge::work("files-details", move || {
             let result = lister.info(&item).map_err(failure_of);
@@ -87,7 +86,7 @@ impl Edge {
             return;
         };
         let sink = {
-            let (heard, lister) = (self.heard.clone(), Arc::clone(&self.lister));
+            let (heard, lister) = (self.heard.clone(), Arc::clone(&self.seams.lister));
             let (place, folder) = (at.clone(), folder.clone());
             move |event: FolderEvent| {
                 let change = change_of(&*lister, &folder, event);
