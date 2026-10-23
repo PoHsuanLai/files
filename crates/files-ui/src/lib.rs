@@ -27,6 +27,7 @@
 
 pub mod edge;
 mod error;
+mod icons;
 mod keys;
 mod launch;
 pub mod looks;
@@ -43,8 +44,8 @@ mod view;
 pub mod words;
 
 pub use edge::{
-    AppChoiceView, AppRole, Apps, Changed, NoApps, NoThumbnails, NoVolumes, OpenAs, Opener, Seams,
-    Volumes, WatchGuard, Zone,
+    AppChoiceView, AppRole, Apps, Changed, IconSources, NoApps, NoThumbnails, NoVolumes, OpenAs,
+    Opener, Seams, Volumes, WatchGuard, Zone,
 };
 #[cfg(feature = "testing")]
 pub use edge::{FakeVolumes, VolumeCall};

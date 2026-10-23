@@ -4,8 +4,8 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use ds_helpers::mime::{Associations, DesktopId, MimeDb, NameGuess};
 use files_core::{FileName, MimeType};
-use files_mime::{Associations, DesktopId, MimeDb, NameGuess};
 
 use super::activate::Activate;
 use super::build::{Catalog, LauncherBuilder};

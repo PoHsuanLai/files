@@ -6,15 +6,15 @@ use ds::components::chrome::column::model::ColumnGap;
 use ds::components::content::label::LabelStyle;
 use ds::components::controls::button_model::Answers;
 use ds::prelude::{
-    Button, Column, ColumnAlign, Fact, FactList, Form, FormSection, Icon, IconSize, IconSource,
-    IconView, Label, Sheet,
+    Button, Column, ColumnAlign, Fact, FactList, FileIcon, FileIconChoice, Form, FormSection,
+    IconSize, Label, Sheet,
 };
-use ds::style::icon::family::PlateFamily;
 use ds::style::icon::render::IconPx;
-use files_core::{EntryKind, Info, LinkTo};
+use files_core::{ByteSize, EntryKind, Info, ItemRef};
 use files_model::{InfoView, Input};
 
 use crate::edge::Zone;
+use crate::icons::Icons;
 use crate::state::Browse;
 use crate::words::{InfoRow, info_failure_words, info_rows, name_rows};
 
@@ -25,59 +25,53 @@ fn facts(rows: Vec<InfoRow>) -> Vec<Fact> {
         .collect()
 }
 
-/// The glyph on the item's plate.
-fn glyph_of(kind: &EntryKind) -> Icon {
-    match kind {
-        EntryKind::Folder | EntryKind::Link(LinkTo::Folder) => Icon::Folder,
-        EntryKind::File(_) | EntryKind::Link(_) | EntryKind::Special(_) => Icon::File,
-        // A kind files-core adds later is a file until this names it.
-        _ => Icon::File,
-    }
+/// The icon of an item whose facts are not read yet: the one its name gives a file.
+fn unread(icons: &Icons, item: &ItemRef) -> FileIconChoice {
+    icons.choice_of(&item.folder, &item.name, EntryKind::File(ByteSize(0)))
 }
 
 /// The item's icon over its name.
-fn heading(glyph: Icon, name: String) -> Element {
+fn heading(choice: FileIconChoice, name: String) -> Element {
     rsx! {
         Column { align: ColumnAlign::Center, gap: ColumnGap::default(),
-            IconView {
-                source: IconSource::Glyph(glyph),
-                size: IconSize::Px(IconPx(64)),
-                plate: Some(PlateFamily::Blue),
-            }
+            FileIcon { choice, size: IconSize::Px(IconPx(64)) }
             Label { text: name, style: LabelStyle::Title }
         }
     }
 }
 
 /// What the sheet holds for each state of the panel.
-fn body_of(view: &InfoView, zone: Zone) -> Option<(String, Element)> {
+fn body_of(view: &InfoView, zone: Zone, icons: &Icons) -> Option<(String, Element)> {
     match view {
         InfoView::Closed => None,
         InfoView::Loading(item) => {
             let name = item.name.display().into_owned();
-            Some((name.clone(), heading(Icon::File, name)))
+            let choice = unread(icons, item);
+            Some((name.clone(), heading(choice, name)))
         }
         InfoView::Failed(item, failure) => {
             let name = item.name.display().into_owned();
             let said = info_failure_words(*failure);
+            let choice = unread(icons, item);
             let body = rsx! {
-                {heading(Icon::File, name.clone())}
+                {heading(choice, name.clone())}
                 Label { text: said }
             };
             Some((name, body))
         }
-        InfoView::Shown(info) => Some((info.name.display().into_owned(), shown(info, zone))),
+        InfoView::Shown(info) => Some((info.name.display().into_owned(), shown(info, zone, icons))),
         // A state files-model adds later draws nothing until this names it.
         _ => None,
     }
 }
 
 /// The facts of `info`: its heading, then its rows and its name.
-fn shown(info: &Info, zone: Zone) -> Element {
+fn shown(info: &Info, zone: Zone, icons: &Icons) -> Element {
     let rows = info_rows(info, |at| zone.words(at));
     let names = name_rows(info);
+    let choice = icons.choice_of(&info.folder, &info.name, info.kind.clone());
     rsx! {
-        {heading(glyph_of(&info.kind), info.name.display().into_owned())}
+        {heading(choice, info.name.display().into_owned())}
         FormSection { FactList { facts: facts(rows) } }
         FormSection { title: Some("Name & Extension".to_owned()), FactList { facts: facts(names) } }
     }
@@ -87,7 +81,8 @@ fn shown(info: &Info, zone: Zone) -> Element {
 #[component]
 pub(super) fn InfoSheet(browse: Browse, zone: Zone) -> Element {
     let view = browse.state.read().info().clone();
-    let Some((name, body)) = body_of(&view, zone) else {
+    let icons = browse.icons.read().clone();
+    let Some((name, body)) = body_of(&view, zone, &icons) else {
         return rsx! {};
     };
     let close = EventHandler::new(move |()| browse.send(Input::CloseInfo));

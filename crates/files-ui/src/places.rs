@@ -3,6 +3,7 @@
 //! Pure data and mappings. The binary finds the folders (the XDG user directories that exist) and
 //! passes them in as [`Places`]; [`groups`] says what the sidebar lists; `view` draws it.
 
+use ds::prelude::FolderKind;
 use files_core::{FolderPath, Location, Volume, VolumeId};
 
 /// A place the sidebar can list.
@@ -52,6 +53,23 @@ impl PlaceKind {
             PlaceKind::Videos => "Videos",
             PlaceKind::Computer => "Computer",
             PlaceKind::Trash => "Trash",
+        }
+    }
+}
+
+impl PlaceKind {
+    /// The folder icon of this place.
+    fn folder_kind(self) -> FolderKind {
+        match self {
+            PlaceKind::Home => FolderKind::Home,
+            PlaceKind::Desktop => FolderKind::Desktop,
+            PlaceKind::Documents => FolderKind::Documents,
+            PlaceKind::Downloads => FolderKind::Downloads,
+            PlaceKind::Pictures => FolderKind::Pictures,
+            PlaceKind::Music => FolderKind::Music,
+            PlaceKind::Videos => FolderKind::Movies,
+            PlaceKind::Trash => FolderKind::Trash,
+            PlaceKind::Computer => FolderKind::Plain,
         }
     }
 }
@@ -184,6 +202,16 @@ impl Places {
                 .find(|(known, _)| *known == kind)
                 .map(|(_, folder)| Location::Folder(folder.clone())),
         }
+    }
+
+    /// What `folder` is, for drawing its icon: one of the special folders when it is the folder of
+    /// a favourite, else a plain folder.
+    pub(crate) fn folder_kind(&self, folder: &FolderPath) -> FolderKind {
+        let here = Location::Folder(folder.clone());
+        PlaceKind::FAVORITES
+            .into_iter()
+            .find(|kind| self.location_of(*kind).as_ref() == Some(&here))
+            .map_or(FolderKind::Plain, PlaceKind::folder_kind)
     }
 
     /// The place `location` is, for the sidebar's cursor: the first listed place whose folder it

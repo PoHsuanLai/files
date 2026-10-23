@@ -15,7 +15,6 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 # The layer table. Keep it in step with ARCHITECTURE.md section 1.
 LAYERS='
 files-core 0
-files-mime 0
 files-fs 0
 files-trash 0
 files-ops 0
@@ -37,7 +36,9 @@ for line in sys.stdin.read().split("\n"):
         layers[parts[0]] = int(parts[1])
 
 PURE = {"files-core", "files-model"}
-io = re.compile(r"^(tokio.*|async-.*|futures.*|notify.*|trash|rustix|nix|libc|xattr|zbus.*|docket.*|dioxus.*|ds-.*|ds)$")
+# ds-helpers is allowed in the pure crates for its `mime` module (names and types as data); the rest of
+# the quire crates are I/O or UI.
+io = re.compile(r"^(tokio.*|async-.*|futures.*|notify.*|trash|rustix|nix|libc|xattr|zbus.*|docket.*|dioxus.*|ds-(?!helpers$).*|ds)$")
 bus = re.compile(r"^(zbus.*|docket.*|porter.*|peephole.*|prov)$")
 ui = re.compile(r"^(dioxus.*|blitz.*|ds|ds-(?!helpers$|peer$).*)$")
 meta = json.loads(sys.argv[1])

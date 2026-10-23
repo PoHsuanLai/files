@@ -3,12 +3,11 @@
 use dioxus::prelude::*;
 use ds::base::selection::Pick;
 use ds::components::lists::collection_view::{CollectionItem, CollectionView, Thumbnail};
-use ds::prelude::IconSource;
+use ds::prelude::{FileIconChoice, Icon, IconSource};
 use files_core::{Entry, FileName, ItemRef};
 use files_model::{Browser, Input, Rename};
 
 use super::rename::RenameCell;
-use super::table::icon_of;
 use super::wanted::Wanted;
 use crate::rows::{click_of, cursor_of, selection_of};
 use crate::state::Browse;
@@ -20,6 +19,23 @@ fn item_for(state: &Browser, entry: &Entry) -> Option<ItemRef> {
     Some(ItemRef::new(folder.clone(), entry.name.clone()))
 }
 
+/// What a tile draws for an icon. quire's `CollectionView` takes a glyph or an image per tile, not
+/// a `FileIcon`, so the kind's own glyph stands for a file, the folder's for a folder, and a
+/// pack's picture is drawn whole.
+fn thumbnail_of(choice: FileIconChoice) -> Thumbnail {
+    match choice {
+        FileIconChoice::Standard { kind, .. } => {
+            Thumbnail::Icon(IconSource::from(kind.file_glyph()))
+        }
+        FileIconChoice::Picture(source) | FileIconChoice::Artwork(source) => {
+            Thumbnail::Image(source)
+        }
+        FileIconChoice::Folder(_) => Thumbnail::Icon(IconSource::from(Icon::Folder)),
+        // A choice quire adds later is a file until this names it.
+        _ => Thumbnail::Icon(IconSource::from(Icon::File)),
+    }
+}
+
 /// The picture of the tile of `entry`: its thumbnail once it has one, else its icon; and, for a
 /// file that may have a thumbnail and has not been given its answer, the wish for one, which
 /// lasts as long as the tile is drawn.
@@ -29,7 +45,7 @@ fn picture_of(
     shelf: &Thumbs,
     entry: &Entry,
 ) -> (Thumbnail, Option<Element>) {
-    let icon = Thumbnail::Icon(IconSource::from(icon_of(entry)));
+    let icon = thumbnail_of(browse.icons.read().choice_for(state.folder(), entry));
     let Some(key) = item_for(state, entry).and_then(|item| ThumbKey::of(item, entry)) else {
         return (icon, None);
     };

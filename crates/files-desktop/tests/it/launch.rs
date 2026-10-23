@@ -3,11 +3,11 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use ds_helpers::mime::{Associations, DesktopId, MimeApps, MimeDb, MimeLayer};
 use files_desktop::{
     ActivateCall, ActivationToken, AppChoice, AppEntry, Catalog, DesktopLauncher, EntryError,
     FakeActivate, FakeIcons, FakeSpawn, LaunchError, Launcher, Standing, installed_check,
 };
-use files_mime::{Associations, DesktopId, MimeApps, MimeDb, MimeLayer};
 
 const GLOBS: &str = "50:text/plain:*.txt\n50:image/png:*.png\n50:application/pdf:*.pdf\n\
                      50:text/html:*.html\n50:application/x-a:*.amb\n50:application/x-b:*.amb\n";

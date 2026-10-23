@@ -11,11 +11,12 @@ publish.workspace = true
 [dependencies]
 anyview-platform = { workspace = true }
 dirs = { workspace = true }
+ds-extensions = { workspace = true }
+ds-helpers = { workspace = true }
 ds-settings = { workspace = true }
 files-core = { workspace = true }
 files-desktop = { workspace = true }
 files-fs = { workspace = true }
-files-mime = { workspace = true }
 files-model = { workspace = true }
 files-trash = { workspace = true }
 files-ui = { workspace = true }

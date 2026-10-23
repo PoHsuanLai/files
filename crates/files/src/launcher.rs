@@ -3,10 +3,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use ds_helpers::mime::{Associations, MimeDb, XdgDirs};
 use files_desktop::{
     Activate, ActivationToken, Catalog, DesktopLauncher, StartError, installed_check, load_apps,
 };
-use files_mime::{Associations, MimeDb, XdgDirs};
 
 use crate::icons::ThemeIcons;
 
@@ -43,10 +43,15 @@ fn listed(variable: &str, default: &[&str]) -> Vec<PathBuf> {
     }
 }
 
-/// The launcher over what is installed. With no file type database every file is of an unknown
-/// type, so the window says there is no app for it.
-pub fn launcher(dirs: &XdgDirs, activate: Arc<dyn Activate>) -> DesktopLauncher {
-    let db = MimeDb::load(dirs).map_or_else(|_| MimeDb::from_layers(&[]), |loaded| loaded.value);
+/// The file type database of the installed system. With none, every file is of an unknown type,
+/// so the window says there is no app for it and draws the standard icon.
+pub fn mime_db(dirs: &XdgDirs) -> MimeDb {
+    MimeDb::load(dirs).map_or_else(|_| MimeDb::from_layers(&[]), |loaded| loaded.value)
+}
+
+/// The launcher over what is installed, with the types of `db`.
+pub fn launcher(dirs: &XdgDirs, db: &MimeDb, activate: Arc<dyn Activate>) -> DesktopLauncher {
+    let db = db.clone();
     let applications: Vec<PathBuf> = std::iter::once(&dirs.data_home)
         .chain(dirs.data_dirs.iter())
         .map(|dir| dir.join("applications"))

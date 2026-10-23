@@ -3,8 +3,8 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use ds_helpers::{ApplicationEntry, DESKTOP_ENTRY_CAP, DesktopFile};
-use files_mime::{DesktopId, Installed};
+use ds_helpers::mime::Installed;
+use ds_helpers::{ApplicationEntry, DESKTOP_ENTRY_CAP, DesktopFile, DesktopId};
 
 use super::EntryError;
 
@@ -119,7 +119,7 @@ pub fn load_apps(dirs: &[PathBuf]) -> Vec<AppEntry> {
         .collect()
 }
 
-/// The check `files_mime::Associations` takes for "is this app installed": it is one of `apps`.
+/// The check `ds_helpers::mime::Associations` takes for "is this app installed": it is one of `apps`.
 pub fn installed_check(
     apps: &[AppEntry],
 ) -> impl Fn(&DesktopId) -> Installed + Send + Sync + 'static {

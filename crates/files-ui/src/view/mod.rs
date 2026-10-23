@@ -3,6 +3,7 @@
 
 mod busy;
 mod chooser;
+mod file_icons;
 mod goto;
 mod icon;
 mod icons;
@@ -31,6 +32,7 @@ use ds_settings::use_environment;
 
 use crate::launch::Launch;
 
+use self::file_icons::use_file_icons;
 use self::window::Window;
 
 /// files' own CSS: layout only, quire's tokens only.
@@ -49,6 +51,8 @@ pub fn App() -> Element {
         spawner,
     );
     let now = env();
+    let icons = use_file_icons(&launch, now.settings.appearance.file_icons.clone());
+    use_context_provider(|| icons);
     rsx! {
         Ds {
             appearance: now.settings.appearance.appearance(),

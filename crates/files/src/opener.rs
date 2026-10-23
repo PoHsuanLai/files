@@ -3,8 +3,8 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use ds_helpers::DesktopId;
 use files_desktop::{AppChoice, Launcher};
-use files_mime::DesktopId;
 use files_ui::{OpenAs, OpenFailure, Opener};
 
 /// Hands files to the launcher, each to its default app or all to the one the person picked.

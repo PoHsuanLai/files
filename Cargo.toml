@@ -13,7 +13,6 @@ publish = false
 # The layer table in scripts/check-boundary.sh says which of these may name which.
 [workspace.dependencies]
 files-core = { path = "crates/files-core" }
-files-mime = { path = "crates/files-mime" }
 files-model = { path = "crates/files-model" }
 files-fs = { path = "crates/files-fs" }
 files-trash = { path = "crates/files-trash" }
@@ -21,11 +20,12 @@ files-ops = { path = "crates/files-ops" }
 files-desktop = { path = "crates/files-desktop" }
 files-ui = { path = "crates/files-ui" }
 # quire, pinned the desktop-wide way (.git + full rev; the tag is a comment), as temor and anyview do.
-ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
-ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
-ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
-ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
-ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
+ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
+ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
+ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
+ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
+ds-extensions = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
+ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
 # The desktop's portable keymap core (actions, chords, Primary per platform); files owns no keymap.
 chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "99eec9ddd03ee345b669fcc7954ed44590724290" }
 # anyview, the desktop's viewer: Quick Look is its light tier, `anyview-peek`'s worker and card, hosted as
@@ -58,8 +58,8 @@ porter-core = { git = "https://github.com/PoHsuanLai/porter.git", rev = "e91eb7a
 # The tests of files-desktop write the calls the router sends as JSON.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Desktop entries (the parser and the walk of the applications folders), UI-free without its default feature.
-ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6", default-features = false }  # 7fa27afc (v0.3.45)
+# Desktop entries and the file-type database (`ds_helpers::mime`), UI-free without its default feature.
+ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb", default-features = false }  # c6ec67a3 (v0.3.46)
 tempfile = "3"
 # The binary finds an app's icon file in the person's icon theme (detent's version). MIT.
 freedesktop-icons = "0.4"

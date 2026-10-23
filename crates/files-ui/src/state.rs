@@ -12,6 +12,7 @@ use files_model::{Browser, Input, Rename, TabId, Tabs};
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::edge::{self, AppChoiceView, Edge, Heard};
+use crate::icons::Icons;
 use crate::launch::Launch;
 use crate::looks::Looks;
 use crate::preferences::Preferences;
@@ -39,6 +40,8 @@ pub(crate) struct Browse {
     pub(crate) thumbs: Signal<Thumbs>,
     /// The person's choices, as the settings file last said.
     pub(crate) preferences: Signal<Preferences>,
+    /// Which icon each item gets.
+    pub(crate) icons: Signal<Icons>,
 }
 
 impl std::fmt::Debug for Browse {
@@ -149,6 +152,7 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
         looked,
         thumbs,
         preferences,
+        icons: use_context::<Signal<Icons>>(),
     };
     let mut feed = launch.preferences.clone();
     use_hook(move || {

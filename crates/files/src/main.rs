@@ -24,12 +24,13 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 
+use ds_extensions::Search;
 use ds_settings::ConfigRoot;
 use files_core::{FolderPath, Location};
 use files_desktop::{Disks, ProcUsers};
 use files_trash::SystemTrash;
-use files_ui::Launch;
 use files_ui::settings;
+use files_ui::{IconSources, Launch};
 
 use crate::apps::InstalledApps;
 use crate::args::{Args, Start};
@@ -82,8 +83,11 @@ fn main() -> ExitCode {
     let Role::App(running) = role else {
         return ExitCode::SUCCESS;
     };
-    let launcher = Arc::new(launcher::launcher(&launcher::xdg_dirs(), running.activate));
+    let dirs = launcher::xdg_dirs();
+    let db = Arc::new(launcher::mime_db(&dirs));
+    let launcher = Arc::new(launcher::launcher(&dirs, &db, running.activate));
     let launch = Launch::new(start, Arc::new(DesktopOpener::new(launcher.clone())))
+        .with_file_icons(IconSources::new(Search::from_env(), db))
         .with_apps(Arc::new(InstalledApps::new(launcher)))
         .with_places(places::found())
         .with_prefs(state::prefs_store(&ConfigRoot::Xdg))

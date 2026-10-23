@@ -12,7 +12,7 @@ use ds_settings::{AppName, ConfigRoot, Store, SystemPrefsSource};
 use files_core::{FolderPath, Location};
 use files_fs::PrefsStore;
 
-use crate::edge::{Apps, Opener, Seams, Volumes, Zone};
+use crate::edge::{Apps, IconSources, Opener, Seams, Volumes, Zone};
 use crate::places::Places;
 use crate::preferences::Preferences;
 use crate::requests::Requests;
@@ -65,6 +65,8 @@ pub struct Launch {
     pub zone: Zone,
     /// The disk and the desktop, behind traits.
     pub seams: Seams,
+    /// Where the file icons come from: the Extensions to search and the file types.
+    pub file_icons: IconSources,
     /// What other programs ask of the window (show this folder, reveal these files).
     pub requests: Requests,
     /// The runtime the window runs on, when the caller made one (the one that also drives its
@@ -84,6 +86,7 @@ impl Launch {
             preferences: watch::channel(Preferences::default()).1,
             zone: Zone::Local,
             seams: Seams::disk(opener),
+            file_icons: IconSources::standard(),
             requests: Requests::none(),
             runtime: None,
         }
@@ -164,6 +167,11 @@ impl Launch {
             seams: self.seams.with_prefs(prefs),
             ..self
         }
+    }
+
+    /// The same launch drawing file icons from `file_icons`.
+    pub fn with_file_icons(self, file_icons: IconSources) -> Launch {
+        Launch { file_icons, ..self }
     }
 
     /// The same launch over these seams.

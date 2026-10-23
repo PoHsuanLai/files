@@ -1,5 +1,6 @@
 //! One thing in a folder, as a listing found it.
 
+use std::os::unix::ffi::OsStrExt;
 use std::time::SystemTime;
 
 use crate::{ByteSize, FileName, MimeType, TrashedItem};
@@ -67,7 +68,10 @@ impl Entry {
 
     /// Whether a person sees it by default: a name that starts with a dot is hidden.
     pub fn visibility(&self) -> Visibility {
-        self.name.visibility()
+        match self.name.as_os_str().as_bytes() {
+            [b'.', ..] => Visibility::Hidden,
+            _ => Visibility::Shown,
+        }
     }
 }
 

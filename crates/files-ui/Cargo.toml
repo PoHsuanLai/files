@@ -26,6 +26,8 @@ chrono = { workspace = true }
 dioxus = { workspace = true }
 ds = { workspace = true }
 ds-blitz = { workspace = true }
+ds-extensions = { workspace = true }
+ds-helpers = { workspace = true }
 ds-settings = { workspace = true, features = ["dioxus"] }
 files-core = { workspace = true }
 files-fs = { workspace = true }

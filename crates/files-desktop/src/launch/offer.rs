@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use files_mime::DesktopId;
+use ds_helpers::DesktopId;
 
 use super::desktop::DesktopLauncher;
 

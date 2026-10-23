@@ -25,6 +25,7 @@
 mod apps;
 #[cfg(feature = "testing")]
 mod fake_volumes;
+mod file_icons;
 mod look;
 mod opener;
 mod ops;
@@ -55,6 +56,7 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 pub use apps::{AppChoiceView, AppRole, Apps, NoApps};
 #[cfg(feature = "testing")]
 pub use fake_volumes::{FakeVolumes, VolumeCall};
+pub use file_icons::IconSources;
 pub use opener::{OpenAs, Opener};
 pub use read::change_of;
 pub use seams::Seams;

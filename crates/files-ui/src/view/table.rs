@@ -5,7 +5,7 @@ use ds::base::selection::Pick;
 use ds::components::controls::scroller::handle::use_scroller;
 use ds::components::lists::table::model::{CellAlign, Sort as TableSort, Sorting, TableColumn};
 use ds::components::lists::virtual_table::VirtualTable;
-use ds::prelude::{Icon, IconSource, IconView, Label, Px, TableLook};
+use ds::prelude::{FileIcon, Label, Px, TableLook};
 use files_core::{Entry, Location, Sort};
 use files_model::{Browser, Input, Opens, Rename, opens};
 
@@ -34,16 +34,8 @@ fn column(id: Column, location: &Location) -> TableColumn<Column> {
     }
 }
 
-/// The glyph before a name. quire has no per-type file glyphs yet, so a file is a file.
-pub(super) fn icon_of(entry: &Entry) -> Icon {
-    match opens(entry) {
-        Opens::Folder => Icon::Folder,
-        Opens::File | Opens::Nothing => Icon::File,
-    }
-}
-
 /// What the Name column shows for `entry`: its name field while it is being renamed, else its
-/// glyph and name.
+/// icon and name.
 fn name_cell(browse: Browse, state: &Browser, entry: &Entry) -> Element {
     if let Rename::Editing {
         name,
@@ -56,8 +48,9 @@ fn name_cell(browse: Browse, state: &Browser, entry: &Entry) -> Element {
             RenameCell { browse, draft: draft.clone(), problem: *problem }
         };
     }
+    let choice = browse.icons.read().choice_for(state.folder(), entry);
     rsx! {
-        IconView { source: IconSource::from(icon_of(entry)) }
+        FileIcon { choice }
         Label { text: entry.shown_name().display().into_owned() }
     }
 }

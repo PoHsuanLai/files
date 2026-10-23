@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use files_mime::{Associations, MimeDb};
+use ds_helpers::mime::{Associations, MimeDb};
 
 use super::activate::Activate;
 use super::desktop::DesktopLauncher;

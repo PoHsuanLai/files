@@ -18,7 +18,6 @@ docket-core = { workspace = true }
 docket-dbus = { workspace = true }
 ds-helpers = { workspace = true }
 files-core = { workspace = true }
-files-mime = { workspace = true }
 futures-util = { workspace = true }
 porter-core = { workspace = true }
 prov = { workspace = true }
