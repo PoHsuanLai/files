@@ -9,6 +9,7 @@
 mod apps;
 mod args;
 mod bridge;
+mod clouds;
 mod icons;
 mod launcher;
 mod opener;
@@ -86,7 +87,13 @@ fn main() -> ExitCode {
     let dirs = launcher::xdg_dirs();
     let db = Arc::new(launcher::mime_db(&dirs));
     let launcher = Arc::new(launcher::launcher(&dirs, &db, running.activate));
-    let launch = Launch::new(start, Arc::new(DesktopOpener::new(launcher.clone())))
+    // The cloud drives need the session bus; without it the window shows none.
+    let cloud = runtime.block_on(clouds::connect(runtime.handle().clone()));
+    let opener = match &cloud {
+        Some(cloud) => DesktopOpener::new(launcher.clone()).with_web(cloud.web.clone()),
+        None => DesktopOpener::new(launcher.clone()),
+    };
+    let launch = Launch::new(start, Arc::new(opener))
         .with_file_icons(IconSources::new(Search::from_env(), db))
         .with_apps(Arc::new(InstalledApps::new(launcher)))
         .with_places(places::found())
@@ -99,6 +106,10 @@ fn main() -> ExitCode {
         .with_thumbnails(thumbnails::shared())
         .with_requests(running.requests)
         .with_runtime(runtime.handle().clone());
+    let launch = match cloud {
+        Some(cloud) => launch.with_clouds(cloud.clouds),
+        None => launch,
+    };
     // Without the system bus the window has no disks to list.
     let launch = match runtime.block_on(Disks::system(Arc::new(ProcUsers::new("/proc")))) {
         Ok(disks) => launch.with_volumes(Arc::new(DesktopVolumes::new(

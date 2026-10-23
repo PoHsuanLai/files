@@ -7,8 +7,10 @@ use ds::prelude::FileIconChoice;
 use files_core::{Entry, FileName, ItemRef};
 use files_model::{Browser, Input, Rename};
 
+use super::cloud::CloudBadge;
 use super::rename::RenameCell;
 use super::wanted::Wanted;
+use crate::cloud::badge_of;
 use crate::rows::{click_of, cursor_of, selection_of};
 use crate::state::Browse;
 use crate::thumbs::{ThumbKey, Thumbed, Thumbs};
@@ -58,9 +60,15 @@ fn item_of(
         entry.shown_name().display().into_owned(),
         thumbnail,
     );
-    let item = match wish {
-        Some(wish) => item.badged(wish),
-        None => item,
+    let badge = badge_of(state.cloud_of(&entry.name));
+    let item = match (wish, state.drive_here().is_some()) {
+        (None, false) => item,
+        (wish, _) => item.badged(rsx! {
+            if let Some(wish) = wish {
+                {wish}
+            }
+            CloudBadge { badge }
+        }),
     };
     if let Rename::Editing {
         name,

@@ -4,7 +4,7 @@
 //! passes them in as [`Places`]; [`groups`] says what the sidebar lists; `view` draws it.
 
 use ds::prelude::FolderKind;
-use files_core::{FolderPath, Location, Volume, VolumeId};
+use files_core::{CloudDrive, DriveId, FolderPath, Location, Volume, VolumeId};
 
 /// A place the sidebar can list.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -81,6 +81,8 @@ pub enum Heading {
     Favorites,
     /// Where things are kept: the computer's disk.
     Locations,
+    /// The cloud drives the person turned on for Files.
+    Cloud,
 }
 
 impl Heading {
@@ -89,6 +91,7 @@ impl Heading {
         match self {
             Heading::Favorites => "Favorites",
             Heading::Locations => "Locations",
+            Heading::Cloud => "Cloud",
         }
     }
 }
@@ -103,6 +106,8 @@ pub enum PlaceKey {
     /// A disk under Locations, by its id, so a disk plugged in or out between a draw and a
     /// press never opens another.
     Volume(VolumeId),
+    /// A cloud drive, by its id.
+    Cloud(DriveId),
 }
 
 /// The row of the disk mounted exactly at `location`, for the sidebar's cursor.
@@ -114,6 +119,17 @@ pub(crate) fn volume_key(volumes: &[Volume], location: &Location) -> Option<Plac
         .iter()
         .find(|volume| volume.folder() == Some(folder))
         .map(|volume| PlaceKey::Volume(volume.id.clone()))
+}
+
+/// The row of the cloud drive whose folder holds `location`, for the sidebar's cursor.
+pub(crate) fn cloud_key(clouds: &[CloudDrive], location: &Location) -> Option<PlaceKey> {
+    let Location::Folder(folder) = location else {
+        return None;
+    };
+    clouds
+        .iter()
+        .find(|drive| drive.holds(folder))
+        .map(|drive| PlaceKey::Cloud(drive.id.clone()))
 }
 
 /// Whether the sidebar lists the attached disks under Locations.

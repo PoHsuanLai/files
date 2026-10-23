@@ -11,12 +11,12 @@ use ds::prelude::{
 };
 use ds::style::icon::render::IconPx;
 use files_core::{ByteSize, EntryKind, Info, ItemRef};
-use files_model::{InfoView, Input};
+use files_model::{Browser, InfoView, Input};
 
 use crate::edge::Zone;
 use crate::icons::Icons;
 use crate::state::Browse;
-use crate::words::{InfoRow, info_failure_words, info_rows, name_rows};
+use crate::words::{InfoRow, drive_rows, info_failure_words, info_rows, item_rows, name_rows};
 
 /// The facts as the rows of a `FactList`.
 fn facts(rows: Vec<InfoRow>) -> Vec<Fact> {
@@ -40,8 +40,29 @@ fn heading(choice: FileIconChoice, name: String) -> Element {
     }
 }
 
+/// The rows a cloud drive adds: its own for the drive's folder, the item's for an item of the
+/// folder shown that is in a drive.
+fn cloud_rows(state: &Browser, info: &Info) -> Vec<InfoRow> {
+    let own = state.drive_at(&info.item().as_folder());
+    if let Some(drive) = own {
+        return drive_rows(drive);
+    }
+    if state.folder() != Some(&info.folder) {
+        return Vec::new();
+    }
+    state
+        .cloud_of(&info.name)
+        .map(item_rows)
+        .unwrap_or_default()
+}
+
 /// What the sheet holds for each state of the panel.
-fn body_of(view: &InfoView, zone: Zone, icons: &Icons) -> Option<(String, Element)> {
+fn body_of(
+    view: &InfoView,
+    zone: Zone,
+    icons: &Icons,
+    cloud: Vec<InfoRow>,
+) -> Option<(String, Element)> {
     match view {
         InfoView::Closed => None,
         InfoView::Loading(item) => {
@@ -59,20 +80,26 @@ fn body_of(view: &InfoView, zone: Zone, icons: &Icons) -> Option<(String, Elemen
             };
             Some((name, body))
         }
-        InfoView::Shown(info) => Some((info.name.display().into_owned(), shown(info, zone, icons))),
+        InfoView::Shown(info) => Some((
+            info.name.display().into_owned(),
+            shown(info, zone, icons, cloud),
+        )),
         // A state files-model adds later draws nothing until this names it.
         _ => None,
     }
 }
 
 /// The facts of `info`: its heading, then its rows and its name.
-fn shown(info: &Info, zone: Zone, icons: &Icons) -> Element {
+fn shown(info: &Info, zone: Zone, icons: &Icons, cloud: Vec<InfoRow>) -> Element {
     let rows = info_rows(info, |at| zone.words(at));
     let names = name_rows(info);
     let choice = icons.choice_of(&info.folder, &info.name, info.kind.clone());
     rsx! {
         {heading(choice, info.name.display().into_owned())}
         FormSection { FactList { facts: facts(rows) } }
+        if !cloud.is_empty() {
+            FormSection { title: Some("Cloud".to_owned()), FactList { facts: facts(cloud) } }
+        }
         FormSection { title: Some("Name & Extension".to_owned()), FactList { facts: facts(names) } }
     }
 }
@@ -82,7 +109,14 @@ fn shown(info: &Info, zone: Zone, icons: &Icons) -> Element {
 pub(super) fn InfoSheet(browse: Browse, zone: Zone) -> Element {
     let view = browse.state.read().info().clone();
     let icons = browse.icons.read().clone();
-    let Some((name, body)) = body_of(&view, zone, &icons) else {
+    let cloud = {
+        let state = browse.state.read();
+        match &view {
+            InfoView::Shown(info) => cloud_rows(&state, info),
+            InfoView::Closed | InfoView::Loading(_) | InfoView::Failed(..) | _ => Vec::new(),
+        }
+    };
+    let Some((name, body)) = body_of(&view, zone, &icons, cloud) else {
         return rsx! {};
     };
     let close = EventHandler::new(move |()| browse.send(Input::CloseInfo));

@@ -106,6 +106,12 @@ impl Browser {
             Input::CancelWork => self.cancel_work(),
             Input::Op(event) => self.heard(event),
             Input::Volumes(volumes) => self.volumes_changed(volumes),
+            Input::Clouds(clouds) => self.clouds_changed(clouds),
+            Input::CloudItems(items) => self.cloud_read(items),
+            Input::DownloadNow => self.download_now(),
+            Input::RemoveDownload => self.remove_download(),
+            Input::KeepDownloaded => self.keep_downloaded(),
+            Input::CloudAnswered(refused) => self.cloud_answered(refused),
             Input::OpenVolume(id) => self.open_volume(id),
             Input::Mounted(id, result) => self.mounted(id, result),
             Input::Eject(id) => self.eject(id),
@@ -134,7 +140,9 @@ impl Browser {
             Ok(entries) => Listing::Loaded(entries),
             Err(failure) => Listing::Failed(failure),
         };
-        (Browser { listing, ..self }.refreshed(), Vec::new())
+        let browser = Browser { listing, ..self }.refreshed();
+        let effects = browser.cloud_ask();
+        (browser, effects)
     }
 
     fn changed(self, change: Change) -> Stepped {
@@ -144,8 +152,17 @@ impl Browser {
         let Listing::Loaded(entries) = &self.listing else {
             return (self, Vec::new());
         };
+        // Only a new entry has a cloud state to ask for; a download changing a file's size is
+        // told by the drive itself.
+        let added = matches!(change, Change::Added(_));
         let listing = Listing::Loaded(crate::listing::apply(entries.clone(), change));
-        (Browser { listing, ..self }.refreshed(), Vec::new())
+        let browser = Browser { listing, ..self }.refreshed();
+        let effects = if added {
+            browser.cloud_ask()
+        } else {
+            Vec::new()
+        };
+        (browser, effects)
     }
 
     fn with_prefs(self, prefs: FolderPrefs) -> Stepped {

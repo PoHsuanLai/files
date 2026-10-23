@@ -107,6 +107,11 @@ impl Browse {
         self.edge.read().all_apps()
     }
 
+    /// Opens Accounts in Settings (the button of a drive that needs signing in).
+    pub(crate) fn open_accounts(&self) {
+        self.edge.read().open_accounts();
+    }
+
     /// The edge, for a tile that wants a thumbnail while it is drawn and says so when it goes.
     pub(crate) fn edge(&self) -> Rc<Edge> {
         Rc::clone(&self.edge.read())

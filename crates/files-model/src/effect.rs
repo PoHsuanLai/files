@@ -4,8 +4,8 @@ use std::path::PathBuf;
 
 use crate::app::AppPick;
 use files_core::{
-    FileName, FolderPath, FolderPrefs, ItemRef, Location, OpFailure, OpPlan, Resolution, Summary,
-    VolumeId, VolumeName, VolumeTrouble,
+    FileName, FolderPath, FolderPrefs, ItemRef, Keeping, Location, OnlineUrl, OpFailure, OpPlan,
+    Resolution, Summary, VolumeId, VolumeName, VolumeTrouble,
 };
 
 /// One file to hand to an app: where it is, and what it is called.
@@ -95,6 +95,18 @@ pub enum Effect {
     /// Eject this disk even though programs may be using it (the person said so), and answer with
     /// `Input::ForceEjected`.
     ForceEjectVolume(VolumeId),
+    /// Ask where these items of a cloud drive stand and answer with `Input::CloudItems`.
+    ReadCloud(Vec<ItemRef>),
+    /// Download these items and answer with `Input::CloudAnswered`.
+    CloudDownload(Vec<ItemRef>),
+    /// Remove the downloaded copy of these items and answer with `Input::CloudAnswered`.
+    CloudRemove(Vec<ItemRef>),
+    /// Keep these items downloaded, or not, and answer with `Input::CloudAnswered`.
+    CloudKeep(Vec<ItemRef>, Keeping),
+    /// Open this online document in the browser.
+    OpenUrl(OnlineUrl),
+    /// Tell the person this, in plain words.
+    Say(String),
     /// Close the window: its last tab was closed.
     CloseWindow,
     /// Tell the person a disk could not be opened or ejected.

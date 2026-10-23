@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use ds::prelude::SystemPrefs;
 use ds_harness::{Harness, HarnessConfig, Viewport};
 use files_core::{FolderPath, Location};
-use files_fs::{DiskLister, FakePrefs, FakeWatcher};
+use files_fs::{DiskLister, FakePrefs, FakeWatcher, NoClouds};
 use files_model::AppPick;
 use files_trash::FakeTrash;
 use files_ui::edge::Seams;
@@ -152,6 +152,7 @@ pub fn launch_remembering(
         prefs,
         apps: Arc::new(FakeApps),
         volumes: Arc::new(NoVolumes),
+        clouds: Arc::new(NoClouds),
         thumbnails: Arc::new(NoThumbnails),
     };
     Launch::new(start, Arc::clone(opener) as Arc<dyn Opener>)

@@ -23,6 +23,7 @@
 //! are read by the [`files_fs::Lister`] on a thread and come back as `Input::InfoRead`.
 
 mod apps;
+mod clouds;
 #[cfg(feature = "testing")]
 mod fake_volumes;
 mod file_icons;
@@ -100,6 +101,8 @@ pub struct Edge {
     peek: PeekWorker,
     /// Lists, opens and ejects the disks.
     disks: volumes::Disks,
+    /// Lists the cloud drives and carries out the asks of them.
+    clouds: clouds::CloudDrives,
     /// Makes the icon view's thumbnails.
     thumbs: thumbs::Thumbnails,
 }
@@ -120,6 +123,7 @@ impl Edge {
         let ops = Worker::start(Arc::clone(&seams.trash), sink).ok();
         let prefs = prefs::Prefs::start(Arc::clone(&seams.prefs), heard.clone());
         let disks = volumes::Disks::start(Arc::clone(&seams.volumes), heard.clone());
+        let clouds = clouds::CloudDrives::start(Arc::clone(&seams.clouds), heard.clone());
         let maker = Arc::new(Anyview::new(Arc::clone(&seams.thumbnails)));
         let thumbnailer = Thumbnailer::new(Arc::clone(&seams.thumbnails), maker);
         let thumbs = thumbs::Thumbnails::start(thumbnailer, heard.clone());
@@ -131,6 +135,7 @@ impl Edge {
             prefs,
             peek: look::worker(),
             disks,
+            clouds,
             thumbs,
         };
         (edge, inbox)
@@ -192,6 +197,16 @@ impl Edge {
             Effect::TellVolume { name, trouble } => {
                 self.say(Heard::Told(volume_trouble_words(&name, &trouble)));
             }
+            Effect::ReadCloud(items) => self.clouds.read(tab, items),
+            Effect::CloudDownload(items) => self.clouds.download(tab, items),
+            Effect::CloudRemove(items) => self.clouds.remove(tab, items),
+            Effect::CloudKeep(items, keeping) => self.clouds.keep(tab, items, keeping),
+            Effect::OpenUrl(url) => {
+                if let Err(failure) = self.seams.opener.open_url(&url) {
+                    self.say(Heard::Told(failure.to_string()));
+                }
+            }
+            Effect::Say(text) => self.say(Heard::Told(text)),
             // An effect files-model adds later is dropped until this names it.
             _ => {}
         }
@@ -213,6 +228,13 @@ impl Edge {
     fn open(&self, targets: &[OpenTarget], with: OpenAs) {
         let paths = targets.iter().map(OpenTarget::path).collect();
         if let Err(failure) = self.seams.opener.open(paths, with) {
+            self.say(Heard::Told(failure.to_string()));
+        }
+    }
+
+    /// Opens Accounts in Settings; the person is told if it could not be.
+    pub fn open_accounts(&self) {
+        if let Err(failure) = self.seams.opener.open_accounts() {
             self.say(Heard::Told(failure.to_string()));
         }
     }

@@ -8,12 +8,12 @@ below and fails on any edge it does not allow, or on a crate it does not list.
 
 | Layer | Crate | Holds |
 |---|---|---|
-| 0, data | `files-core` | The vocabulary (a name and a type are quire's `ds_helpers::mime::FileName` and `MimeType`): names, entries, locations, views, sort, conflicts, progress and plans of work (`OpPlan`), trashed items, as plain data. Names no other workspace crate and does no I/O. |
-| 0, library | `files-fs` | The disk behind traits: listing a folder and the facts of one item (Get Info), watching it, the remembered view of each folder (`PrefsStore`, kept as TOML in the app's state folder by quire's `ds-helpers` file helpers). Fakes behind the `testing` feature. |
+| 0, data | `files-core` | The vocabulary (a name and a type are quire's `ds_helpers::mime::FileName` and `MimeType`): names, entries, locations, views, sort, conflicts, progress and plans of work (`OpPlan`), trashed items, cloud drives and where their files stand (`CloudDrive`, `CloudItem`), as plain data. Names no other workspace crate and does no I/O. |
+| 0, library | `files-fs` | The disk behind traits: listing a folder and the facts of one item (Get Info), watching it, the remembered view of each folder (`PrefsStore`, kept as TOML in the app's state folder by quire's `ds-helpers` file helpers), and the cloud drives (`Clouds`: list them, where items stand, download, remove a download, keep, a stream of news; `NoClouds`). Fakes behind the `testing` feature. |
 | 0, library | `files-trash` | The freedesktop.org Trash behind a trait: move to it, list it, put back, delete now, empty, the per-volume `.Trash-$uid` folders. A fake keeps a Trash in a scratch folder. |
 | 0, library | `files-ops` | Copy, move, trash and rename as a queue: progress, cancel, conflict questions (keep both, replace, skip, stop), an undo journal. Each job is submitted with a caller's tag (`Worker<T>`) that comes back with every event of it. Plain threads and channels; links are copied as links. |
 | 1, logic | `files-model` | Pure state machines, `step(state, input, now) -> (state, effects)`: the browser (history, selection, rename, Go to Folder, type-to-select, sort and view per folder, disks), tabs (`tabs/`), the queue as shown (work and questions), Quick Look, Get Info and the preview pane. No I/O. |
-| 2, desktop | `files-desktop` | The only crate that names a bus, docket or porter: `org.freedesktop.FileManager1`, the app's intents (`IntentProvider1`), UDisks2 on the system bus, launching apps with an activation token, one instance. |
+| 2, desktop | `files-desktop` | The only crate that names a bus, docket or porter: `org.freedesktop.FileManager1`, the app's intents (`IntentProvider1`), UDisks2 on the system bus, the cloud drives (`org.quire.Storage1`, porter's, behind `files_fs::Clouds`), opening an online document's address through the portal, launching apps with an activation token, one instance. |
 | 3, UI | `files-ui` | The window, drawn only with quire's components, and the seams it is given (`Opener`, `Apps`, `Volumes`, `Requests`). `settings/` is the program's own settings file and its schema. `edge/` carries out the model's effects against the layer 0 traits and those seams, one module per family (`read`, `ops`, `prefs`, `volumes`, `look`, `thumbs`, `file_icons`: the Extensions folders read into quire's icon resolver), and runs anyview's peek worker for Quick Look and the preview pane (its `Card` is drawn inside quire's `Peek` and `PreviewPane`) and the threads that make the icon view's thumbnails. The sidebar's sections are `places`. `icons` asks the resolver for an entry and maps its answer to quire's `FileIconChoice`. |
 | 4, binary | `files` | `main`: arguments, the runtime, `ds_blitz::launch`, and the glue between layers 2 and 3: `files-desktop`'s launcher, disks and intents adapted to `files-ui`'s seams, the XDG folders, the session bus. Each file is one adapter. |
 
@@ -148,7 +148,33 @@ has another version, so a new wish and a new thumbnail. The cache is a seam (`Se
 the binary builds `FreedesktopThumbnails` from the environment, tests give a fake). A PDF page comes
 from the renderer's own page cache and is shown as it is.
 
-## 10. Settings
+## 10. Cloud drives
+
+A cloud drive is a storage account the person turned on for Files; porter serves it as a folder
+and as `org.quire.Storage1`. `files-core` holds the vocabulary (`CloudDrive`: id, provider, account
+label, folder, `DriveState`, words, `Usage`; `CloudItem`: `CloudState`, `Keeping`, `CloudKind`,
+`Share`, words, `OnlineUrl`, the `other` version of a conflict). The folder is only ever the one the
+service gave. The seam is `files_fs::Clouds` (blocking calls, `CloudNews` through a guarded
+watch); `files-desktop::Storage` is the async client over a connection the caller passes (it joins
+`Watch` and again whenever the service appears, and says `CloudNews::Drives` when it goes or
+comes), and `DesktopClouds` blocks on the runtime for the window's own threads. An unknown word
+from the service is a typed `StorageError`; a row that cannot be read is left out, a drive state
+that is unknown shows as an error.
+
+The model keeps `Browser::clouds` (the list, like the disks) and, for the folder shown, where each
+row stands. A fresh listing in a drive adds `Effect::ReadCloud`; `Input::CloudItems` answers it and
+carries every `ItemsChanged`. Opening a file asks `CloudDownload` for one in the cloud and opens it
+when it reaches downloaded (an offline drive says so instead); an online document is
+`Effect::OpenUrl` with the address the service gave, never the file. The menu is Download Now,
+Remove Download and Keep Downloaded (checked, a dash for some); a refusal comes back as
+`Input::CloudAnswered` and each reason is told once. The edge (`edge/clouds.rs`) is one thread, as
+the disks' is, and tells every tab the drives only when they changed; a service that is away is
+an empty list, once. The sidebar's Cloud section lists the drives with a small mark for a state
+(syncing, offline, paused, needs sign-in, error). Rows wear a badge (glyph, and quire's ring while a
+transfer moves); a drive that needs signing in shows its words and a button that asks the opener to
+open Accounts, only when pressed. Files has no Pause Syncing: only the shell and Settings may call it.
+
+## 11. Settings
 
 The person's choices are `$XDG_CONFIG_HOME/files/settings.toml`, read through quire's `ds_settings::Store`
 (lenient: a bad value costs only its own key; atomic write; a directory watch). `files-ui/src/settings`

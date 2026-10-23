@@ -20,6 +20,7 @@
 //! ```
 
 mod behaviour;
+mod cloud;
 mod conflict;
 mod entry;
 mod error;
@@ -36,6 +37,10 @@ mod view;
 mod volume;
 
 pub use behaviour::{Asking, Behaviour, FoldersOnTop};
+pub use cloud::{
+    AccountLabel, CloudDrive, CloudItem, CloudKind, CloudNews, CloudState, CloudWords, DriveId,
+    DriveState, Keeping, OnlineUrl, ProviderName, Refused, Share, UrlError, Usage,
+};
 pub use conflict::{Answer, Conflict, ConflictKind, Reach, Resolution};
 pub use ds_helpers::mime::{FileName, MimeError, MimeType, NameError};
 pub use entry::{Entry, EntryKind, LinkTo, Special, Visibility};

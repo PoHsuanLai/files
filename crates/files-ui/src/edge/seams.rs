@@ -4,7 +4,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use anyview_platform::ThumbnailCache;
-use files_fs::{DiskLister, Lister, NoPrefs, NotifyWatcher, PrefsStore, Watcher};
+use files_fs::{Clouds, DiskLister, Lister, NoClouds, NoPrefs, NotifyWatcher, PrefsStore, Watcher};
 use files_trash::{SystemTrash, Trash};
 
 use super::{Apps, NoApps, NoThumbnails, NoVolumes, Opener, Volumes};
@@ -26,6 +26,8 @@ pub struct Seams {
     pub apps: Arc<dyn Apps>,
     /// The computer's disks: listing, opening and ejecting them.
     pub volumes: Arc<dyn Volumes>,
+    /// The cloud drives: listing them, where their files stand, downloading and keeping.
+    pub clouds: Arc<dyn Clouds>,
     /// The thumbnails the desktop shares, which the icon view reads and adds to.
     pub thumbnails: Arc<dyn ThumbnailCache + Send + Sync>,
 }
@@ -41,6 +43,7 @@ impl Seams {
             prefs: Arc::new(NoPrefs),
             apps: Arc::new(NoApps),
             volumes: Arc::new(NoVolumes),
+            clouds: Arc::new(NoClouds),
             thumbnails: Arc::new(NoThumbnails),
         }
     }
@@ -53,6 +56,11 @@ impl Seams {
     /// The same seams over the disks `volumes` knows.
     pub fn with_volumes(self, volumes: Arc<dyn Volumes>) -> Seams {
         Seams { volumes, ..self }
+    }
+
+    /// The same seams over the cloud drives `clouds` knows.
+    pub fn with_clouds(self, clouds: Arc<dyn Clouds>) -> Seams {
+        Seams { clouds, ..self }
     }
 
     /// The same seams sharing thumbnails through `thumbnails`.

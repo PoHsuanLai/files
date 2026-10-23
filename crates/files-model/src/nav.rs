@@ -45,6 +45,9 @@ impl Browser {
             goto: GoTo::Closed,
             chooser: Chooser::Closed,
             volumes: self.volumes,
+            clouds: self.clouds,
+            cloud: Default::default(),
+            opening: Vec::new(),
             pane: self.pane,
             details: None,
         };
@@ -122,7 +125,7 @@ impl Browser {
         match (into, files.is_empty()) {
             (Some(to), _) => self.go(to),
             (None, true) => (self, Vec::new()),
-            (None, false) => (self, vec![Effect::OpenFiles(files)]),
+            (None, false) => self.open_files(files),
         }
     }
 }

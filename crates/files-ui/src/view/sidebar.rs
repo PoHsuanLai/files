@@ -6,11 +6,16 @@ use ds::base::press::Press;
 use ds::base::vocab::RowState;
 use ds::components::chrome::sidebar::Sidebar;
 use ds::components::chrome::sidebar_model::SidebarSection;
-use ds::prelude::{Icon, ListItem, Row, RowAction, RowLeading, SectionHeader, Selection};
-use files_core::{Eject, Volume, VolumeId, VolumeKind};
+use ds::prelude::{
+    Accessory, Icon, ListItem, Row, RowAction, RowLeading, SectionHeader, Selection,
+};
+use files_core::{CloudDrive, Eject, Location, Volume, VolumeId, VolumeKind};
 use files_model::Input;
 
-use crate::places::{DiskRows, Heading, PlaceKey, PlaceKind, Places, groups, volume_key};
+use crate::cloud::drive_mark;
+use crate::places::{
+    DiskRows, Heading, PlaceKey, PlaceKind, Places, cloud_key, groups, volume_key,
+};
 use crate::state::Browse;
 
 /// The glyph of a place. quire has no Home, Desktop or Videos glyph yet, so the nearest stand in.
@@ -46,11 +51,12 @@ pub(super) struct Hears {
     pub(super) oneject: EventHandler<VolumeId>,
 }
 
-/// The sidebar's sections for `places` and the attached `volumes`: a list of headings and rows,
-/// `cursor` drawn selected.
+/// The sidebar's sections for `places`, the attached `volumes` and the cloud drives: a list of
+/// headings and rows, `cursor` drawn selected.
 pub(super) fn sidebar_rows(
     places: &Places,
     volumes: &[Volume],
+    clouds: &[CloudDrive],
     cursor: Option<PlaceKey>,
     hears: Hears,
 ) -> Vec<SidebarSection<PlaceKey>> {
@@ -64,6 +70,10 @@ pub(super) fn sidebar_rows(
     let items = groups(places)
         .into_iter()
         .flat_map(|group| {
+            let cloud_rows = (group.heading == Heading::Locations)
+                .then(|| cloud_section(clouds, &selection_of, hears))
+                .into_iter()
+                .flatten();
             let heading = ListItem::heading(
                 PlaceKey::Heading(group.heading),
                 rsx! { SectionHeader { title: group.heading.label().to_owned() } },
@@ -99,10 +109,62 @@ pub(super) fn sidebar_rows(
                 rows.extend(disks);
                 rows.extend(tail);
             }
-            std::iter::once(heading).chain(rows)
+            cloud_rows.chain(std::iter::once(heading)).chain(rows)
         })
         .collect();
     vec![SidebarSection::List(items)]
+}
+
+/// The cloud drives' heading and one row for each; nothing while there are none.
+fn cloud_section(
+    clouds: &[CloudDrive],
+    selection_of: &impl Fn(PlaceKey) -> Selection,
+    hears: Hears,
+) -> Vec<ListItem<PlaceKey>> {
+    if clouds.is_empty() {
+        return Vec::new();
+    }
+    let heading = ListItem::heading(
+        PlaceKey::Heading(Heading::Cloud),
+        rsx! { SectionHeader { title: Heading::Cloud.label().to_owned() } },
+    );
+    let rows = clouds.iter().map(|drive| {
+        let key = PlaceKey::Cloud(drive.id.clone());
+        let selection = selection_of(key.clone());
+        let name = drive.name_among(clouds);
+        let state = drive.state;
+        let onselect = hears.onselect;
+        ListItem::row(
+            key,
+            name.clone(),
+            rsx! { CloudRow { id: drive.id.clone(), name, state, selection, onselect } },
+        )
+    });
+    std::iter::once(heading).chain(rows).collect()
+}
+
+/// One cloud drive's row: its name, and a small mark after it unless it is up to date.
+#[component]
+fn CloudRow(
+    id: files_core::DriveId,
+    name: String,
+    state: files_core::DriveState,
+    selection: Selection,
+    onselect: EventHandler<PlaceKey>,
+) -> Element {
+    let accessory = drive_mark(state).map_or(Accessory::None, |mark| Accessory::Glyph(mark.icon));
+    rsx! {
+        Row {
+            leading: RowLeading::Icon(Icon::Folder),
+            title: name,
+            accessory,
+            state: RowState {
+                selection,
+                ..RowState::default()
+            },
+            onclick: move |_| onselect.call(PlaceKey::Cloud(id.clone())),
+        }
+    }
 }
 
 /// One place's row.
@@ -154,11 +216,13 @@ fn VolumeRow(volume: Volume, selection: Selection, hears: Hears) -> Element {
 #[component]
 pub(super) fn PlacesPane(browse: Browse, places: Places) -> Element {
     let volumes = browse.state.read().volumes().to_vec();
+    let clouds = browse.state.read().clouds().to_vec();
     let cursor = {
         let state = browse.state.read();
         places
             .key_of(state.location())
             .or_else(|| volume_key(state.volumes(), state.location()))
+            .or_else(|| cloud_key(state.clouds(), state.location()))
     };
     let go = use_callback({
         let places = places.clone();
@@ -169,7 +233,19 @@ pub(super) fn PlacesPane(browse: Browse, places: Places) -> Element {
                 }
             }
             PlaceKey::Volume(id) => browse.send(Input::OpenVolume(id)),
-            PlaceKey::Heading(Heading::Favorites | Heading::Locations) => {}
+            PlaceKey::Cloud(id) => {
+                let folder = browse
+                    .state
+                    .read()
+                    .clouds()
+                    .iter()
+                    .find(|drive| drive.id == id)
+                    .map(|drive| drive.folder.clone());
+                if let Some(folder) = folder {
+                    browse.send(Input::Go(Location::Folder(folder)));
+                }
+            }
+            PlaceKey::Heading(Heading::Favorites | Heading::Locations | Heading::Cloud) => {}
         }
     });
     let eject = use_callback(move |id: VolumeId| browse.send(Input::Eject(id)));
@@ -180,7 +256,7 @@ pub(super) fn PlacesPane(browse: Browse, places: Places) -> Element {
     rsx! {
         Sidebar::<PlaceKey> {
             label: "Sidebar",
-            sections: sidebar_rows(&places, &volumes, cursor.clone(), hears),
+            sections: sidebar_rows(&places, &volumes, &clouds, cursor.clone(), hears),
             cursor,
             onselect: go,
         }

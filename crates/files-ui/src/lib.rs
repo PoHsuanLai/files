@@ -25,6 +25,7 @@
 //! assert_eq!(size_words(ByteSize(1_500_000)), "1.5 MB");
 //! ```
 
+pub mod cloud;
 pub mod edge;
 mod error;
 mod icons;

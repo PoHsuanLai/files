@@ -1,8 +1,10 @@
 //! One window's view of one location.
 
+use std::collections::HashMap;
+
 use files_core::{
-    Behaviour, Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, Info, ItemRef, Location,
-    Summary, Volume,
+    Behaviour, CloudDrive, CloudItem, Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, Info,
+    ItemRef, Location, Summary, Volume,
 };
 
 use crate::app::Chooser;
@@ -63,6 +65,12 @@ pub struct Browser {
     pub(crate) chooser: Chooser,
     /// The disks the sidebar lists, as the caller last told.
     pub(crate) volumes: Vec<Volume>,
+    /// The cloud drives the sidebar lists, as the caller last told.
+    pub(crate) clouds: Vec<CloudDrive>,
+    /// Where each row of the folder shown stands in its cloud drive, once read.
+    pub(crate) cloud: HashMap<FileName, CloudItem>,
+    /// The files to open as soon as they are downloaded.
+    pub(crate) opening: Vec<FileName>,
 }
 
 impl Browser {
@@ -94,6 +102,9 @@ impl Browser {
             goto: GoTo::Closed,
             chooser: Chooser::Closed,
             volumes: Vec::new(),
+            clouds: Vec::new(),
+            cloud: HashMap::new(),
+            opening: Vec::new(),
         };
         (browser, effects)
     }
@@ -240,6 +251,7 @@ impl Browser {
             hidden: self.hidden,
             behaviour: self.behaviour,
             volumes: self.volumes.clone(),
+            clouds: self.clouds.clone(),
             pane: self.pane,
             clipboard: self.clipboard.clone(),
             undo: self.undo.clone(),

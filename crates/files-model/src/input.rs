@@ -3,8 +3,8 @@
 use std::time::Duration;
 
 use files_core::{
-    Behaviour, EjectFailure, Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef, Location,
-    MountFailure, Resolution, Sort, ViewMode, Volume, VolumeId,
+    Behaviour, CloudDrive, CloudItem, EjectFailure, Entry, FileName, FolderPath, FolderPrefs, Info,
+    ItemRef, Location, MountFailure, Refused, Resolution, Sort, ViewMode, Volume, VolumeId,
 };
 
 use crate::app::AppPick;
@@ -196,6 +196,18 @@ pub enum Input {
     Op(OpEvent),
     /// The disks the sidebar lists changed (one came or went, one was opened or closed).
     Volumes(Vec<Volume>),
+    /// The cloud drives the sidebar lists changed (one came or went, a state, the space used).
+    Clouds(Vec<CloudDrive>),
+    /// Where items of a cloud drive stand: the answer to `Effect::ReadCloud`, or news of a change.
+    CloudItems(Vec<(ItemRef, CloudItem)>),
+    /// Download the selection now (the context menu).
+    DownloadNow,
+    /// Remove the downloaded copy of the selection (the context menu).
+    RemoveDownload,
+    /// Keep the selection downloaded, or stop keeping it when all of it is (the context menu).
+    KeepDownloaded,
+    /// The answer to a download, a removal or a keep: the paths not taken, with the reasons.
+    CloudAnswered(Vec<Refused>),
     /// Open a disk from the sidebar: go to it, mounting it first when it is not.
     OpenVolume(VolumeId),
     /// The answer to `Effect::MountVolume`.

@@ -3,6 +3,7 @@
 
 mod busy;
 mod chooser;
+mod cloud;
 mod file_icons;
 mod goto;
 mod icon;

@@ -10,7 +10,7 @@ use anyview_platform::ThumbnailCache;
 use ds::prelude::SystemPrefs;
 use ds_settings::{AppName, ConfigRoot, Store, SystemPrefsSource};
 use files_core::{FolderPath, Location};
-use files_fs::PrefsStore;
+use files_fs::{Clouds, PrefsStore};
 
 use crate::edge::{Apps, IconSources, Opener, Seams, Volumes, Zone};
 use crate::places::Places;
@@ -148,6 +148,14 @@ impl Launch {
     pub fn with_volumes(self, volumes: Arc<dyn Volumes>) -> Launch {
         Launch {
             seams: self.seams.with_volumes(volumes),
+            ..self
+        }
+    }
+
+    /// The same launch showing the cloud drives `clouds` knows.
+    pub fn with_clouds(self, clouds: Arc<dyn Clouds>) -> Launch {
+        Launch {
+            seams: self.seams.with_clouds(clouds),
             ..self
         }
     }

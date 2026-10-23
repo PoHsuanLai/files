@@ -2,7 +2,7 @@
 //! instance, and opening files with apps. This is the only crate of the app that names the session
 //! bus.
 //!
-//! Five parts, each usable on its own:
+//! Six parts, each usable on its own:
 //!
 //! - [`file_manager`]: `org.freedesktop.FileManager1`, parsed into typed [`Show`] requests that go
 //!   to a sink the app gives;
@@ -13,6 +13,10 @@
 //!   `IntentProvider1`), answered through the [`Window`] trait the caller implements;
 //! - [`disks`]: the computer's disks from UDisks2 on the system bus ([`Disks`]): list, open, eject
 //!   and a stream of changes, with the programs holding a disk open found by [`DiskUsers`].
+//!
+//! - [`storage`]: the cloud drives from porter's `org.quire.Storage1` ([`Storage`], and
+//!   [`DesktopClouds`] behind `files_fs::Clouds`), and [`open_url`], an online document opened in
+//!   the browser through the desktop portal.
 //!
 //! No part reads the environment: the caller passes the bus connection, the folders, the process
 //! folder and the tokens in.
@@ -41,6 +45,8 @@ pub mod file_manager;
 pub mod instance;
 pub mod intents;
 pub mod launch;
+pub mod open_url;
+pub mod storage;
 mod token;
 pub mod uri;
 
@@ -55,6 +61,8 @@ pub use launch::{
     NoIcons, Spawn, SpawnCommand, Standing, StartError, SystemSpawn, Takes, installed_check,
     load_apps,
 };
+pub use open_url::{OpenUrlError, open_url};
+pub use storage::{DesktopClouds, Storage, StorageError};
 pub use token::ActivationToken;
 
 #[cfg(feature = "testing")]

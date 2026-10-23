@@ -68,3 +68,15 @@ pub enum PrefsError {
     #[error("How folders are shown can't be saved.")]
     Write(#[source] ds_helpers::WriteError),
 }
+
+/// Why the cloud drives could not be asked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum CloudError {
+    /// The service is not there, or did not answer.
+    #[error("The cloud drives can't be reached right now.")]
+    Unavailable,
+    /// The service answered in words this version does not understand.
+    #[error("The cloud drives answered in a way Files can't read.")]
+    Unreadable,
+}

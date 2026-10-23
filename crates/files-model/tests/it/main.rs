@@ -4,6 +4,7 @@
 mod asked;
 mod behaviour;
 mod changes;
+mod cloud;
 mod common;
 mod go_to;
 mod listing;

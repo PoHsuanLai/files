@@ -9,9 +9,11 @@ use ds::prelude::{FileIcon, Label, Px, TableLook};
 use files_core::{Entry, Location, Sort};
 use files_model::{Browser, Input, Opens, Rename, opens};
 
+use super::cloud::CloudBadge;
 use super::menu::ContextAt;
 use super::rename::RenameCell;
 use super::row::{RowCell, Takes};
+use crate::cloud::badge_of;
 use crate::edge::Zone;
 use crate::rows::{Column, click_of, cursor_of, direction_of, order_of, selection_of};
 use crate::state::Browse;
@@ -49,9 +51,13 @@ fn name_cell(browse: Browse, state: &Browser, entry: &Entry) -> Element {
         };
     }
     let choice = browse.icons.read().choice_for(state.folder(), entry);
+    let badge = badge_of(state.cloud_of(&entry.name));
     rsx! {
         FileIcon { choice }
         Label { text: entry.shown_name().display().into_owned() }
+        if state.drive_here().is_some() {
+            CloudBadge { badge }
+        }
     }
 }
 

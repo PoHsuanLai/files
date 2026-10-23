@@ -33,6 +33,7 @@ mod asked;
 mod behave;
 mod browser;
 mod changes;
+mod cloud;
 mod effect;
 mod error;
 mod goto;
@@ -59,6 +60,9 @@ pub use app::{AppPick, Chooser};
 pub use arrange::arrange;
 pub use asked::Bring;
 pub use browser::Browser;
+pub use cloud::{
+    CloudMenu, DOWNLOAD_FAILED_WORDS, KeptMark, NO_ADDRESS_WORDS, OFFLINE_WORDS, ROWS_ASKED,
+};
 pub use effect::{Effect, OpenTarget};
 pub use error::{GoToProblem, ListFailure, RenameProblem};
 pub use goto::{GoTo, expand};

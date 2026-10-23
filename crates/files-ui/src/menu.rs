@@ -40,6 +40,12 @@ pub enum Command {
     DeleteImmediately,
     /// Erase everything in the Trash for good.
     EmptyTrash,
+    /// Download the selection now (in a cloud drive).
+    DownloadNow,
+    /// Remove the downloaded copy of the selection, keeping it listed (in a cloud drive).
+    RemoveDownload,
+    /// Keep the selection downloaded; checked while all of it is (in a cloud drive).
+    KeepDownloaded,
     /// Show the preview pane beside the folder.
     ShowPreview,
     /// Put the preview pane away.
@@ -64,6 +70,9 @@ impl Command {
             Command::PutBack => "Put Back",
             Command::DeleteImmediately => "Delete Immediately\u{2026}",
             Command::EmptyTrash => "Empty Trash\u{2026}",
+            Command::DownloadNow => "Download Now",
+            Command::RemoveDownload => "Remove Download",
+            Command::KeepDownloaded => "Keep Downloaded",
             Command::ShowPreview => "Show Preview",
             Command::HidePreview => "Hide Preview",
         }
@@ -87,6 +96,9 @@ impl Command {
             Command::PutBack => Input::PutBack,
             Command::DeleteImmediately => Input::DeleteImmediately,
             Command::EmptyTrash => Input::EmptyTrash,
+            Command::DownloadNow => Input::DownloadNow,
+            Command::RemoveDownload => Input::RemoveDownload,
+            Command::KeepDownloaded => Input::KeepDownloaded,
             Command::ShowPreview | Command::HidePreview => Input::TogglePreview,
         })
     }
@@ -199,17 +211,21 @@ pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, Availabili
             (Command::DeleteImmediately, some),
         ]],
         (Location::Trash, Over::Background) => vec![vec![(Command::EmptyTrash, rows)]],
-        (_, Over::Row) => vec![
-            open_group(browser, some),
-            vec![(Command::MoveToTrash, some)],
-            vec![
-                (Command::GetInfo, some),
-                (Command::Rename, one),
-                (Command::QuickLook, some),
-            ],
-            vec![(Command::Copy, some), (Command::CopyAsPathname, some)],
-            vec![(Command::NewFolder, Availability::Available)],
-        ],
+        (_, Over::Row) => {
+            let mut groups = vec![open_group(browser, some)];
+            groups.extend(cloud_group(browser));
+            groups.extend([
+                vec![(Command::MoveToTrash, some)],
+                vec![
+                    (Command::GetInfo, some),
+                    (Command::Rename, one),
+                    (Command::QuickLook, some),
+                ],
+                vec![(Command::Copy, some), (Command::CopyAsPathname, some)],
+                vec![(Command::NewFolder, Availability::Available)],
+            ]);
+            groups
+        }
         (_, Over::Background) => vec![
             vec![(Command::NewFolder, Availability::Available)],
             vec![(Command::GetInfoFolder, Availability::Available)],
@@ -217,6 +233,16 @@ pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, Availabili
             vec![(preview_command(browser), Availability::Available)],
         ],
     }
+}
+
+/// Download Now, Remove Download and Keep Downloaded, for a selection in a cloud drive.
+fn cloud_group(browser: &Browser) -> Option<Vec<(Command, Availability)>> {
+    let menu = browser.cloud_menu()?;
+    Some(vec![
+        (Command::DownloadNow, menu.download),
+        (Command::RemoveDownload, menu.remove),
+        (Command::KeepDownloaded, menu.keep),
+    ])
 }
 
 /// Show Preview while the pane is away, Hide Preview while it is up.

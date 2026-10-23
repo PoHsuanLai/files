@@ -4,8 +4,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use ds_helpers::DesktopId;
+use files_core::OnlineUrl;
 use files_desktop::{AppChoice, Launcher};
 use files_ui::{OpenAs, OpenFailure, Opener};
+
+use crate::clouds::Web;
 
 /// Hands files to the launcher, each to its default app or all to the one the person picked.
 ///
@@ -14,6 +17,7 @@ use files_ui::{OpenAs, OpenFailure, Opener};
 /// passed here.
 pub struct DesktopOpener {
     launcher: Arc<dyn Launcher>,
+    web: Option<Web>,
 }
 
 impl std::fmt::Debug for DesktopOpener {
@@ -25,7 +29,18 @@ impl std::fmt::Debug for DesktopOpener {
 impl DesktopOpener {
     /// An opener over `launcher`.
     pub fn new(launcher: Arc<dyn Launcher>) -> DesktopOpener {
-        DesktopOpener { launcher }
+        DesktopOpener {
+            launcher,
+            web: None,
+        }
+    }
+
+    /// The same opener opening online documents with `web`.
+    pub fn with_web(self, web: Web) -> DesktopOpener {
+        DesktopOpener {
+            web: Some(web),
+            ..self
+        }
     }
 }
 
@@ -44,6 +59,15 @@ impl Opener for DesktopOpener {
         self.launcher
             .open(&targets, choice_of(with)?, None)
             .map_err(|error| OpenFailure(error.to_string()))
+    }
+
+    fn open_url(&self, url: &OnlineUrl) -> Result<(), OpenFailure> {
+        match &self.web {
+            Some(web) => web.open(url),
+            None => Err(OpenFailure(
+                "Online documents can\u{2019}t be opened right now.".to_owned(),
+            )),
+        }
     }
 }
 

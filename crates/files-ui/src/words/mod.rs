@@ -1,5 +1,6 @@
 //! Sizes, kinds and dates in the words a person reads. Pure: no clock, no zone, no disk.
 
+mod cloud;
 mod date;
 mod info;
 mod kind;
@@ -8,6 +9,10 @@ mod pane;
 mod size;
 mod volumes;
 
+pub use cloud::{
+    SIGN_IN_BUTTON, drive_rows, drive_state_words, item_rows, item_state_words, status_words,
+    trouble_title,
+};
 pub use date::date_words;
 pub use info::{InfoRow, exact_size_words, info_failure_words, info_rows, items_words, name_rows};
 pub use kind::kind_words;

@@ -11,6 +11,7 @@ mod instance;
 mod intent_calls;
 mod intents;
 mod launch;
+mod storage;
 mod udisks;
 mod uri;
 mod users;

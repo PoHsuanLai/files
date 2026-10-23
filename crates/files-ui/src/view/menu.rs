@@ -2,8 +2,10 @@
 
 use dioxus::prelude::*;
 use ds::host::measure::Anchor;
-use ds::prelude::{Availability, IconSize, Menu, MenuImage, MenuItem, MenuPlacement, Point, Px};
-use files_model::Availability as Can;
+use ds::prelude::{
+    Availability, Check, IconSize, Menu, MenuImage, MenuItem, MenuPlacement, Point, Px,
+};
+use files_model::{Availability as Can, KeptMark};
 
 use crate::menu::{Command, OTHER_APP, Over, Pick, app_lines, groups_for};
 use crate::state::Browse;
@@ -61,8 +63,18 @@ fn open_with(browse: Browse) -> Vec<MenuItem<Pick>> {
 
 /// The menu's lines: each group's commands, a rule between groups, Open With as a
 /// submenu.
+/// The check of Keep Downloaded: on when all of the selection is kept, a dash when some is.
+fn check_of(kept: KeptMark) -> Check {
+    match kept {
+        KeptMark::All => Check::On,
+        KeptMark::Partly => Check::Mixed,
+        KeptMark::Nothing => Check::Off,
+    }
+}
+
 fn items(browse: Browse, over: Over) -> Vec<MenuItem<Pick>> {
     let groups = groups_for(&browse.state.read(), over);
+    let kept = browse.state.read().cloud_menu().map(|menu| menu.kept);
     let mut lines = Vec::new();
     for group in groups {
         if !lines.is_empty() {
@@ -77,8 +89,12 @@ fn items(browse: Browse, over: Over) -> Vec<MenuItem<Pick>> {
                     children: open_with(browse),
                 }
             } else {
-                MenuItem::new(Pick::Command(command), command.title())
-                    .with_availability(availability(can))
+                let line = MenuItem::new(Pick::Command(command), command.title())
+                    .with_availability(availability(can));
+                match (command, kept) {
+                    (Command::KeepDownloaded, Some(kept)) => line.with_check(check_of(kept)),
+                    _ => line,
+                }
             };
             lines.push(line);
         }
