@@ -1,55 +1,57 @@
 //! Cloud drives in the folder pane: the small badge after a row's name, the state of a drive that
-//! cannot show its files, and the status line under a drive's folder. Motion is quire's: the ring
-//! follows its share over the move token, and the glyph fades with the symbol effect when the
-//! item no longer needs a badge.
+//! cannot show its files, and the status line under a drive's folder. Motion is quire's: the pie
+//! follows its share over the move token, and the badge fades out (`Fade`) when the item no longer
+//! needs one.
 
 use dioxus::prelude::*;
 use ds::components::overlays::empty_state::EmptyForm;
 use ds::prelude::{
-    Button, EmptyState, Fraction, Progress, ProgressIndicator, ProgressStyle, Shown, StatusBar,
-    Symbol, SymbolEffect, TransitionEffect,
+    Button, EmptyState, Fade, Fraction, Progress, ProgressIndicator, ProgressStyle, Shown,
+    StatusBar, Symbol, SymbolEffect,
 };
 use ds::style::tokens::control_size::ControlSize;
 use files_core::CloudDrive;
 
-use crate::cloud::{Badge, Mark};
+use crate::cloud::Badge;
 use crate::state::Browse;
 use crate::words::{SIGN_IN_BUTTON, status_words, trouble_title};
 
-/// The badge of one row. A glyph that is no longer needed (a download that finished) fades out
-/// where it stood instead of vanishing; a row that never had one draws nothing.
+/// The badge of one row: the glyph, or a pie that fills while the item moves. A badge that is no
+/// longer needed (a download that finished) fades out where it stood, showing what it last
+/// showed; a row that never had one draws nothing.
 #[component]
 pub(super) fn CloudBadge(badge: Badge) -> Element {
-    // The last glyph shown: what fades out when the badge goes. Not reactive, like quire's own
+    // The last badge drawn: what fades out when the row needs none. Not reactive, like quire's own
     // `ds-busy-seen` flag, so keeping it never schedules another render.
-    let mut last = use_hook(|| CopyValue::new(None::<Mark>));
-    let now = badge.mark();
-    if let Some(mark) = now
-        && *last.peek() != Some(mark)
-    {
-        last.set(Some(mark));
+    let mut last = use_hook(|| CopyValue::new(Badge::Clear));
+    if badge != Badge::Clear && *last.peek() != badge {
+        last.set(badge);
     }
-    let Some(mark) = now.or(*last.peek()) else {
+    let drawn = if badge == Badge::Clear {
+        *last.peek()
+    } else {
+        badge
+    };
+    let Some(mark) = drawn.mark() else {
         return rsx! {};
     };
-    let shown = if now.is_some() {
-        Shown::Visible
-    } else {
+    let shown = if badge == Badge::Clear {
         Shown::Hidden
+    } else {
+        Shown::Visible
     };
-    let effect = SymbolEffect::Transition(TransitionEffect::Disappear, shown);
     rsx! {
-        span {
-            role: now.map(|_| "img"),
-            "aria-label": now.map(|_| mark.name),
-            "aria-hidden": if now.is_none() { Some("true") } else { None },
-            Symbol { icon: mark.icon, effect }
-        }
-        if let Some(share) = badge.share() {
-            ProgressIndicator {
-                style: ProgressStyle::Ring,
-                progress: Progress::Known(Fraction(share.permille())),
-                size: ControlSize::Mini,
+        Fade { shown,
+            span { role: "img", "aria-label": mark.name,
+                if let Some(share) = drawn.share() {
+                    ProgressIndicator {
+                        style: ProgressStyle::Pie,
+                        progress: Progress::Known(Fraction(share.permille())),
+                        size: ControlSize::Mini,
+                    }
+                } else {
+                    Symbol { icon: mark.icon, effect: SymbolEffect::NONE }
+                }
             }
         }
     }

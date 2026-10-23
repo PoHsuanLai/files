@@ -155,7 +155,7 @@ fn CloudRow(
     let accessory = drive_mark(state).map_or(Accessory::None, |mark| Accessory::Glyph(mark.icon));
     rsx! {
         Row {
-            leading: RowLeading::Icon(Icon::Folder),
+            leading: RowLeading::Icon(Icon::Cloud),
             title: name,
             accessory,
             state: RowState {

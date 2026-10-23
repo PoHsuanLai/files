@@ -48,10 +48,10 @@ impl Badge {
     }
 }
 
-const IN_THE_CLOUD: Mark = Mark::new(Icon::Download, "In the cloud");
-const DOWNLOADING: Mark = Mark::new(Icon::Download, "Downloading");
-const UPLOADING: Mark = Mark::new(Icon::Upload, "Uploading");
-const WAITING: Mark = Mark::new(Icon::Clock, "Waiting to upload");
+const IN_THE_CLOUD: Mark = Mark::new(Icon::CloudDownload, "In the cloud");
+const DOWNLOADING: Mark = Mark::new(Icon::CloudDownload, "Downloading");
+const UPLOADING: Mark = Mark::new(Icon::CloudUpload, "Uploading");
+const WAITING: Mark = Mark::new(Icon::CloudUpload, "Waiting to upload");
 const FAILED: Mark = Mark::new(Icon::TriangleAlert, "Couldn\u{2019}t sync");
 const CONFLICT: Mark = Mark::new(Icon::OctagonAlert, "Two versions");
 const ONLINE: Mark = Mark::new(Icon::Globe, "Opens in your browser");
