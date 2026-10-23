@@ -21,21 +21,21 @@ files-ops = { path = "crates/files-ops" }
 files-desktop = { path = "crates/files-desktop" }
 files-ui = { path = "crates/files-ui" }
 # quire, pinned the desktop-wide way (.git + full rev; the tag is a comment), as temor and anyview do.
-ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d679bbf7964ffd642ea29c4ffd6c2641bafe22c4" }  # d679bbf7: v0.3.43
-ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d679bbf7964ffd642ea29c4ffd6c2641bafe22c4" }  # d679bbf7: v0.3.43
-ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d679bbf7964ffd642ea29c4ffd6c2641bafe22c4" }  # d679bbf7: v0.3.43
-ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d679bbf7964ffd642ea29c4ffd6c2641bafe22c4" }  # d679bbf7: v0.3.43
-ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d679bbf7964ffd642ea29c4ffd6c2641bafe22c4" }  # d679bbf7: v0.3.43
+ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
+ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
+ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
+ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
+ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
 # The desktop's portable keymap core (actions, chords, Primary per platform); files owns no keymap.
 chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "99eec9ddd03ee345b669fcc7954ed44590724290" }
 # anyview, the desktop's viewer: Quick Look is its light tier, `anyview-peek`'s worker and card, hosted as
 # mailo hosts them (headless otherwise: no media player, no D-Bus). The rev is anyview's main, which names
 # the quire rev above. `anyview-core` is the vocabulary (`FilePath`), `anyview-fs` opens a path as an input.
-anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "88ff6c88fa3f63359d19bad2254702324c30172b" }  # 88ff6c88
-anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "88ff6c88fa3f63359d19bad2254702324c30172b" }  # 88ff6c88
-anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "88ff6c88fa3f63359d19bad2254702324c30172b" }  # 88ff6c88
-anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "88ff6c88fa3f63359d19bad2254702324c30172b" }  # 88ff6c88
-anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "88ff6c88fa3f63359d19bad2254702324c30172b", default-features = false }  # 88ff6c88
+anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98" }  # 92e98449
+anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98" }  # 92e98449
+anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98" }  # 92e98449
+anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98" }  # 92e98449
+anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98", default-features = false }  # 92e98449
 # Copied from quire/docs/workspace-deps.toml at the rev above.
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
 # Dates in the list view, in the person's own time zone.
@@ -59,7 +59,7 @@ porter-core = { git = "https://github.com/PoHsuanLai/porter.git", rev = "b2adc64
 serde = "1"
 serde_json = "1"
 # Desktop entries (the parser and the walk of the applications folders), UI-free without its default feature.
-ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d679bbf7964ffd642ea29c4ffd6c2641bafe22c4", default-features = false }  # d679bbf7 (v0.3.43)
+ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1", default-features = false }  # 10ee7011 (v0.3.44)
 tempfile = "3"
 # The binary finds an app's icon file in the person's icon theme (detent's version). MIT.
 freedesktop-icons = "0.4"
