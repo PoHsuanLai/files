@@ -17,6 +17,7 @@ files-desktop = { workspace = true }
 files-fs = { workspace = true }
 files-mime = { workspace = true }
 files-model = { workspace = true }
+files-trash = { workspace = true }
 files-ui = { workspace = true }
 freedesktop-icons = { workspace = true }
 tokio = { workspace = true }

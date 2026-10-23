@@ -14,6 +14,7 @@ use tokio::sync::mpsc::UnboundedReceiver;
 use crate::edge::{self, AppChoiceView, Edge, Heard};
 use crate::launch::Launch;
 use crate::looks::Looks;
+use crate::preferences::Preferences;
 use crate::requests::Asked;
 use crate::thumbs::Thumbs;
 use crate::words::announce_words;
@@ -36,6 +37,8 @@ pub(crate) struct Browse {
     pub(crate) looked: Signal<Looks>,
     /// The thumbnails the icon view has been given.
     pub(crate) thumbs: Signal<Thumbs>,
+    /// The person's choices, as the settings file last said.
+    pub(crate) preferences: Signal<Preferences>,
 }
 
 impl std::fmt::Debug for Browse {
@@ -118,6 +121,7 @@ impl Browse {
 pub(crate) fn use_browse(launch: &Launch) -> Browse {
     let setup = use_hook(|| {
         let (first, effects) = Tabs::new(launch.start.clone());
+        let first = first.with_behaviour(launch.preferences.borrow().behaviour);
         let first = match &launch.home {
             Some(home) => first.with_home(home.clone()),
             None => first,
@@ -134,6 +138,7 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
     let tabs = use_signal(|| setup.first.clone());
     let looked = use_signal(Looks::default);
     let thumbs = use_signal(Thumbs::default);
+    let preferences = use_signal(|| launch.preferences.borrow().clone());
     let window = use_window_handle();
     let browse = Browse {
         tabs,
@@ -143,7 +148,20 @@ pub(crate) fn use_browse(launch: &Launch) -> Browse {
         start: setup.start,
         looked,
         thumbs,
+        preferences,
     };
+    let mut feed = launch.preferences.clone();
+    use_hook(move || {
+        // A change of the person's choices: the sidebar's rows, and every tab's behaviour.
+        spawn(async move {
+            while feed.changed().await.is_ok() {
+                let next = feed.borrow_and_update().clone();
+                let mut slot = browse.preferences;
+                slot.set(next.clone());
+                browse.send_to_all(&Input::Behave(next.behaviour));
+            }
+        })
+    });
     let toasts = use_toasts();
     let requests = launch.requests.clone();
     use_hook(move || {

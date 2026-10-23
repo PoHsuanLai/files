@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use tokio::runtime::Handle;
+use tokio::sync::watch;
 
 use anyview_platform::ThumbnailCache;
 use ds::prelude::SystemPrefs;
@@ -13,6 +14,7 @@ use files_fs::PrefsStore;
 
 use crate::edge::{Apps, Opener, Seams, Volumes, Zone};
 use crate::places::Places;
+use crate::preferences::Preferences;
 use crate::requests::Requests;
 
 /// Where the look comes from: the design system's own settings (`appearance.toml`: the person's
@@ -57,6 +59,8 @@ pub struct Launch {
     pub places: Places,
     /// Where the look comes from.
     pub appearance: AppearanceSource,
+    /// The person's choices, now and as they change; the window follows every change.
+    pub preferences: watch::Receiver<Preferences>,
     /// The zone dates are shown in.
     pub zone: Zone,
     /// The disk and the desktop, behind traits.
@@ -77,6 +81,7 @@ impl Launch {
             home: None,
             places: Places::default(),
             appearance: AppearanceSource::desktop(),
+            preferences: watch::channel(Preferences::default()).1,
             zone: Zone::Local,
             seams: Seams::disk(opener),
             requests: Requests::none(),
@@ -100,6 +105,14 @@ impl Launch {
     /// The same launch with this look.
     pub fn with_appearance(self, appearance: AppearanceSource) -> Launch {
         Launch { appearance, ..self }
+    }
+
+    /// The same launch following the person's choices as `preferences` sends them.
+    pub fn with_preferences(self, preferences: watch::Receiver<Preferences>) -> Launch {
+        Launch {
+            preferences,
+            ..self
+        }
     }
 
     /// The same launch showing dates in `zone`.

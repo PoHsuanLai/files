@@ -10,7 +10,7 @@ use ds::prelude::{Icon, ListItem, Row, RowAction, RowLeading, SectionHeader, Sel
 use files_core::{Eject, Volume, VolumeId, VolumeKind};
 use files_model::Input;
 
-use crate::places::{Heading, PlaceKey, PlaceKind, Places, groups, volume_key};
+use crate::places::{DiskRows, Heading, PlaceKey, PlaceKind, Places, groups, volume_key};
 use crate::state::Browse;
 
 /// The glyph of a place. quire has no Home, Desktop or Videos glyph yet, so the nearest stand in.
@@ -85,7 +85,8 @@ pub(super) fn sidebar_rows(
             if group.heading == Heading::Locations {
                 // The disks go before the last row, the Trash.
                 let at = rows.len().saturating_sub(1);
-                let disks = volumes.iter().map(|volume| {
+                let listed = places.sidebar().disks() == DiskRows::Listed;
+                let disks = volumes.iter().filter(|_| listed).map(|volume| {
                     let key = PlaceKey::Volume(volume.id.clone());
                     let selection = selection_of(key.clone());
                     ListItem::row(

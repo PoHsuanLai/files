@@ -41,6 +41,7 @@ impl Browser {
             looking: Looking::Closed,
             info: InfoView::Closed,
             home: self.home,
+            behaviour: self.behaviour,
             goto: GoTo::Closed,
             chooser: Chooser::Closed,
             volumes: self.volumes,

@@ -98,14 +98,67 @@ pub(crate) fn volume_key(volumes: &[Volume], location: &Location) -> Option<Plac
         .map(|volume| PlaceKey::Volume(volume.id.clone()))
 }
 
-/// The folders behind the favourites, as the binary found them. A favourite with no folder (the
-/// person has no Music folder) is simply not listed.
+/// Whether the sidebar lists the attached disks under Locations.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum DiskRows {
+    /// Each attached disk has a row.
+    #[default]
+    Listed,
+    /// No disk has a row; the person opens them some other way.
+    Left,
+}
+
+/// Which rows the person chose to leave out of the sidebar. The Trash cannot be left out.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Sidebar {
+    left_out: Vec<PlaceKind>,
+    disks: DiskRows,
+}
+
+impl Sidebar {
+    /// The same sidebar without the row for `kind`.
+    pub fn leaving_out(mut self, kind: PlaceKind) -> Sidebar {
+        if !self.left_out.contains(&kind) {
+            self.left_out.push(kind);
+        }
+        self
+    }
+
+    /// The same sidebar with its disks `disks`.
+    pub fn with_disks(self, disks: DiskRows) -> Sidebar {
+        Sidebar { disks, ..self }
+    }
+
+    /// Whether the row for `kind` is listed (when it has a place to go to).
+    pub fn lists(&self, kind: PlaceKind) -> bool {
+        kind == PlaceKind::Trash || !self.left_out.contains(&kind)
+    }
+
+    /// Whether the attached disks are listed.
+    pub fn disks(&self) -> DiskRows {
+        self.disks
+    }
+}
+
+/// The folders behind the favourites, as the binary found them, and which rows the person chose
+/// to list. A favourite with no folder (the person has no Music folder) is simply not listed.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Places {
     folders: Vec<(PlaceKind, FolderPath)>,
+    sidebar: Sidebar,
 }
 
 impl Places {
+    /// The same places listed as `sidebar` says. Where a row goes is not changed by this.
+    pub fn with_sidebar(self, sidebar: Sidebar) -> Places {
+        Places { sidebar, ..self }
+    }
+
+    /// Which rows are listed.
+    pub fn sidebar(&self) -> &Sidebar {
+        &self.sidebar
+    }
+
     /// `kind` is `folder`, replacing any folder it had. [`PlaceKind::Computer`] is always `/` and
     /// ignores this.
     pub fn with(mut self, kind: PlaceKind, folder: FolderPath) -> Places {
@@ -153,14 +206,16 @@ pub struct Group {
     pub rows: Vec<PlaceKind>,
 }
 
-/// What the sidebar lists: the favourites that have a folder (none, no group), then the computer
-/// and the Trash.
+/// What the sidebar lists: the favourites that have a folder and that the person did not leave
+/// out (none, no group), then the computer, unless left out, and the Trash.
 ///
 /// Recents is left out until the place behind it is built.
 pub fn groups(places: &Places) -> Vec<Group> {
+    let listed = |kind: &PlaceKind| places.sidebar().lists(*kind);
     let favorites: Vec<PlaceKind> = PlaceKind::FAVORITES
         .into_iter()
         .filter(|kind| places.location_of(*kind).is_some())
+        .filter(listed)
         .collect();
     let mut groups = Vec::new();
     if !favorites.is_empty() {
@@ -171,7 +226,10 @@ pub fn groups(places: &Places) -> Vec<Group> {
     }
     groups.push(Group {
         heading: Heading::Locations,
-        rows: vec![PlaceKind::Computer, PlaceKind::Trash],
+        rows: [PlaceKind::Computer, PlaceKind::Trash]
+            .into_iter()
+            .filter(listed)
+            .collect(),
     });
     groups
 }

@@ -1,7 +1,8 @@
 //! One window's view of one location.
 
 use files_core::{
-    Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, Info, ItemRef, Location, Summary, Volume,
+    Behaviour, Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, Info, ItemRef, Location,
+    Summary, Volume,
 };
 
 use crate::app::Chooser;
@@ -32,6 +33,8 @@ pub struct Browser {
     pub(crate) rename: Rename,
     pub(crate) prefs: FolderPrefs,
     pub(crate) hidden: HiddenFiles,
+    /// The person's choices about how a window behaves (the window's, shared by its tabs).
+    pub(crate) behaviour: Behaviour,
     /// The names an `Input::Reveal` asked to select, until the person selects something.
     pub(crate) reveal: Vec<FileName>,
     /// What is being changed now.
@@ -76,6 +79,7 @@ impl Browser {
             rename: Rename::Idle,
             prefs: FolderPrefs::default(),
             hidden: HiddenFiles::default(),
+            behaviour: Behaviour::default(),
             reveal: Vec::new(),
             work: Work::Idle,
             undo: None,
@@ -141,6 +145,11 @@ impl Browser {
     /// Whether hidden files are shown.
     pub fn hidden(&self) -> HiddenFiles {
         self.hidden
+    }
+
+    /// How the window behaves where the person has a choice.
+    pub fn behaviour(&self) -> Behaviour {
+        self.behaviour
     }
 
     /// The letters typed to jump to a name, lower-cased; empty before the first.
@@ -222,13 +231,14 @@ impl Browser {
     }
 
     /// A new browser at `location` for a new tab: it knows what this one knows of the person's
-    /// home, the disks, hidden files, what was copied and what can be undone, and starts with
+    /// home, the disks, hidden files, how the window behaves, what was copied and what can be undone, and starts with
     /// nothing else.
     pub(crate) fn opened_like(&self, location: Location) -> (Browser, Vec<Effect>) {
         let (browser, _) = Browser::new(location.clone());
         let browser = Browser {
             home: self.home.clone(),
             hidden: self.hidden,
+            behaviour: self.behaviour,
             volumes: self.volumes.clone(),
             pane: self.pane,
             clipboard: self.clipboard.clone(),
@@ -258,7 +268,8 @@ impl Browser {
     /// hidden-files choice.
     pub(crate) fn refreshed(self) -> Browser {
         let entries = self.listing.entries();
-        let rows: Vec<Entry> = arrange(entries, &self.prefs, self.hidden)
+        let order = arrange(entries, &self.prefs, self.hidden, self.behaviour.folders);
+        let rows: Vec<Entry> = order
             .into_iter()
             .filter_map(|at| entries.get(at).cloned())
             .collect();

@@ -29,11 +29,13 @@
 mod error;
 #[cfg(any(test, feature = "testing"))]
 mod fake;
+mod retention;
 mod store;
 mod system;
 
 pub use error::TrashError;
 #[cfg(any(test, feature = "testing"))]
 pub use fake::FakeTrash;
+pub use retention::{THIRTY_DAYS, expired, sweep};
 pub use store::Trash;
 pub use system::SystemTrash;

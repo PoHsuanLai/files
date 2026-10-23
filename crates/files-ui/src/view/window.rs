@@ -61,9 +61,13 @@ pub(super) fn Window() -> Element {
         }
     }));
     let shown = sidebar();
+    let places = launch
+        .places
+        .clone()
+        .with_sidebar(browse.preferences.read().sidebar.clone());
     let side_body = match shown {
         Shown::Visible => rsx! {
-            PlacesPane { browse, places: launch.places.clone() }
+            PlacesPane { browse, places }
         },
         Shown::Hidden => rsx! {},
     };

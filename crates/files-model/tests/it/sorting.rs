@@ -4,7 +4,8 @@ use std::cmp::Ordering;
 use std::time::{Duration, UNIX_EPOCH};
 
 use files_core::{
-    ByteSize, Entry, EntryKind, FolderPrefs, HiddenFiles, MimeType, Sort, SortKey, SortOrder,
+    ByteSize, Entry, EntryKind, FolderPrefs, FoldersOnTop, HiddenFiles, MimeType, Sort, SortKey,
+    SortOrder,
 };
 use files_model::{Input, arrange, compare};
 
@@ -17,7 +18,7 @@ fn sort(key: SortKey, order: SortOrder) -> Sort {
 fn order(entries: &[Entry], sort: Sort) -> Vec<String> {
     let mut prefs = FolderPrefs::default();
     prefs.sort = sort;
-    arrange(entries, &prefs, HiddenFiles::Shown)
+    arrange(entries, &prefs, HiddenFiles::Shown, FoldersOnTop::Mixed)
         .into_iter()
         .map(|at| entries[at].name.display().into_owned())
         .collect()

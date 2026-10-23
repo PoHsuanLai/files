@@ -32,6 +32,7 @@ files-fs = { workspace = true }
 files-model = { workspace = true }
 files-ops = { workspace = true }
 files-trash = { workspace = true }
+serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 
@@ -44,6 +45,7 @@ ds-lint = { workspace = true }
 files-fs = { workspace = true, features = ["testing"] }
 files-trash = { workspace = true, features = ["testing"] }
 tempfile = { workspace = true }
+toml = { workspace = true }
 
 [lints]
 workspace = true

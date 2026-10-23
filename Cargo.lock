@@ -2459,6 +2459,7 @@ dependencies = [
  "files-fs",
  "files-mime",
  "files-model",
+ "files-trash",
  "files-ui",
  "freedesktop-icons",
  "tempfile",
@@ -2567,9 +2568,11 @@ dependencies = [
  "files-ops",
  "files-trash",
  "files-ui",
+ "serde",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
+ "toml",
 ]
 
 [[package]]

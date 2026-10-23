@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Install files into the desktop from this checkout: build it in release, then put the binary, the
 # desktop entry, the two bus services that start it (by its own name and as the desktop's file
-# manager) and the intents manifest where the session reads them. Run as yourself; sudo asks once
-# when the place is not yours. Safe to run again.
+# manager), the intents manifest and the settings schema where the session reads them. Run as
+# yourself; sudo asks once when the place is not yours. Safe to run again.
 #
 #   dist/install.sh --dry-run    print every step, change nothing (not even a build)
 #   dist/install.sh              do it
@@ -52,7 +52,7 @@ else
 fi
 [ "$DRY" = 1 ] || [ -x "$BUILT" ] || { echo "no binary at $BUILT" >&2; exit 1; }
 
-step "3/4 the binary, the desktop entry, the services and the intents"
+step "3/4 the binary, the desktop entry, the services, the intents and the settings schema"
 put 755 "$BUILT" "$BIN_DEST"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -64,13 +64,20 @@ service_text "$APPDIST/org.quire.Files.FileManager1.service" >"$TMP/fm.service"
 put 644 "$TMP/fm.service" "$FM_SERVICE_DEST"
 # What the desktop's intent router reads.
 put 644 "$DIST/intents/org.quire.Files.toml" "$INTENTS_DEST"
+# What the Settings app draws Files' page from: the binary writes it from its own settings.
+if [ "$DRY" = 1 ]; then
+  note "would run: $BUILT --write-schema and install files.settings.toml"
+else
+  "$BUILT" --write-schema "$TMP/schema" >/dev/null || { echo "files --write-schema failed" >&2; exit 1; }
+  put 644 "$TMP/schema/files.settings.toml" "$SCHEMA_DEST"
+fi
 
 step "4/4 caches"
 if [ -z "$DESTDIR" ] && command -v update-desktop-database >/dev/null; then
   run ${SUDO:+"$SUDO"} update-desktop-database "$(dirname "$DESKTOP_DEST")"
 fi
 if command -v restorecon >/dev/null && [ -n "$SUDO" ]; then
-  asroot restorecon -F "$BIN_DEST" "$DESKTOP_DEST" "$SERVICE_DEST" "$FM_SERVICE_DEST" "$INTENTS_DEST"
+  asroot restorecon -F "$BIN_DEST" "$DESKTOP_DEST" "$SERVICE_DEST" "$FM_SERVICE_DEST" "$INTENTS_DEST" "$SCHEMA_DEST"
 fi
 
 step "done"

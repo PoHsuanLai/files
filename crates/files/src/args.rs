@@ -6,7 +6,7 @@
 //! the session bus's service files pass: the bus started Files to answer a call, which then moves
 //! the window, so nothing else is asked of an app that is already running.
 
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
 
 /// Where the window starts.
@@ -63,6 +63,19 @@ impl Args {
         };
         Ok(Args { start, started })
     }
+}
+
+/// `files --write-schema DIR`: the folder to write the settings schema into, when that is what was
+/// asked (it is the whole command line); the error is a sentence for the person.
+pub fn schema_dir(args: &[OsString]) -> Option<Result<PathBuf, String>> {
+    let (first, rest) = args.split_first()?;
+    if first != OsStr::new("--write-schema") {
+        return None;
+    }
+    Some(match rest {
+        [dir] => Ok(PathBuf::from(dir)),
+        _ => Err("--write-schema takes the one folder to write into.".to_owned()),
+    })
 }
 
 /// Whether the argument is the address of the Trash: `trash:///`, or `trash:` with no path.
@@ -183,6 +196,27 @@ mod tests {
             ),
         ];
         for (name, got, want) in cases {
+            assert_eq!(got, want, "{name}");
+        }
+    }
+
+    #[test]
+    fn writing_the_schema_names_one_folder() {
+        let args = |list: &[&str]| list.iter().map(OsString::from).collect::<Vec<_>>();
+        let cases = [
+            (
+                "a folder",
+                args(&["--write-schema", "/tmp/s"]),
+                Some(Ok("/tmp/s")),
+            ),
+            ("none", args(&["--write-schema"]), Some(Err(()))),
+            ("two", args(&["--write-schema", "/a", "/b"]), Some(Err(()))),
+            ("another command", args(&["/tmp"]), None),
+            ("nothing", args(&[]), None),
+        ];
+        for (name, list, want) in cases {
+            let got = schema_dir(&list).map(|asked| asked.map_err(|_| ()));
+            let want = want.map(|asked: Result<&str, ()>| asked.map(PathBuf::from));
             assert_eq!(got, want, "{name}");
         }
     }

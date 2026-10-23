@@ -2,6 +2,7 @@
 //! the questions, in Finder's words. Pure.
 
 use files_core::{Conflict, ConflictKind, OpKind, Summary};
+use files_model::ExtensionChange;
 
 /// `“name”` in typographic quotes.
 fn quoted(summary: &Summary) -> String {
@@ -68,3 +69,59 @@ pub fn erase_words(count: Option<(usize, String)>) -> String {
 
 /// The message under any question about erasing.
 pub const CANNOT_UNDO: &str = "You can't undo this action.";
+
+/// What the question before changing a file's extension says.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExtensionWords {
+    /// The question.
+    pub title: String,
+    /// The line under it.
+    pub message: &'static str,
+    /// The button that goes ahead with the new name.
+    pub go_ahead: String,
+    /// The button that keeps the old extension.
+    pub keep: String,
+}
+
+/// The question before a rename that changes, adds or takes away a file's extension.
+pub fn extension_words(change: &ExtensionChange) -> ExtensionWords {
+    let quoted = |extension: &str| format!("\u{201c}.{extension}\u{201d}");
+    let message = "If you make this change, your document may open in a different application.";
+    match (change.old_extension(), change.new_extension()) {
+        (Some(old), Some(new)) => ExtensionWords {
+            title: format!(
+                "Are you sure you want to change the extension from {} to {}?",
+                quoted(&old),
+                quoted(&new)
+            ),
+            message,
+            go_ahead: format!("Use .{new}"),
+            keep: format!("Keep .{old}"),
+        },
+        (None, Some(new)) => ExtensionWords {
+            title: format!(
+                "Are you sure you want to add the extension {} to the end of the name?",
+                quoted(&new)
+            ),
+            message,
+            go_ahead: format!("Add .{new}"),
+            keep: "Don't Add".to_owned(),
+        },
+        (Some(old), None) => ExtensionWords {
+            title: format!(
+                "Are you sure you want to remove the extension {}?",
+                quoted(&old)
+            ),
+            message,
+            go_ahead: "Remove".to_owned(),
+            keep: format!("Keep .{old}"),
+        },
+        // Neither name has one: nothing to ask, but the words stay plain.
+        (None, None) => ExtensionWords {
+            title: "Are you sure you want to rename this item?".to_owned(),
+            message,
+            go_ahead: "Rename".to_owned(),
+            keep: "Cancel".to_owned(),
+        },
+    }
+}

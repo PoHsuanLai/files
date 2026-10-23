@@ -16,7 +16,7 @@ mod closed;
 mod id;
 mod shared;
 
-use files_core::{FolderPath, Location};
+use files_core::{Behaviour, FolderPath, Location};
 
 use crate::browser::Browser;
 use crate::effect::Effect;
@@ -71,6 +71,27 @@ impl Tabs {
         Tabs {
             front: homed(front),
             others: others.into_iter().map(homed).collect(),
+            at,
+            next,
+        }
+    }
+
+    /// The same tabs, each behaving as `behaviour` says; a tab opened later behaves like the one it
+    /// is opened from.
+    pub fn with_behaviour(self, behaviour: Behaviour) -> Tabs {
+        let Tabs {
+            front,
+            others,
+            at,
+            next,
+        } = self;
+        let behaving = |tab: Tab| Tab {
+            id: tab.id,
+            browser: tab.browser.with_behaviour(behaviour),
+        };
+        Tabs {
+            front: behaving(front),
+            others: others.into_iter().map(behaving).collect(),
             at,
             next,
         }

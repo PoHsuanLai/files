@@ -2,6 +2,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)] // tests may unwrap (CONVENTIONS)
 
 mod asked;
+mod behaviour;
 mod changes;
 mod common;
 mod go_to;

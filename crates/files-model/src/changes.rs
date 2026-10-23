@@ -1,8 +1,8 @@
 //! Changing files: new folder, Trash, copy and paste, drops, undo, and the workers' reports.
 
 use files_core::{
-    Answer, FileName, ItemRef, Location, OpKind, OpPlan, Resolution, Split, Transfer, TrashedItem,
-    keep_both,
+    Answer, Asking, FileName, ItemRef, Location, OpKind, OpPlan, Resolution, Split, Transfer,
+    TrashedItem, keep_both,
 };
 
 use crate::browser::Browser;
@@ -90,12 +90,15 @@ impl Browser {
         self.asking(Question::DeleteForGood(items))
     }
 
-    /// Ask whether to empty the Trash.
+    /// Empty the Trash, after asking first unless the person chose not to be asked.
     pub(crate) fn empty_trash(self) -> Stepped {
         if self.location != Location::Trash || self.rows.is_empty() {
             return (self, Vec::new());
         }
-        self.asking(Question::EmptyTrash)
+        match self.behaviour.emptying_trash {
+            Asking::Ask => self.asking(Question::EmptyTrash),
+            Asking::Skip => self.run(OpPlan::EmptyTrash),
+        }
     }
 
     pub(crate) fn asking(self, question: Question) -> Stepped {
@@ -122,6 +125,18 @@ impl Browser {
                 },
                 vec![Effect::ForceEjectVolume(busy.id)],
             ),
+            Question::ChangeExtension(change) => {
+                let effect = Effect::Rename {
+                    folder: change.folder,
+                    from: change.from,
+                    to: change.to,
+                };
+                let browser = Browser {
+                    question: Question::None,
+                    ..self
+                };
+                (browser, vec![effect])
+            }
             Question::None | Question::Conflict(_) => (self, Vec::new()),
         }
     }
@@ -130,7 +145,16 @@ impl Browser {
     pub(crate) fn dismiss(self) -> Stepped {
         let effects = match &self.question {
             Question::Conflict(_) => vec![Effect::Answer(Resolution::once(Answer::Stop))],
-            Question::None
+            // Keeping the old extension: the typed name with it put back, when that is a change.
+            Question::ChangeExtension(change) if change.kept != change.from => {
+                vec![Effect::Rename {
+                    folder: change.folder.clone(),
+                    from: change.from.clone(),
+                    to: change.kept.clone(),
+                }]
+            }
+            Question::ChangeExtension(_)
+            | Question::None
             | Question::EmptyTrash
             | Question::DeleteForGood(_)
             | Question::ForceEject(_) => Vec::new(),
@@ -157,7 +181,8 @@ impl Browser {
             Question::None
             | Question::EmptyTrash
             | Question::DeleteForGood(_)
-            | Question::ForceEject(_) => (self, Vec::new()),
+            | Question::ForceEject(_)
+            | Question::ChangeExtension(_) => (self, Vec::new()),
         }
     }
 
@@ -302,7 +327,8 @@ impl Browser {
                     ref kept @ (Question::None
                     | Question::EmptyTrash
                     | Question::DeleteForGood(_)
-                    | Question::ForceEject(_)) => kept.clone(),
+                    | Question::ForceEject(_)
+                    | Question::ChangeExtension(_)) => kept.clone(),
                 };
                 let starting = match outcome.end {
                     End::Done if outcome.summary.kind == OpKind::NewFolder => self.starting,

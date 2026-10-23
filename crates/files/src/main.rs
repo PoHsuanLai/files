@@ -19,13 +19,17 @@ mod state;
 mod thumbnails;
 mod volumes;
 
+use std::ffi::OsString;
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use ds_settings::ConfigRoot;
 use files_core::{FolderPath, Location};
 use files_desktop::{Disks, ProcUsers};
+use files_trash::SystemTrash;
 use files_ui::Launch;
+use files_ui::settings;
 
 use crate::apps::InstalledApps;
 use crate::args::{Args, Start};
@@ -34,18 +38,25 @@ use crate::session::{Role, join, launch_token};
 use crate::volumes::DesktopVolumes;
 
 fn main() -> ExitCode {
-    let args = match Args::parse(std::env::args_os().skip(1)) {
+    let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
+    if let Some(asked) = args::schema_dir(&argv) {
+        return write_schema(asked);
+    }
+    let args = match Args::parse(argv) {
         Ok(args) => args,
         Err(said) => {
             eprintln!("files: {said}");
             eprintln!("usage: files [FOLDER]");
+            eprintln!("       files --write-schema DIR");
             return ExitCode::from(2);
         }
     };
     let folder = match args.start {
         Start::Trash => Some(Location::Trash),
         Start::Given(path) => folder_at(absolute(path, std::env::current_dir().ok())),
-        Start::Home => folder_at(dirs::home_dir()),
+        Start::Home => folder_at(places::new_window(
+            settings::load(&ConfigRoot::Xdg).new_window(),
+        )),
     };
     let Some(start) = folder else {
         eprintln!("files: there is no folder to open; give one: files FOLDER");
@@ -76,6 +87,11 @@ fn main() -> ExitCode {
         .with_apps(Arc::new(InstalledApps::new(launcher)))
         .with_places(places::found())
         .with_prefs(state::prefs_store(&ConfigRoot::Xdg))
+        .with_preferences(settings::follow(
+            ConfigRoot::Xdg,
+            runtime.handle(),
+            Arc::new(SystemTrash),
+        ))
         .with_thumbnails(thumbnails::shared())
         .with_requests(running.requests)
         .with_runtime(runtime.handle().clone());
@@ -95,6 +111,27 @@ fn main() -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
             eprintln!("files: {err}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// `files --write-schema DIR`: the schema the Settings app reads, written into `DIR`.
+fn write_schema(asked: Result<PathBuf, String>) -> ExitCode {
+    let dir = match asked {
+        Ok(dir) => dir,
+        Err(said) => {
+            eprintln!("files: {said}");
+            return ExitCode::from(2);
+        }
+    };
+    match settings::write_schema(&dir) {
+        Ok(written) => {
+            println!("wrote {}", written.display());
+            ExitCode::SUCCESS
+        }
+        Err(err) => {
+            eprintln!("files: {}: {err}", dir.display());
             ExitCode::FAILURE
         }
     }

@@ -11,7 +11,10 @@ mod volumes;
 pub use date::date_words;
 pub use info::{InfoRow, exact_size_words, info_failure_words, info_rows, items_words, name_rows};
 pub use kind::kind_words;
-pub use ops::{CANNOT_UNDO, announce_words, busy_words, conflict_words, erase_words};
+pub use ops::{
+    CANNOT_UNDO, ExtensionWords, announce_words, busy_words, conflict_words, erase_words,
+    extension_words,
+};
 pub use pane::{many_words, pane_rows};
 pub use size::{entry_size_words, size_words};
 pub use volumes::{force_eject_words, volume_trouble_words};

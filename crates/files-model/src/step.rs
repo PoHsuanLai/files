@@ -89,6 +89,7 @@ impl Browser {
             Input::SetView(view) => self.set_view(view),
             Input::SetSort(sort) => self.set_sort(sort),
             Input::ToggleHidden => self.toggle_hidden(),
+            Input::Behave(behaviour) => self.behave(behaviour),
             Input::NewFolder => self.new_folder(),
             Input::MoveToTrash => self.move_to_trash(),
             Input::PutBack => self.put_back(),

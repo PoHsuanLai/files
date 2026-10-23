@@ -1,9 +1,10 @@
 //! The Trash contract, proved on `FakeTrash` over a scratch folder.
 
 use std::fs;
+use std::time::{Duration, UNIX_EPOCH};
 
 use files_core::{FileName, FolderPath, ItemRef};
-use files_trash::{FakeTrash, Trash, TrashError};
+use files_trash::{FakeTrash, THIRTY_DAYS, Trash, TrashError, expired, sweep};
 use tempfile::TempDir;
 
 /// A scratch folder with `home/` for the files and `bin/` for the fake Trash.
@@ -124,4 +125,34 @@ fn trashing_what_is_not_there_says_so() {
         rig.trash.trash(&[rig.item("ghost")]),
         Err(TrashError::NotFound)
     );
+}
+
+#[test]
+fn only_items_older_than_the_time_kept_are_old_and_a_sweep_erases_just_those() {
+    let rig = rig();
+    let (a, b, c) = (rig.make("a", "1"), rig.make("b", "2"), rig.make("c", "3"));
+    // The fake dates them one, two and three seconds after the epoch.
+    let thrown = rig.trash.trash(&[a, b, c]).unwrap();
+    let second = Duration::from_secs(1);
+    // (label, now in seconds, time kept in seconds, items that are old)
+    let table = [
+        ("all old", 100, 10, 3),
+        ("the first only", 3, 1, 1),
+        ("none yet", 3, 2, 0),
+        ("a clock gone back", 0, 0, 0),
+    ];
+    for (label, now, kept, want) in table {
+        let old = expired(thrown.clone(), UNIX_EPOCH + second * now, second * kept);
+        assert_eq!(old.len(), want, "{label}");
+    }
+
+    let swept = sweep(&rig.trash, UNIX_EPOCH + second * 3, second).unwrap();
+    assert_eq!(swept, 1);
+    assert_eq!(rig.trash.list().unwrap().len(), 2);
+    assert_eq!(sweep(&rig.trash, UNIX_EPOCH + second * 3, second), Ok(0));
+}
+
+#[test]
+fn thirty_days_is_thirty_days() {
+    assert_eq!(THIRTY_DAYS, Duration::from_secs(2_592_000));
 }

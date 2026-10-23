@@ -24,6 +24,8 @@ SERVICE_DEST="$ROOTED/share/dbus-1/services/org.quire.Files.service"
 FM_SERVICE_DEST="$ROOTED/share/dbus-1/services/org.quire.Files.FileManager1.service"
 # The intents manifest the desktop's router reads, beside the other apps'.
 INTENTS_DEST="$ROOTED/share/quire/intents/org.quire.Files.toml"
+# The schema the Settings app reads to draw Files' page, written by the binary itself.
+SCHEMA_DEST="$ROOTED/share/quire/settings/files.settings.toml"
 # The binary to install: a release build unless FILES_BIN says otherwise.
 BUILT="${FILES_BIN:-${CARGO_TARGET_DIR:-$ROOT/target}/release/files}"
 # What the person asked to escalate with, if anything (SUDO=doas ./install.sh), read before SUDO is

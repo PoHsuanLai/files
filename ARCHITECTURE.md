@@ -15,7 +15,7 @@ below and fails on any edge it does not allow, or on a crate it does not list.
 | 0, library | `files-ops` | Copy, move, trash and rename as a queue: progress, cancel, conflict questions (keep both, replace, skip, stop), an undo journal. Each job is submitted with a caller's tag (`Worker<T>`) that comes back with every event of it. Plain threads and channels; links are copied as links. |
 | 1, logic | `files-model` | Pure state machines, `step(state, input, now) -> (state, effects)`: the browser (history, selection, rename, Go to Folder, type-to-select, sort and view per folder, disks), tabs (`tabs/`), the queue as shown (work and questions), Quick Look, Get Info and the preview pane. No I/O. |
 | 2, desktop | `files-desktop` | The only crate that names a bus, docket or porter: `org.freedesktop.FileManager1`, the app's intents (`IntentProvider1`), UDisks2 on the system bus, launching apps with an activation token, one instance. |
-| 3, UI | `files-ui` | The window, drawn only with quire's components, and the seams it is given (`Opener`, `Apps`, `Volumes`, `Requests`). `edge/` carries out the model's effects against the layer 0 traits and those seams, one module per family (`read`, `ops`, `prefs`, `volumes`, `look`, `thumbs`), and runs anyview's peek worker for Quick Look and the preview pane (its `Card` is drawn inside quire's `Peek` and `PreviewPane`) and the threads that make the icon view's thumbnails. The sidebar's sections are `places`. |
+| 3, UI | `files-ui` | The window, drawn only with quire's components, and the seams it is given (`Opener`, `Apps`, `Volumes`, `Requests`). `settings/` is the program's own settings file and its schema. `edge/` carries out the model's effects against the layer 0 traits and those seams, one module per family (`read`, `ops`, `prefs`, `volumes`, `look`, `thumbs`), and runs anyview's peek worker for Quick Look and the preview pane (its `Card` is drawn inside quire's `Peek` and `PreviewPane`) and the threads that make the icon view's thumbnails. The sidebar's sections are `places`. |
 | 4, binary | `files` | `main`: arguments, the runtime, `ds_blitz::launch`, and the glue between layers 2 and 3: `files-desktop`'s launcher, disks and intents adapted to `files-ui`'s seams, the XDG folders, the session bus. Each file is one adapter. |
 
 ## 2. Data and logic
@@ -148,3 +148,19 @@ cover are looked at, the picture scaled to 128 px) and kept there for every prog
 has another version, so a new wish and a new thumbnail. The cache is a seam (`Seams::thumbnails`;
 the binary builds `FreedesktopThumbnails` from the environment, tests give a fake). A PDF page comes
 from the renderer's own page cache and is shown as it is.
+
+## 10. Settings
+
+The person's choices are `$XDG_CONFIG_HOME/files/settings.toml`, read through quire's `ds_settings::Store`
+(lenient: a bad value costs only its own key; atomic write; a directory watch). `files-ui/src/settings`
+holds the document (`FilesDoc`: `general`, `sidebar`, `advanced`, each a struct deriving
+`SettingsSchema`), its `Word` enums, the schema (`files --write-schema DIR` writes
+`files.settings.toml`, which the installer puts in `share/quire/settings/`) and `follow`, which turns
+the file into a `tokio::sync::watch` channel of `Preferences` that `Launch` carries. `Preferences` is
+plain data: `files_core::Behaviour` (folders on top, the two warnings) and the sidebar's rows. The
+window sends `Input::Behave` to every tab when it changes, so the model stays pure; a tab opened later
+copies the front one's behaviour. Where a new window opens is read once at start (`NewWindow`, resolved
+to a folder by the binary). Removing old Trash items is `files_trash::sweep`, run by `follow` through
+the `Trash` seam. Emptying the Trash because another program asked (`AskEmptyTrash`) is always asked
+about, whatever the warning setting says. How each folder is shown stays state (`folders.toml` in the
+state folder), not a choice.

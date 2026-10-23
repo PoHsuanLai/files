@@ -34,12 +34,27 @@ files name `/usr/bin/files`, so change them for another prefix):
 | `crates/files/dist/org.quire.Files.FileManager1.service` | `<prefix>/share/dbus-1/services/` |
 | `crates/files/dist/org.quire.Files.service` | `<prefix>/share/dbus-1/services/` |
 | `dist/intents/org.quire.Files.toml` | `<prefix>/share/quire/intents/` |
+| `files --write-schema DIR` writes `files.settings.toml` | `<prefix>/share/quire/settings/` |
 
 Files is one running app. A second `files FOLDER` hands the folder to the first and exits. While it
 runs, it answers `org.freedesktop.FileManager1` (`ShowFolders`, `ShowItems`, `ShowItemProperties`),
 unless another file manager already owns that name; a program that calls it while Files is closed
 starts it through the service file. To make it the default for folders:
 `xdg-mime default org.quire.Files.desktop inode/directory`.
+
+## Settings
+
+Files has a page in the desktop's Settings app, the way Finder has a Settings window. The choices live in
+`$XDG_CONFIG_HOME/files/settings.toml` (the Settings app writes it; a change reaches an open window at
+once), and `files --write-schema DIR` writes the `files.settings.toml` the Settings app draws the page from.
+
+- **General**: where a new window opens (Home, Desktop, Documents, Downloads, or a folder you choose).
+- **Sidebar**: which places are listed (the user folders, Computer, and the attached disks).
+- **Advanced**: keep folders on top when sorting by name; warn before changing an extension; warn before
+  emptying the Trash; remove items from the Trash after 30 days (done when Files starts and when it is
+  turned on). The defaults are Finder's.
+
+How each folder is shown (its view and sort) is not a setting: Files remembers it as the folder is used.
 
 ## Licence
 

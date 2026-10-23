@@ -6,10 +6,11 @@ use chrono::{TimeZone, Utc};
 use files_core::{
     ByteSize, Entry, EntryKind, FileName, FolderPath, Info, ItemCount, ItemRef, LinkTo, Special,
 };
+use files_model::ExtensionChange;
 use files_ui::Zone;
 use files_ui::words::{
     NONE, announce_words, busy_words, conflict_words, date_words, entry_size_words, erase_words,
-    exact_size_words, info_rows, items_words, kind_words, name_rows, size_words,
+    exact_size_words, extension_words, info_rows, items_words, kind_words, name_rows, size_words,
 };
 
 fn entry(name: &str, kind: EntryKind) -> Entry {
@@ -352,5 +353,47 @@ fn the_force_eject_question_names_the_disk_and_the_programs_using_it() {
             (title, message),
             "{label}"
         );
+    }
+}
+
+#[test]
+fn a_changed_extension_is_asked_about_in_finders_words() {
+    let name = |text: &str| FileName::new(text).unwrap();
+    let change = |from: &str, to: &str| {
+        let folder = FolderPath::new("/home/p").unwrap();
+        ExtensionChange::new(folder, name(from), name(to), name(from))
+    };
+    // (label, from, to, the question, the button that goes ahead, the button that keeps)
+    let table = [
+        (
+            "changed",
+            "a.txt",
+            "a.md",
+            "Are you sure you want to change the extension from \u{201c}.txt\u{201d} to \u{201c}.md\u{201d}?",
+            "Use .md",
+            "Keep .txt",
+        ),
+        (
+            "added",
+            "a",
+            "a.md",
+            "Are you sure you want to add the extension \u{201c}.md\u{201d} to the end of the name?",
+            "Add .md",
+            "Don't Add",
+        ),
+        (
+            "removed",
+            "a.txt",
+            "a",
+            "Are you sure you want to remove the extension \u{201c}.txt\u{201d}?",
+            "Remove",
+            "Keep .txt",
+        ),
+    ];
+    for (label, from, to, title, go_ahead, keep) in table {
+        let words = extension_words(&change(from, to));
+        assert_eq!(words.title, title, "{label}");
+        assert_eq!(words.go_ahead, go_ahead, "{label}");
+        assert_eq!(words.keep, keep, "{label}");
     }
 }

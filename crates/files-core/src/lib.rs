@@ -16,6 +16,7 @@
 //! # Ok::<(), NameError>(())
 //! ```
 
+mod behaviour;
 mod conflict;
 mod entry;
 mod error;
@@ -33,6 +34,7 @@ mod trashed;
 mod view;
 mod volume;
 
+pub use behaviour::{Asking, Behaviour, FoldersOnTop};
 pub use conflict::{Answer, Conflict, ConflictKind, Reach, Resolution};
 pub use entry::{Entry, EntryKind, LinkTo, Special, Visibility};
 pub use error::{ItemError, MimeError, NameError, PathError};

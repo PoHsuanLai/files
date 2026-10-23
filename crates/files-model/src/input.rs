@@ -3,8 +3,8 @@
 use std::time::Duration;
 
 use files_core::{
-    EjectFailure, Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef, Location, MountFailure,
-    Resolution, Sort, ViewMode, Volume, VolumeId,
+    Behaviour, EjectFailure, Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef, Location,
+    MountFailure, Resolution, Sort, ViewMode, Volume, VolumeId,
 };
 
 use crate::app::AppPick;
@@ -151,6 +151,8 @@ pub enum Input {
     SetSort(Sort),
     /// Show or leave out hidden files.
     ToggleHidden,
+    /// The person's choices about how the window behaves changed (Settings).
+    Behave(Behaviour),
     /// Make a new folder here and start renaming it (Shift+Command+N).
     NewFolder,
     /// Move the selection to the Trash (Command+Backspace).

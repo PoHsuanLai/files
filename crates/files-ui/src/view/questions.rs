@@ -5,10 +5,10 @@ use dioxus::prelude::*;
 use ds::components::overlays::alert_model::{AlertButton, AlertRole, AlertStyle, Suppression};
 use ds::prelude::{Alert, Check, TextLine};
 use files_core::{Answer, Conflict, Resolution};
-use files_model::{BusyDisk, Input, Question};
+use files_model::{BusyDisk, ExtensionChange, Input, Question};
 
 use crate::state::Browse;
-use crate::words::{CANNOT_UNDO, conflict_words, erase_words, force_eject_words};
+use crate::words::{CANNOT_UNDO, conflict_words, erase_words, extension_words, force_eject_words};
 
 /// The question that is up, if any.
 #[component]
@@ -29,6 +29,7 @@ pub(super) fn Questions(browse: Browse) -> Element {
             ConflictAlert { browse, conflict }
         },
         Question::ForceEject(busy) => force_eject(browse, &busy),
+        Question::ChangeExtension(change) => extension(browse, &change),
         // A question files-model adds later is not asked until this names it.
         _ => rsx! {},
     }
@@ -46,6 +47,25 @@ fn erase(browse: Browse, title: String, action: &str) -> Element {
             buttons: vec![
                 AlertButton::new(action, AlertRole::Destructive, confirm),
                 AlertButton::new("Cancel", AlertRole::Cancel, cancel),
+            ],
+        }
+    }
+}
+
+/// A rename that changes a file's extension: use the new name or keep the old extension, which is
+/// the default.
+fn extension(browse: Browse, change: &ExtensionChange) -> Element {
+    let confirm = EventHandler::new(move |()| browse.send(Input::Confirm));
+    let keep = EventHandler::new(move |()| browse.send(Input::Dismiss));
+    let words = extension_words(change);
+    rsx! {
+        Alert {
+            title: words.title,
+            message: Some(TextLine::from(words.message)),
+            style: AlertStyle::Warning,
+            buttons: vec![
+                AlertButton::new(&words.go_ahead, AlertRole::Normal, confirm),
+                AlertButton::new(&words.keep, AlertRole::Cancel, keep),
             ],
         }
     }
