@@ -20,12 +20,12 @@ files-ops = { path = "crates/files-ops" }
 files-desktop = { path = "crates/files-desktop" }
 files-ui = { path = "crates/files-ui" }
 # quire, pinned the desktop-wide way (.git + full rev; the tag is a comment), as temor and anyview do.
-ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
-ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
-ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
-ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
-ds-extensions = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
-ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb" }  # c6ec67a3: v0.3.46
+ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "3dfaadd23e4bb7f60f5bcf359f712e9d59011b78" }  # 3dfaadd2: v0.3.47
+ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "3dfaadd23e4bb7f60f5bcf359f712e9d59011b78" }  # 3dfaadd2: v0.3.47
+ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "3dfaadd23e4bb7f60f5bcf359f712e9d59011b78" }  # 3dfaadd2: v0.3.47
+ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "3dfaadd23e4bb7f60f5bcf359f712e9d59011b78" }  # 3dfaadd2: v0.3.47
+ds-extensions = { git = "https://github.com/PoHsuanLai/quire.git", rev = "3dfaadd23e4bb7f60f5bcf359f712e9d59011b78" }  # 3dfaadd2: v0.3.47
+ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "3dfaadd23e4bb7f60f5bcf359f712e9d59011b78" }  # 3dfaadd2: v0.3.47
 # The desktop's portable keymap core (actions, chords, Primary per platform); files owns no keymap.
 chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "99eec9ddd03ee345b669fcc7954ed44590724290" }
 # anyview, the desktop's viewer: Quick Look is its light tier, `anyview-peek`'s worker and card, hosted as
@@ -59,7 +59,7 @@ porter-core = { git = "https://github.com/PoHsuanLai/porter.git", rev = "e91eb7a
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Desktop entries and the file-type database (`ds_helpers::mime`), UI-free without its default feature.
-ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "c6ec67a3c3e6100b1dc31981b4ba3191cee3b8fb", default-features = false }  # c6ec67a3 (v0.3.46)
+ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "3dfaadd23e4bb7f60f5bcf359f712e9d59011b78", default-features = false }  # 3dfaadd2 (v0.3.47)
 tempfile = "3"
 # The binary finds an app's icon file in the person's icon theme (detent's version). MIT.
 freedesktop-icons = "0.4"
