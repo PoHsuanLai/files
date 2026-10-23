@@ -103,6 +103,8 @@ pub enum Effect {
     CloudRemove(Vec<ItemRef>),
     /// Keep these items downloaded, or not, and answer with `Input::CloudAnswered`.
     CloudKeep(Vec<ItemRef>, Keeping),
+    /// Save these online documents as files and answer with `Input::CopiesSaved`.
+    CloudSaveCopy(Vec<ItemRef>),
     /// Open this online document in the browser.
     OpenUrl(OnlineUrl),
     /// Tell the person this, in plain words.

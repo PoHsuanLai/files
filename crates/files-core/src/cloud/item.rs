@@ -137,6 +137,24 @@ impl CloudItem {
     }
 }
 
+/// An online document saved as a file: the document, and the file made from it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Saved {
+    /// The online document.
+    pub document: ItemRef,
+    /// The file saved next to it.
+    pub copy: ItemRef,
+}
+
+/// The answer to Save a Copy: what was saved, and what was refused with its reason.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SavedCopies {
+    /// Each document saved, with its copy.
+    pub saved: Vec<Saved>,
+    /// The paths not saved, with the reasons.
+    pub refused: Vec<Refused>,
+}
+
 /// A path an ask did not take, and why.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Refused {

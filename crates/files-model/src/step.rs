@@ -112,6 +112,8 @@ impl Browser {
             Input::RemoveDownload => self.remove_download(),
             Input::KeepDownloaded => self.keep_downloaded(),
             Input::CloudAnswered(refused) => self.cloud_answered(refused),
+            Input::SaveCopy => self.save_copy(),
+            Input::CopiesSaved(copies) => self.copies_saved(copies),
             Input::OpenVolume(id) => self.open_volume(id),
             Input::Mounted(id, result) => self.mounted(id, result),
             Input::Eject(id) => self.eject(id),

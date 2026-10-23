@@ -166,7 +166,7 @@ row stands. A fresh listing in a drive adds `Effect::ReadCloud`; `Input::CloudIt
 carries every `ItemsChanged`. Opening a file asks `CloudDownload` for one in the cloud and opens it
 when it reaches downloaded (an offline drive says so instead); an online document is
 `Effect::OpenUrl` with the address the service gave, never the file. The menu is Download Now,
-Remove Download and Keep Downloaded (checked, a dash for some); a refusal comes back as
+Remove Download and Keep Downloaded (checked, a dash for some), and Save a Copy when the selection holds an online document (`CloudSaveCopy`; the answer reads the folder again and selects the new files); a refusal comes back as
 `Input::CloudAnswered` and each reason is told once. The edge (`edge/clouds.rs`) is one thread, as
 the disks' is, and tells every tab the drives only when they changed; a service that is away is
 an empty list, once. The sidebar's Cloud section lists the drives with a small mark for a state

@@ -3,10 +3,10 @@
 
 use files_core::{
     CloudDrive, CloudItem, CloudKind, CloudState, CloudWords, DriveId, DriveState, FolderPath,
-    ItemRef, Keeping, OnlineUrl, ProviderName, Refused, Share,
+    ItemRef, Keeping, OnlineUrl, ProviderName, Refused, Saved, SavedCopies, Share,
 };
 use files_model::{
-    Availability, Browser, CloudMenu, Effect, Input, KeptMark, OFFLINE_WORDS, OpenTarget,
+    Availability, Browser, Change, CloudMenu, Effect, Input, KeptMark, OFFLINE_WORDS, OpenTarget,
 };
 
 use crate::common::*;
@@ -283,4 +283,99 @@ fn going_to_another_folder_forgets_where_the_rows_stood() {
     let (browser, _) = browser.step(Input::Go(home()), at(0));
     assert!(browser.cloud_of(&name("Report.docx")).is_none());
     assert_eq!(browser.clouds().len(), 1, "the drives stay");
+}
+
+fn online(name_: &str) -> (&str, CloudItem) {
+    (name_, CloudItem::new(CloudKind::Online, CloudState::Cloud))
+}
+
+fn with_documents() -> Browser {
+    in_drive(
+        DriveState::Ready,
+        vec![
+            online("Plan.gdoc"),
+            ("Notes.txt", file_in(CloudState::Downloaded)),
+        ],
+    )
+}
+
+#[test]
+fn save_a_copy_is_offered_only_for_a_selection_with_an_online_document() {
+    let cases = [
+        (
+            "an online document",
+            vec!["Plan.gdoc"],
+            Availability::Available,
+        ),
+        ("a plain file", vec!["Notes.txt"], Availability::Unavailable),
+        (
+            "both",
+            vec!["Notes.txt", "Plan.gdoc"],
+            Availability::Available,
+        ),
+    ];
+    for (label, rows, want) in cases {
+        let clicks = rows
+            .iter()
+            .map(|r| Input::Click(name(r), files_model::Modifier::Toggle))
+            .collect();
+        let (browser, _) = run(with_documents(), clicks);
+        assert_eq!(browser.cloud_menu().map(|m| m.copy), Some(want), "{label}");
+    }
+}
+
+#[test]
+fn save_a_copy_asks_for_the_online_documents_of_the_selection_only() {
+    let clicks = ["Notes.txt", "Plan.gdoc"]
+        .iter()
+        .map(|r| Input::Click(name(r), files_model::Modifier::Toggle))
+        .collect();
+    let (browser, _) = run(with_documents(), clicks);
+    let (_, effects) = browser.step(Input::SaveCopy, at(0));
+    assert_eq!(
+        effects,
+        vec![Effect::CloudSaveCopy(vec![item("Plan.gdoc")])]
+    );
+
+    let (browser, _) = open(with_documents(), "Notes.txt");
+    let (_, effects) = browser.step(Input::SaveCopy, at(0));
+    assert!(effects.is_empty());
+}
+
+#[test]
+fn the_saved_copy_is_selected_when_the_listing_shows_it_and_a_refusal_is_told() {
+    let (browser, _) = run(
+        with_documents(),
+        vec![Input::Click(name("Plan.gdoc"), files_model::Modifier::None)],
+    );
+    let copies = SavedCopies {
+        saved: vec![Saved {
+            document: item("Plan.gdoc"),
+            copy: item("Plan.docx"),
+        }],
+        refused: vec![Refused {
+            item: item("Survey.gform"),
+            words: CloudWords::new("This document can't be saved as a file."),
+        }],
+    };
+    let (browser, effects) = browser.step(Input::CopiesSaved(copies), at(0));
+    assert_eq!(
+        effects,
+        vec![
+            Effect::List(dir("/c/OneDrive")),
+            Effect::ReadCloud(vec![item("Plan.docx")]),
+            Effect::Say("This document can't be saved as a file.".to_owned()),
+        ]
+    );
+    assert_eq!(
+        selected(&browser),
+        ["Plan.gdoc"],
+        "not listed yet: nothing moves"
+    );
+
+    let (browser, _) = browser.step(
+        Input::Changed(dir("/c/OneDrive"), Change::Added(file("Plan.docx"))),
+        at(0),
+    );
+    assert_eq!(selected(&browser), ["Plan.docx"]);
 }

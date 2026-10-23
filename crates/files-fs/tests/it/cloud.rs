@@ -6,7 +6,7 @@ use files_core::{
     CloudDrive, CloudItem, CloudKind, CloudNews, CloudState, DriveId, DriveState, FileName,
     FolderPath, ItemRef, Keeping, ProviderName, Share,
 };
-use files_fs::{CloudCall, CloudError, Clouds, FakeClouds, OFFLINE_WORDS};
+use files_fs::{CloudCall, CloudError, Clouds, FakeClouds, NO_FILE_FORMAT_WORDS, OFFLINE_WORDS};
 
 fn drive(state: DriveState) -> CloudDrive {
     CloudDrive::new(
@@ -91,4 +91,30 @@ fn watchers_hear_changes_and_the_service_going_and_coming() {
     let heard = heard.lock().unwrap();
     assert!(matches!(heard[0], CloudNews::Items(..)));
     assert_eq!(heard[1..], [CloudNews::Drives, CloudNews::Drives]);
+}
+
+fn at(name: &str) -> ItemRef {
+    ItemRef::new(
+        FolderPath::new("/c/OneDrive").unwrap(),
+        FileName::new(name).unwrap(),
+    )
+}
+
+#[test]
+fn save_a_copy_names_the_files_and_refuses_what_has_no_format() {
+    let online = |kind| CloudItem::new(kind, CloudState::Cloud);
+    let clouds = FakeClouds::with(vec![drive(DriveState::Ready)])
+        .holding(at("Plan.gdoc"), online(CloudKind::Online))
+        .holding(at("Survey.gform"), online(CloudKind::Online))
+        .holding(at("Report.docx"), online(CloudKind::File));
+    let first = clouds.save_copy(&[at("Plan.gdoc")]).unwrap();
+    assert_eq!(first.saved[0].copy, at("Plan.docx"));
+    let second = clouds.save_copy(&[at("Plan.gdoc")]).unwrap();
+    assert_eq!(second.saved[0].copy, at("Plan 2.docx"));
+    let refused = clouds
+        .save_copy(&[at("Survey.gform"), at("Report.docx")])
+        .unwrap();
+    assert!(refused.saved.is_empty());
+    assert_eq!(refused.refused[0].words.as_str(), NO_FILE_FORMAT_WORDS);
+    assert_eq!(refused.refused.len(), 2);
 }

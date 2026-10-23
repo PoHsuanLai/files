@@ -46,6 +46,8 @@ pub enum Command {
     RemoveDownload,
     /// Keep the selection downloaded; checked while all of it is (in a cloud drive).
     KeepDownloaded,
+    /// Save the online documents of the selection as files next to them (in a cloud drive).
+    SaveCopy,
     /// Show the preview pane beside the folder.
     ShowPreview,
     /// Put the preview pane away.
@@ -73,6 +75,7 @@ impl Command {
             Command::DownloadNow => "Download Now",
             Command::RemoveDownload => "Remove Download",
             Command::KeepDownloaded => "Keep Downloaded",
+            Command::SaveCopy => "Save a Copy",
             Command::ShowPreview => "Show Preview",
             Command::HidePreview => "Hide Preview",
         }
@@ -99,6 +102,7 @@ impl Command {
             Command::DownloadNow => Input::DownloadNow,
             Command::RemoveDownload => Input::RemoveDownload,
             Command::KeepDownloaded => Input::KeepDownloaded,
+            Command::SaveCopy => Input::SaveCopy,
             Command::ShowPreview | Command::HidePreview => Input::TogglePreview,
         })
     }
@@ -238,11 +242,15 @@ pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, Availabili
 /// Download Now, Remove Download and Keep Downloaded, for a selection in a cloud drive.
 fn cloud_group(browser: &Browser) -> Option<Vec<(Command, Availability)>> {
     let menu = browser.cloud_menu()?;
-    Some(vec![
+    let mut group = vec![
         (Command::DownloadNow, menu.download),
         (Command::RemoveDownload, menu.remove),
         (Command::KeepDownloaded, menu.keep),
-    ])
+    ];
+    if menu.copy == Availability::Available {
+        group.push((Command::SaveCopy, menu.copy));
+    }
+    Some(group)
 }
 
 /// Show Preview while the pane is away, Hide Preview while it is up.

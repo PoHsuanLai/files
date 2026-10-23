@@ -11,7 +11,7 @@ mod decode;
 mod error;
 mod follow;
 
-use files_core::{CloudDrive, CloudItem, ItemRef, Keeping, Refused};
+use files_core::{CloudDrive, CloudItem, ItemRef, Keeping, Refused, SavedCopies};
 use files_fs::{CloudError, CloudGuard, Clouds, News};
 use porter_dbus::StorageProxy;
 use tokio::runtime::Handle;
@@ -94,6 +94,12 @@ impl Storage {
         ))
     }
 
+    /// Save a Copy: each online document as a file next to it.
+    pub async fn save_copy(&self, items: &[ItemRef]) -> Result<SavedCopies, StorageError> {
+        let (saved, refused) = self.proxy.save_copy(paths(items)).await?;
+        Ok(decode::copies(saved, refused))
+    }
+
     /// Keep Downloaded, on or off.
     pub async fn keep(
         &self,
@@ -168,6 +174,12 @@ impl Clouds for DesktopClouds {
     fn remove_download(&self, items: &[ItemRef]) -> Result<Vec<Refused>, CloudError> {
         self.runtime
             .block_on(self.storage.remove_download(items))
+            .map_err(failed)
+    }
+
+    fn save_copy(&self, items: &[ItemRef]) -> Result<SavedCopies, CloudError> {
+        self.runtime
+            .block_on(self.storage.save_copy(items))
             .map_err(failed)
     }
 

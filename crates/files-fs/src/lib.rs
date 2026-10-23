@@ -29,7 +29,7 @@ mod prefs;
 mod watch;
 
 #[cfg(any(test, feature = "testing"))]
-pub use cloud::{CloudCall, FakeClouds, OFFLINE_WORDS};
+pub use cloud::{CloudCall, FakeClouds, NO_FILE_FORMAT_WORDS, OFFLINE_WORDS};
 pub use cloud::{CloudError, CloudGuard, Clouds, News, NoClouds};
 pub use error::{ListError, PrefsError, WatchError};
 #[cfg(any(test, feature = "testing"))]

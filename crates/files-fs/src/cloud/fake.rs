@@ -4,8 +4,8 @@ use std::collections::BTreeMap;
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use files_core::{
-    CloudDrive, CloudItem, CloudNews, CloudState, CloudWords, DriveId, DriveState, ItemRef,
-    Keeping, Refused, Share,
+    CloudDrive, CloudItem, CloudKind, CloudNews, CloudState, CloudWords, DriveId, DriveState,
+    ItemRef, Keeping, Refused, Saved, SavedCopies, Share,
 };
 
 use super::{CloudError, CloudGuard, Clouds, News};
@@ -20,10 +20,29 @@ pub enum CloudCall {
     Removed(Vec<ItemRef>),
     /// Keep Downloaded, on or off.
     Kept(Vec<ItemRef>, Keeping),
+    /// Save a Copy.
+    Copied(Vec<ItemRef>),
 }
 
 /// What a download asked of an offline drive says.
 pub const OFFLINE_WORDS: &str = "This file will download when you\u{2019}re connected.";
+
+/// What a document with no file format (a Form) is refused with.
+pub const NO_FILE_FORMAT_WORDS: &str = "This document can\u{2019}t be saved as a file.";
+
+/// What anything but an online document is refused with.
+const NOT_ONLINE_WORDS: &str = "Only online documents can be saved as a copy.";
+
+/// The file type a document of the extension `ext` is saved as.
+fn export_of(ext: &str) -> Option<&'static str> {
+    match ext {
+        "gdoc" => Some("docx"),
+        "gsheet" => Some("xlsx"),
+        "gslides" => Some("pptx"),
+        "gdraw" => Some("png"),
+        _ => None,
+    }
+}
 
 #[derive(Default)]
 struct State {
@@ -242,6 +261,46 @@ impl Clouds for FakeClouds {
         }))
     }
 
+    fn save_copy(&self, items: &[ItemRef]) -> Result<SavedCopies, CloudError> {
+        self.check()?;
+        self.lock().calls.push(CloudCall::Copied(items.to_vec()));
+        let mut answer = SavedCopies::default();
+        for document in items {
+            let found = self.lock().items.get(document).cloned();
+            let refuse = |words: &str| Refused {
+                item: document.clone(),
+                words: CloudWords::new(words),
+            };
+            match found {
+                Some(found) if found.kind == CloudKind::Online => {
+                    let ext = document
+                        .name
+                        .extension()
+                        .map(|e| e.to_string_lossy().into_owned());
+                    let Some(export) = ext.as_deref().and_then(export_of) else {
+                        answer.refused.push(refuse(NO_FILE_FORMAT_WORDS));
+                        continue;
+                    };
+                    let stem = document.name.stem().to_string_lossy().into_owned();
+                    let copy = self.free_name(document, &stem, export);
+                    match copy {
+                        Some(copy) => {
+                            let file = CloudItem::new(CloudKind::File, CloudState::Downloaded);
+                            self.set_item(copy.clone(), file);
+                            answer.saved.push(Saved {
+                                document: document.clone(),
+                                copy,
+                            });
+                        }
+                        None => answer.refused.push(refuse(NO_FILE_FORMAT_WORDS)),
+                    }
+                }
+                Some(_) | None => answer.refused.push(refuse(NOT_ONLINE_WORDS)),
+            }
+        }
+        Ok(answer)
+    }
+
     fn keep(&self, items: &[ItemRef], keeping: Keeping) -> Result<Vec<Refused>, CloudError> {
         self.check()?;
         self.lock()
@@ -265,6 +324,19 @@ impl Clouds for FakeClouds {
 }
 
 impl FakeClouds {
+    /// "Plan.docx", else "Plan 2.docx", "Plan 3.docx"... the first the fake does not hold.
+    fn free_name(&self, document: &ItemRef, stem: &str, export: &str) -> Option<ItemRef> {
+        let state = self.lock();
+        (1..)
+            .map(|n| match n {
+                1 => format!("{stem}.{export}"),
+                n => format!("{stem} {n}.{export}"),
+            })
+            .filter_map(|text| files_core::FileName::new(text).ok())
+            .map(|name| document.renamed(name))
+            .find(|candidate| !state.items.contains_key(candidate))
+    }
+
     fn check(&self) -> Result<(), CloudError> {
         if self.lock().away {
             Err(CloudError::Unavailable)

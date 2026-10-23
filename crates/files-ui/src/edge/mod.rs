@@ -200,6 +200,7 @@ impl Edge {
             Effect::ReadCloud(items) => self.clouds.read(tab, items),
             Effect::CloudDownload(items) => self.clouds.download(tab, items),
             Effect::CloudRemove(items) => self.clouds.remove(tab, items),
+            Effect::CloudSaveCopy(items) => self.clouds.copy(tab, items),
             Effect::CloudKeep(items, keeping) => self.clouds.keep(tab, items, keeping),
             Effect::OpenUrl(url) => {
                 if let Err(failure) = self.seams.opener.open_url(&url) {

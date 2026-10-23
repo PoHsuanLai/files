@@ -129,7 +129,7 @@ name = "almanac-core"
 version = "0.1.0"
 source = "git+https://github.com/PoHsuanLai/almanac?rev=ff542b0c28d20a08424a9846633b3b1d9ec86c78#ff542b0c28d20a08424a9846633b3b1d9ec86c78"
 dependencies = [
- "porter-core",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16)",
  "prov",
  "serde",
  "serde_json",
@@ -182,10 +182,54 @@ dependencies = [
 ]
 
 [[package]]
+name = "anstream"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "824a212faf96e9acacdbd09febd34438f8f711fb84e09a8916013cd7815ca28d"
+dependencies = [
+ "anstyle",
+ "anstyle-parse",
+ "anstyle-query",
+ "anstyle-wincon",
+ "colorchoice",
+ "is_terminal_polyfill",
+ "utf8parse",
+]
+
+[[package]]
 name = "anstyle"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
+
+[[package]]
+name = "anstyle-parse"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52ce7f38b242319f7cabaa6813055467063ecdc9d355bbb4ce0c68908cd8130e"
+dependencies = [
+ "utf8parse",
+]
+
+[[package]]
+name = "anstyle-query"
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40c48f72fd53cd289104fc64099abca73db4166ad86ea0b4341abe65af83dadc"
+dependencies = [
+ "windows-sys 0.60.2",
+]
+
+[[package]]
+name = "anstyle-wincon"
+version = "3.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "291e6a250ff86cd4a820112fb8898808a366d8f9f58ce16d1f538353ad55747d"
+dependencies = [
+ "anstyle",
+ "once_cell_polyfill",
+ "windows-sys 0.60.2",
+]
 
 [[package]]
 name = "anyhow"
@@ -1157,6 +1201,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap"
+version = "4.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa8876b300ab35ba921adea3dfd70157a46249b33f95c9084ae5709785478946"
+dependencies = [
+ "clap_builder",
+ "clap_derive",
+]
+
+[[package]]
+name = "clap_builder"
+version = "4.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec0797fb7aeb1406c84efac526901f7ec3ead2124f946b494e72879d4b54704d"
+dependencies = [
+ "anstream",
+ "anstyle",
+ "clap_lex",
+ "strsim",
+]
+
+[[package]]
+name = "clap_derive"
+version = "4.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9c751b79415d4e559e3d1fcf128e09e720eb673a06d26cf6f392d37d75b66e0"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+]
+
+[[package]]
+name = "clap_lex"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
+
+[[package]]
 name = "clipboard-win"
 version = "5.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1199,6 +1283,12 @@ name = "color_quant"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
+
+[[package]]
+name = "colorchoice"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d07550c9036bf2ae0c684c4297d503f838287c83c53686d05370d0e139ae570"
 
 [[package]]
 name = "combine"
@@ -1968,8 +2058,8 @@ dependencies = [
  "bulkhead",
  "cua-action",
  "model-provider",
- "porter-core",
- "porter-infer",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16)",
+ "porter-infer 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16)",
  "prov",
  "serde",
  "serde_json",
@@ -1982,8 +2072,8 @@ version = "0.1.0"
 source = "git+https://github.com/PoHsuanLai/docket.git?rev=ff9d1b73b9ee529c1434de7dec5eb5072d503c66#ff9d1b73b9ee529c1434de7dec5eb5072d503c66"
 dependencies = [
  "docket-core",
- "porter-core",
- "porter-dbus",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16)",
+ "porter-dbus 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16)",
  "prov",
  "serde",
  "serde_json",
@@ -2499,8 +2589,11 @@ dependencies = [
  "ds-helpers",
  "files-core",
  "files-desktop",
+ "files-fs",
  "futures-util",
- "porter-core",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16)",
+ "porter-dbus 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-rig",
  "prov",
  "serde",
  "serde_json",
@@ -3399,6 +3492,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "is_terminal_polyfill"
+version = "1.70.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695"
+
+[[package]]
 name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4085,7 +4184,7 @@ version = "0.16.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca93e534d1142d1d0dcca6d25fe302508a5dfb40b302802904577725ea0b695b"
 dependencies = [
- "sha2",
+ "sha2 0.11.0",
 ]
 
 [[package]]
@@ -4665,6 +4764,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
+name = "once_cell_polyfill"
+version = "1.70.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
+
+[[package]]
 name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4863,7 +4968,7 @@ dependencies = [
  "md-5 0.11.0",
  "pdfrum-object",
  "sha1",
- "sha2",
+ "sha2 0.11.0",
  "thiserror 2.0.21",
  "unicode-normalization",
  "zeroize",
@@ -4903,7 +5008,7 @@ dependencies = [
  "pdfrum-page",
  "pdfrum-parser",
  "peniko",
- "sha2",
+ "sha2 0.11.0",
  "skrifa 0.47.0",
  "subsetter",
  "thiserror 2.0.21",
@@ -5310,6 +5415,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "porter-client"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-dbus 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-infer 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-provider",
+ "porter-secrets",
+ "porter-service",
+ "rustix",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "zbus",
+ "zeroize",
+]
+
+[[package]]
+name = "porter-core"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "peephole-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "zeroize",
+]
+
+[[package]]
 name = "porter-core"
 version = "0.1.0"
 source = "git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16#e91eb7a4bb44ac751ab1e3430915c746daad9a16"
@@ -5324,12 +5461,28 @@ dependencies = [
 [[package]]
 name = "porter-dbus"
 version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "peephole",
+ "peephole-bus",
+ "peephole-core",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "zbus",
+]
+
+[[package]]
+name = "porter-dbus"
+version = "0.1.0"
 source = "git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16#e91eb7a4bb44ac751ab1e3430915c746daad9a16"
 dependencies = [
  "peephole",
  "peephole-bus",
  "peephole-core",
- "porter-core",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16)",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -5339,15 +5492,138 @@ dependencies = [
 ]
 
 [[package]]
+name = "porter-discover"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-http",
+ "porter-provider",
+ "roxmltree 0.21.1",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "porter-fake"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-infer 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-provider",
+ "porter-secrets",
+ "porter-service",
+]
+
+[[package]]
+name = "porter-fake-servers"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "base64 0.22.1",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-discover",
+ "porter-fake",
+ "porter-provider",
+ "rustls",
+ "rustls-pki-types",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+ "tokio-rustls",
+]
+
+[[package]]
+name = "porter-fs"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+
+[[package]]
+name = "porter-http"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "porter-infer"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "base64 0.22.1",
+ "cua-action",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "porter-infer"
 version = "0.1.0"
 source = "git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16#e91eb7a4bb44ac751ab1e3430915c746daad9a16"
 dependencies = [
  "base64 0.22.1",
  "cua-action",
- "porter-core",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16)",
  "serde",
  "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "porter-provider"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "serde",
+ "thiserror 2.0.21",
+ "toml",
+]
+
+[[package]]
+name = "porter-rig"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "clap",
+ "porter-client",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-dbus 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-fake",
+ "porter-fake-servers",
+ "porter-infer 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "serde",
+ "serde_json",
+ "tokio",
+ "zbus",
+]
+
+[[package]]
+name = "porter-secrets"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-fs",
+ "rustix",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "porter-service"
+version = "0.1.0"
+source = "git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266#b95df10ef54ddab1b70f4b5ee59959ee2fb12266"
+dependencies = [
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=b95df10ef54ddab1b70f4b5ee59959ee2fb12266)",
+ "porter-provider",
+ "porter-secrets",
  "thiserror 2.0.21",
 ]
 
@@ -5415,7 +5691,7 @@ name = "prov"
 version = "0.1.0"
 source = "git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16#e91eb7a4bb44ac751ab1e3430915c746daad9a16"
 dependencies = [
- "porter-core",
+ "porter-core 0.1.0 (git+https://github.com/PoHsuanLai/porter.git?rev=e91eb7a4bb44ac751ab1e3430915c746daad9a16)",
  "serde",
  "thiserror 2.0.21",
 ]
@@ -5730,6 +6006,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "ring"
+version = "0.17.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7"
+dependencies = [
+ "cc",
+ "cfg-if",
+ "getrandom 0.2.17",
+ "libc",
+ "untrusted",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "roxmltree"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5776,6 +6066,41 @@ dependencies = [
  "libc",
  "linux-raw-sys",
  "windows-sys 0.60.2",
+]
+
+[[package]]
+name = "rustls"
+version = "0.23.46"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf"
+dependencies = [
+ "log",
+ "once_cell",
+ "ring",
+ "rustls-pki-types",
+ "rustls-webpki",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
+name = "rustls-pki-types"
+version = "1.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f4925028c7eb5d1fcdaf196971378ed9d2c1c4efc7dc5d011256f76c99c0a96"
+dependencies = [
+ "zeroize",
+]
+
+[[package]]
+name = "rustls-webpki"
+version = "0.103.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281"
+dependencies = [
+ "ring",
+ "rustls-pki-types",
+ "untrusted",
 ]
 
 [[package]]
@@ -5963,6 +6288,17 @@ dependencies = [
  "cfg-if",
  "cpufeatures 0.3.1",
  "digest 0.11.3",
+]
+
+[[package]]
+name = "sha2"
+version = "0.10.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
+dependencies = [
+ "cfg-if",
+ "cpufeatures 0.2.17",
+ "digest 0.10.7",
 ]
 
 [[package]]
@@ -6210,6 +6546,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "strsim"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
+
+[[package]]
 name = "strum"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6414,6 +6756,12 @@ dependencies = [
  "skrifa 0.42.1",
  "write-fonts",
 ]
+
+[[package]]
+name = "subtle"
+version = "2.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "svgtypes"
@@ -6716,6 +7064,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-rustls"
+version = "0.26.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db"
+dependencies = [
+ "rustls",
+ "tokio",
+]
+
+[[package]]
 name = "toml"
 version = "1.1.8+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6939,6 +7297,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
+name = "untrusted"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
+
+[[package]]
 name = "url"
 version = "2.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6990,6 +7354,12 @@ name = "utf8_iter"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
+
+[[package]]
+name = "utf8parse"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
@@ -7786,6 +8156,15 @@ dependencies = [
 
 [[package]]
 name = "windows-sys"
+version = "0.52.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
+dependencies = [
+ "windows-targets 0.52.6",
+]
+
+[[package]]
+name = "windows-sys"
 version = "0.60.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2f500e4d28234f72040990ec9d39e3a6b950f9f22d3dba18416c35882612bcb"
@@ -7834,6 +8213,22 @@ dependencies = [
 
 [[package]]
 name = "windows-targets"
+version = "0.52.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b724f72796e036ab90c1021d4780d4d3d648aca59e491e6b98e725b84e99973"
+dependencies = [
+ "windows_aarch64_gnullvm 0.52.6",
+ "windows_aarch64_msvc 0.52.6",
+ "windows_i686_gnu 0.52.6",
+ "windows_i686_gnullvm 0.52.6",
+ "windows_i686_msvc 0.52.6",
+ "windows_x86_64_gnu 0.52.6",
+ "windows_x86_64_gnullvm 0.52.6",
+ "windows_x86_64_msvc 0.52.6",
+]
+
+[[package]]
+name = "windows-targets"
 version = "0.53.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4945f9f551b88e0d65f3db0bc25c33b8acea4d9e41163edf90dcd0b19f9069f3"
@@ -7842,7 +8237,7 @@ dependencies = [
  "windows_aarch64_gnullvm 0.53.1",
  "windows_aarch64_msvc 0.53.1",
  "windows_i686_gnu 0.53.1",
- "windows_i686_gnullvm",
+ "windows_i686_gnullvm 0.53.1",
  "windows_i686_msvc 0.53.1",
  "windows_x86_64_gnu 0.53.1",
  "windows_x86_64_gnullvm 0.53.1",
@@ -7872,6 +8267,12 @@ checksum = "2b38e32f0abccf9987a4e3079dfb67dcd799fb61361e53e2882c3cbaf0d905d8"
 
 [[package]]
 name = "windows_aarch64_gnullvm"
+version = "0.52.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32a4622180e7a0ec044bb555404c800bc9fd9ec262ec147edd5989ccd0c02cd3"
+
+[[package]]
+name = "windows_aarch64_gnullvm"
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9d8416fa8b42f5c947f8482c43e7d89e73a173cead56d044f6a56104a6d1b53"
@@ -7887,6 +8288,12 @@ name = "windows_aarch64_msvc"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc35310971f3b2dbbf3f0690a219f40e2d9afcf64f9ab7cc1be722937c26b4bc"
+
+[[package]]
+name = "windows_aarch64_msvc"
+version = "0.52.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09ec2a7bb152e2252b53fa7803150007879548bc709c039df7627cabbd05d469"
 
 [[package]]
 name = "windows_aarch64_msvc"
@@ -7908,9 +8315,21 @@ checksum = "a75915e7def60c94dcef72200b9a8e58e5091744960da64ec734a6c6e9b3743e"
 
 [[package]]
 name = "windows_i686_gnu"
+version = "0.52.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e9b5ad5ab802e97eb8e295ac6720e509ee4c243f69d781394014ebfe8bbfa0b"
+
+[[package]]
+name = "windows_i686_gnu"
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "960e6da069d81e09becb0ca57a65220ddff016ff2d6af6a223cf372a506593a3"
+
+[[package]]
+name = "windows_i686_gnullvm"
+version = "0.52.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0eee52d38c090b3caa76c563b86c3a4bd71ef1a819287c19d586d7334ae8ed66"
 
 [[package]]
 name = "windows_i686_gnullvm"
@@ -7932,6 +8351,12 @@ checksum = "8f55c233f70c4b27f66c523580f78f1004e8b5a8b659e05a4eb49d4166cca406"
 
 [[package]]
 name = "windows_i686_msvc"
+version = "0.52.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "240948bc05c5e7c6dabba28bf89d89ffce3e303022809e73deaefe4f6ec56c66"
+
+[[package]]
+name = "windows_i686_msvc"
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e7ac75179f18232fe9c285163565a57ef8d3c89254a30685b57d83a38d326c2"
@@ -7947,6 +8372,12 @@ name = "windows_x86_64_gnu"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "53d40abd2583d23e4718fddf1ebec84dbff8381c07cae67ff7768bbf19c6718e"
+
+[[package]]
+name = "windows_x86_64_gnu"
+version = "0.52.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "147a5c80aabfbf0c7d901cb5895d1de30ef2907eb21fbbab29ca94c5b08b1a78"
 
 [[package]]
 name = "windows_x86_64_gnu"
@@ -7968,6 +8399,12 @@ checksum = "0b7b52767868a23d5bab768e390dc5f5c55825b6d30b86c844ff2dc7414044cc"
 
 [[package]]
 name = "windows_x86_64_gnullvm"
+version = "0.52.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24d5b23dc417412679681396f2b49f3de8c1473deb516bd34410872eff51ed0d"
+
+[[package]]
+name = "windows_x86_64_gnullvm"
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ffa179e2d07eee8ad8f57493436566c7cc30ac536a3379fdf008f47f6bb7ae1"
@@ -7983,6 +8420,12 @@ name = "windows_x86_64_msvc"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
+
+[[package]]
+name = "windows_x86_64_msvc"
+version = "0.52.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "windows_x86_64_msvc"

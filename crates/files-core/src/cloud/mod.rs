@@ -10,7 +10,7 @@ mod text;
 mod url;
 
 pub use drive::{CloudDrive, DriveState, Usage};
-pub use item::{CloudItem, CloudKind, CloudState, Keeping, Refused, Share};
+pub use item::{CloudItem, CloudKind, CloudState, Keeping, Refused, Saved, SavedCopies, Share};
 pub use text::{AccountLabel, CloudWords, DriveId, ProviderName};
 pub use url::{OnlineUrl, UrlError};
 

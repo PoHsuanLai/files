@@ -7,7 +7,7 @@
 use std::any::Any;
 use std::fmt;
 
-use files_core::{CloudDrive, CloudItem, CloudNews, ItemRef, Keeping, Refused};
+use files_core::{CloudDrive, CloudItem, CloudNews, ItemRef, Keeping, Refused, SavedCopies};
 
 #[cfg(any(test, feature = "testing"))]
 mod fake;
@@ -15,7 +15,7 @@ mod fake;
 pub use crate::error::CloudError;
 
 #[cfg(any(test, feature = "testing"))]
-pub use fake::{CloudCall, FakeClouds, OFFLINE_WORDS};
+pub use fake::{CloudCall, FakeClouds, NO_FILE_FORMAT_WORDS, OFFLINE_WORDS};
 
 /// What a [`Clouds`] calls with each piece of news, from any thread.
 pub type News = Box<dyn Fn(CloudNews) + Send + Sync>;
@@ -56,6 +56,10 @@ pub trait Clouds: Send + Sync {
     /// "Remove Download": the items that were not taken, with the reasons.
     fn remove_download(&self, items: &[ItemRef]) -> Result<Vec<Refused>, CloudError>;
 
+    /// "Save a Copy": saves each online document of `items` as a file next to it. Anything else
+    /// is refused, with the reason.
+    fn save_copy(&self, items: &[ItemRef]) -> Result<SavedCopies, CloudError>;
+
     /// "Keep Downloaded" on or off: the items that were not taken, with the reasons.
     fn keep(&self, items: &[ItemRef], keeping: Keeping) -> Result<Vec<Refused>, CloudError>;
 
@@ -82,6 +86,10 @@ impl Clouds for NoClouds {
     }
 
     fn remove_download(&self, _items: &[ItemRef]) -> Result<Vec<Refused>, CloudError> {
+        Err(CloudError::Unavailable)
+    }
+
+    fn save_copy(&self, _items: &[ItemRef]) -> Result<SavedCopies, CloudError> {
         Err(CloudError::Unavailable)
     }
 

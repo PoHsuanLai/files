@@ -55,12 +55,12 @@ docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "ff9d1b7
 docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "ff9d1b73b9ee529c1434de7dec5eb5072d503c66" }
 prov = { git = "https://github.com/PoHsuanLai/porter.git", rev = "e91eb7a4bb44ac751ab1e3430915c746daad9a16" }
 porter-core = { git = "https://github.com/PoHsuanLai/porter.git", rev = "e91eb7a4bb44ac751ab1e3430915c746daad9a16" }
-# org.quire.Storage1, the cloud drives (files-desktop only). Pinned to porter's storage-s0 branch
-# (13ccfad); it moves to porter master when storage S1 lands. A second porter pin beside the one
-# above is fine: porter-dbus brings its own porter-core.
-porter-dbus = { git = "https://github.com/PoHsuanLai/porter.git", rev = "13ccfad67df103a2852694c346975ea43a54e29e" }
+# org.quire.Storage1, the cloud drives (files-desktop only). Pinned to porter master with storage
+# S1 (b95df10e). A second porter pin beside the one above is fine: porter-dbus brings its own
+# porter-core.
+porter-dbus = { git = "https://github.com/PoHsuanLai/porter.git", rev = "b95df10ef54ddab1b70f4b5ee59959ee2fb12266" }
 # TEST TOOLING (files-desktop dev-dependency only): porter's fake Storage1, served on a private bus.
-porter-rig = { git = "https://github.com/PoHsuanLai/porter.git", rev = "13ccfad67df103a2852694c346975ea43a54e29e" }
+porter-rig = { git = "https://github.com/PoHsuanLai/porter.git", rev = "b95df10ef54ddab1b70f4b5ee59959ee2fb12266" }
 # The tests of files-desktop write the calls the router sends as JSON.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

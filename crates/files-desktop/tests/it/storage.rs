@@ -231,3 +231,34 @@ async fn the_service_going_away_is_news_and_no_drives_and_coming_back_is_news_ag
     assert_eq!(again.unwrap().len(), 2);
     drop((guard, back));
 }
+
+#[tokio::test]
+async fn save_a_copy_makes_files_next_to_the_documents_and_refuses_what_has_no_format() {
+    let Some(rig) = rig().await else { return };
+    let plan = item(&rig, "Google Drive/Projects/Plan.gdoc");
+    let survey = item(&rig, "Google Drive/Projects/Survey.gform");
+    let notes = item(&rig, "OneDrive/Documents/Notes.txt");
+    let first = within(
+        rig.storage
+            .save_copy(&[plan.clone(), survey.clone(), notes.clone()]),
+    )
+    .await
+    .unwrap();
+    assert_eq!(first.saved.len(), 1);
+    assert_eq!(first.saved[0].document, plan);
+    assert_eq!(first.saved[0].copy.name.display(), "Plan.docx");
+    let refused: Vec<_> = first.refused.iter().map(|r| r.item.clone()).collect();
+    assert!(refused.contains(&survey) && refused.contains(&notes));
+    let words = &first
+        .refused
+        .iter()
+        .find(|r| r.item == survey)
+        .unwrap()
+        .words;
+    assert_eq!(words.as_str(), "This document can't be saved as a file.");
+
+    let second = within(rig.storage.save_copy(std::slice::from_ref(&plan)))
+        .await
+        .unwrap();
+    assert_eq!(second.saved[0].copy.name.display(), "Plan 2.docx");
+}

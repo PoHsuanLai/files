@@ -4,7 +4,8 @@ use std::time::Duration;
 
 use files_core::{
     Behaviour, CloudDrive, CloudItem, EjectFailure, Entry, FileName, FolderPath, FolderPrefs, Info,
-    ItemRef, Location, MountFailure, Refused, Resolution, Sort, ViewMode, Volume, VolumeId,
+    ItemRef, Location, MountFailure, Refused, Resolution, SavedCopies, Sort, ViewMode, Volume,
+    VolumeId,
 };
 
 use crate::app::AppPick;
@@ -206,6 +207,10 @@ pub enum Input {
     RemoveDownload,
     /// Keep the selection downloaded, or stop keeping it when all of it is (the context menu).
     KeepDownloaded,
+    /// Save a copy of the online documents in the selection as files (the context menu).
+    SaveCopy,
+    /// The answer to Save a Copy: what was saved, and what was refused.
+    CopiesSaved(SavedCopies),
     /// The answer to a download, a removal or a keep: the paths not taken, with the reasons.
     CloudAnswered(Vec<Refused>),
     /// Open a disk from the sidebar: go to it, mounting it first when it is not.

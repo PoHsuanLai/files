@@ -3,13 +3,14 @@
 
 use files_core::{
     AccountLabel, ByteSize, CloudDrive, CloudItem, CloudKind, CloudState, CloudWords, DriveId,
-    DriveState, FolderPath, ItemRef, Keeping, OnlineUrl, ProviderName, Refused, Share, Usage,
+    DriveState, FolderPath, ItemRef, Keeping, OnlineUrl, ProviderName, Refused, Saved, SavedCopies,
+    Share, Usage,
 };
 use porter_dbus::{
     DRIVE_KEY_LABEL, DRIVE_KEY_LOCAL, DRIVE_KEY_PATH, DRIVE_KEY_PROVIDER, DRIVE_KEY_STATE,
     DRIVE_KEY_TOTAL, DRIVE_KEY_USED, DRIVE_KEY_WORDS, Details, ITEM_KEY_FRACTION, ITEM_KEY_KEPT,
     ITEM_KEY_KIND, ITEM_KEY_OTHER, ITEM_KEY_STATE, ITEM_KEY_URL, ITEM_KEY_WORDS, ItemKind,
-    ItemState, Refused as WireRefused,
+    ItemState, Refused as WireRefused, Saved as WireSaved,
 };
 
 use super::error::StorageError;
@@ -146,4 +147,23 @@ pub(super) fn refused(wire: WireRefused) -> Vec<Refused> {
             })
         })
         .collect()
+}
+
+/// The answer to `SaveCopy`: each document with its copy, in path order, and the refusals.
+pub(super) fn copies(saved: WireSaved, refused: WireRefused) -> SavedCopies {
+    let mut rows: Vec<(String, String)> = saved.into_iter().collect();
+    rows.sort();
+    let saved = rows
+        .into_iter()
+        .filter_map(|(document, copy)| {
+            Some(Saved {
+                document: item_ref(&document).ok()?,
+                copy: item_ref(&copy).ok()?,
+            })
+        })
+        .collect();
+    SavedCopies {
+        saved,
+        refused: self::refused(refused),
+    }
 }

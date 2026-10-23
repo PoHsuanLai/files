@@ -12,7 +12,7 @@ use ds_harness::harness::settle_until;
 use ds_harness::{Harness, Input as Click};
 use files_core::{
     AccountLabel, ByteSize, CloudDrive, CloudItem, CloudKind, CloudState, CloudWords, DriveId,
-    DriveState, FileName, FolderPath, ItemRef, ProviderName, Share, Usage,
+    DriveState, FileName, FolderPath, ItemRef, OnlineUrl, ProviderName, Share, Usage,
 };
 use files_fs::{CloudCall, FakeClouds};
 use files_model::{Effect, Input, TabId};
@@ -311,4 +311,63 @@ fn an_ask_the_service_cannot_take_is_told_as_a_refusal_in_words() {
     };
     assert_eq!(refused.len(), 1);
     assert!(refused[0].words.as_str().contains("can't be reached"));
+}
+
+fn row(n: usize) -> String {
+    format!(".ds-vtable-item[*|data-row=\"{n}\"]")
+}
+
+#[test]
+fn save_a_copy_is_in_the_menu_of_an_online_row_only_and_selects_the_new_file() {
+    let dir = scratch_folder();
+    std::fs::write(dir.path().join("Plan.gdoc"), "{}").unwrap();
+    let plan = item(dir.path(), "Plan.gdoc");
+    let online = CloudItem::new(CloudKind::Online, CloudState::Cloud)
+        .opening_at(OnlineUrl::new("https://docs.example.test/d/1").unwrap());
+    let clouds = Arc::new(
+        FakeClouds::with(vec![drive("od", "OneDrive", "", dir.path())])
+            .holding(plan.clone(), online)
+            .holding(item(dir.path(), "report.pdf"), in_the_cloud()),
+    );
+    let config = tempfile::tempdir().unwrap();
+    let opener = Arc::new(RecordingOpener::default());
+    let mut harness =
+        harness(launch(dir.path(), config.path(), &opener).with_clouds(clouds.clone()));
+    settle_until(&mut harness, |h| {
+        h.html().contains("zebra.png") && h.count("[aria-label=\"In the cloud\"]") == 1
+    });
+    // notes.txt, Plan.gdoc, Projects, report.pdf, zebra.png.
+    let menu_on = |harness: &mut Harness, n: usize| {
+        let at: Point = harness.centre(&row(n)).unwrap();
+        harness.send(Click::press(at, PointerButton::Secondary));
+        settle_until(harness, |h| h.html().contains("Move to Trash"));
+    };
+    menu_on(&mut harness, 3);
+    assert!(
+        !harness.html().contains("Save a Copy"),
+        "report.pdf is a plain file"
+    );
+    harness.send(Click::key(ShortcutKey::Escape));
+    settle_until(&mut harness, |h| h.count(".ds-menu") == 0);
+
+    menu_on(&mut harness, 1);
+    assert!(harness.html().contains("Save a Copy"));
+    // The copy the service makes: a file next to the document.
+    std::fs::write(dir.path().join("Plan.docx"), "docx").unwrap();
+    // Open, Open With, Save a Copy (the rest are dimmed away for an online document).
+    for _ in 0..3 {
+        harness.send(Click::key(ShortcutKey::Down));
+        harness.advance(Duration::from_millis(50));
+    }
+    harness.send(Click::key(ShortcutKey::Enter));
+    settle_until(&mut harness, |_| !clouds.calls().is_empty());
+    assert_eq!(clouds.calls(), vec![CloudCall::Copied(vec![plan])]);
+    // notes.txt, Plan.docx, Plan.gdoc, ...: the new file is the selected row.
+    settle_until(&mut harness, |h| {
+        h.attr(&row(1), "data-selected").as_deref() == Some("yes")
+    });
+    assert_ne!(
+        harness.attr(&row(2), "data-selected").as_deref(),
+        Some("yes")
+    );
 }

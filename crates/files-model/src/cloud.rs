@@ -4,7 +4,7 @@
 
 use files_core::{
     CloudDrive, CloudItem, CloudKind, CloudState, DriveState, FileName, FolderPath, ItemRef,
-    Keeping, Refused,
+    Keeping, Refused, SavedCopies,
 };
 
 use crate::browser::Browser;
@@ -48,6 +48,8 @@ pub struct CloudMenu {
     pub keep: Availability,
     /// Whether Keep Downloaded is checked.
     pub kept: KeptMark,
+    /// Save a Copy: available when the selection holds an online document.
+    pub copy: Availability,
 }
 
 impl Browser {
@@ -106,6 +108,11 @@ impl Browser {
             remove: when(can_remove),
             keep: when(|_| true),
             kept: kept_mark,
+            copy: if self.selected_online().is_empty() {
+                Availability::Unavailable
+            } else {
+                Availability::Available
+            },
         })
     }
 
@@ -298,6 +305,55 @@ impl Browser {
         } else {
             (self, vec![ask(items)])
         }
+    }
+
+    /// The selected online documents, by item.
+    fn selected_online(&self) -> Vec<ItemRef> {
+        if self.drive_here().is_none() {
+            return Vec::new();
+        }
+        self.selected_rows()
+            .into_iter()
+            .filter(|(row, _)| {
+                self.cloud
+                    .get(&row.name)
+                    .is_some_and(|item| item.kind == CloudKind::Online)
+            })
+            .map(|(_, item)| item)
+            .collect()
+    }
+
+    /// Save a Copy for the online documents in the selection.
+    pub(crate) fn save_copy(self) -> Stepped {
+        let items = self.selected_online();
+        self.asking_cloud(items, Effect::CloudSaveCopy)
+    }
+
+    /// The answer to Save a Copy: the copies made in the folder shown are selected as soon as the
+    /// listing holds them (the folder is read again), their states are asked for, and each
+    /// refusal is told.
+    pub(crate) fn copies_saved(self, copies: SavedCopies) -> Stepped {
+        let here = self.folder().cloned();
+        let made: Vec<ItemRef> = copies
+            .saved
+            .into_iter()
+            .map(|saved| saved.copy)
+            .filter(|copy| Some(&copy.folder) == here.as_ref())
+            .collect();
+        let names: Vec<FileName> = made.iter().map(|copy| copy.name.clone()).collect();
+        if names.is_empty() {
+            return self.cloud_answered(copies.refused);
+        }
+        // The folder is read again, so the copies are listed whether or not a change was seen.
+        let (browser, mut effects) = Browser {
+            reveal: names,
+            ..self
+        }
+        .reload();
+        effects.push(Effect::ReadCloud(made));
+        let (browser, said) = browser.cloud_answered(copies.refused);
+        effects.extend(said);
+        (browser, effects)
     }
 
     /// The answer to an ask of the drives: each reason a path was refused is told once, and a
