@@ -84,5 +84,7 @@ allow-git = [
     "https://github.com/PoHsuanLai/almanac",
     "https://github.com/PoHsuanLai/stoker",
     "https://github.com/PoHsuanLai/peephole",
+    # docket's sandbox wrapper (docket ff9d1b73 and later): MIT OR Apache-2.0, at the rev docket pins.
+    "https://github.com/PoHsuanLai/bulkhead",
     "https://github.com/DioxusLabs/taffy",
 ]

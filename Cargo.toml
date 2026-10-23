@@ -21,21 +21,21 @@ files-ops = { path = "crates/files-ops" }
 files-desktop = { path = "crates/files-desktop" }
 files-ui = { path = "crates/files-ui" }
 # quire, pinned the desktop-wide way (.git + full rev; the tag is a comment), as temor and anyview do.
-ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
-ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
-ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
-ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
-ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1" }  # 10ee7011: v0.3.44
+ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
+ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
+ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
+ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
+ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6" }  # 7fa27afc: v0.3.45
 # The desktop's portable keymap core (actions, chords, Primary per platform); files owns no keymap.
 chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "99eec9ddd03ee345b669fcc7954ed44590724290" }
 # anyview, the desktop's viewer: Quick Look is its light tier, `anyview-peek`'s worker and card, hosted as
 # mailo hosts them (headless otherwise: no media player, no D-Bus). The rev is anyview's main, which names
 # the quire rev above. `anyview-core` is the vocabulary (`FilePath`), `anyview-fs` opens a path as an input.
-anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98" }  # 92e98449
-anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98" }  # 92e98449
-anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98" }  # 92e98449
-anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98" }  # 92e98449
-anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "92e98449478ee3941999cf624a3e80d5484fdf98", default-features = false }  # 92e98449
+anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c" }  # 3f51bdd3
+anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c" }  # 3f51bdd3
+anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c" }  # 3f51bdd3
+anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c" }  # 3f51bdd3
+anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c", default-features = false }  # 3f51bdd3
 # Copied from quire/docs/workspace-deps.toml at the rev above.
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
 # Dates in the list view, in the person's own time zone.
@@ -49,17 +49,17 @@ zbus = { version = "5.19", default-features = false, features = ["tokio"] }
 # temor-desktop is for temor. The rev is temor's, so docket and porter lock the same everywhere:
 # docket 7c9b57cb locks porter b2adc64d (porter-core and prov), as temor does. docket-client is
 # feature `dbus` only: no router, no cedar. No [patch] is needed for docket or porter.
-docket-client = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7c9b57cb41516f8e050e797852bc1cc3d18736f0", default-features = false, features = ["dbus"] }
-docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7c9b57cb41516f8e050e797852bc1cc3d18736f0" }
+docket-client = { git = "https://github.com/PoHsuanLai/docket.git", rev = "ff9d1b73b9ee529c1434de7dec5eb5072d503c66", default-features = false, features = ["dbus"] }
+docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "ff9d1b73b9ee529c1434de7dec5eb5072d503c66" }
 # Who may call Files' provider (intentd's unit), and the stand-in a test names for it.
-docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7c9b57cb41516f8e050e797852bc1cc3d18736f0" }
-prov = { git = "https://github.com/PoHsuanLai/porter.git", rev = "b2adc64da9ce49b41c83c73888a7d4da9e57a8bf" }
-porter-core = { git = "https://github.com/PoHsuanLai/porter.git", rev = "b2adc64da9ce49b41c83c73888a7d4da9e57a8bf" }
+docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "ff9d1b73b9ee529c1434de7dec5eb5072d503c66" }
+prov = { git = "https://github.com/PoHsuanLai/porter.git", rev = "e91eb7a4bb44ac751ab1e3430915c746daad9a16" }
+porter-core = { git = "https://github.com/PoHsuanLai/porter.git", rev = "e91eb7a4bb44ac751ab1e3430915c746daad9a16" }
 # The tests of files-desktop write the calls the router sends as JSON.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Desktop entries (the parser and the walk of the applications folders), UI-free without its default feature.
-ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "10ee7011a0b781876377a6a017362a066d0f10f1", default-features = false }  # 10ee7011 (v0.3.44)
+ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "7fa27afc834e8365b356e7a0db94b269e62aaaf6", default-features = false }  # 7fa27afc (v0.3.45)
 tempfile = "3"
 # The binary finds an app's icon file in the person's icon theme (detent's version). MIT.
 freedesktop-icons = "0.4"
