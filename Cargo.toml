@@ -31,11 +31,11 @@ chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "99eec9dd
 # anyview, the desktop's viewer: Quick Look is its light tier, `anyview-peek`'s worker and card, hosted as
 # mailo hosts them (headless otherwise: no media player, no D-Bus). The rev is anyview's main, which names
 # the quire rev above. `anyview-core` is the vocabulary (`FilePath`), `anyview-fs` opens a path as an input.
-anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c" }  # 3f51bdd3
-anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c" }  # 3f51bdd3
-anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c" }  # 3f51bdd3
-anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c" }  # 3f51bdd3
-anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3f51bdd322ed23a34cc168ce4706965755fe239c", default-features = false }  # 3f51bdd3
+anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f3d777f0f8cfa829bae795c7156e1152266d1dda" }  # f3d777f0 (quire v0.3.47)
+anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f3d777f0f8cfa829bae795c7156e1152266d1dda" }  # f3d777f0 (quire v0.3.47)
+anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f3d777f0f8cfa829bae795c7156e1152266d1dda" }  # f3d777f0 (quire v0.3.47)
+anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f3d777f0f8cfa829bae795c7156e1152266d1dda" }  # f3d777f0 (quire v0.3.47)
+anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f3d777f0f8cfa829bae795c7156e1152266d1dda", default-features = false }  # f3d777f0 (quire v0.3.47)
 # Copied from quire/docs/workspace-deps.toml at the rev above.
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
 # Dates in the list view, in the person's own time zone.
