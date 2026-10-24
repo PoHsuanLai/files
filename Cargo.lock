@@ -2039,7 +2039,7 @@ dependencies = [
 [[package]]
 name = "docket-client"
 version = "0.1.0"
-source = "git+https://github.com/PoHsuanLai/docket.git?rev=41ddb1c7fe4b234d638e67628f6700dba67bfa07#41ddb1c7fe4b234d638e67628f6700dba67bfa07"
+source = "git+https://github.com/PoHsuanLai/docket.git?rev=ec949633f4141c100abbafcd903a19c66c857707#ec949633f4141c100abbafcd903a19c66c857707"
 dependencies = [
  "docket-core",
  "docket-dbus",
@@ -2054,7 +2054,7 @@ dependencies = [
 [[package]]
 name = "docket-core"
 version = "0.1.0"
-source = "git+https://github.com/PoHsuanLai/docket.git?rev=41ddb1c7fe4b234d638e67628f6700dba67bfa07#41ddb1c7fe4b234d638e67628f6700dba67bfa07"
+source = "git+https://github.com/PoHsuanLai/docket.git?rev=ec949633f4141c100abbafcd903a19c66c857707#ec949633f4141c100abbafcd903a19c66c857707"
 dependencies = [
  "almanac-core",
  "bulkhead",
@@ -2071,7 +2071,7 @@ dependencies = [
 [[package]]
 name = "docket-dbus"
 version = "0.1.0"
-source = "git+https://github.com/PoHsuanLai/docket.git?rev=41ddb1c7fe4b234d638e67628f6700dba67bfa07#41ddb1c7fe4b234d638e67628f6700dba67bfa07"
+source = "git+https://github.com/PoHsuanLai/docket.git?rev=ec949633f4141c100abbafcd903a19c66c857707#ec949633f4141c100abbafcd903a19c66c857707"
 dependencies = [
  "docket-core",
  "porter-core",
