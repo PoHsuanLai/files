@@ -20,22 +20,22 @@ files-ops = { path = "crates/files-ops" }
 files-desktop = { path = "crates/files-desktop" }
 files-ui = { path = "crates/files-ui" }
 # quire, pinned the desktop-wide way (.git + full rev; the tag is a comment), as temor and anyview do.
-ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "99cffc7d8717b75d1fa1e85867a54987df366470" }  # 99cffc7d: v0.3.48
-ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "99cffc7d8717b75d1fa1e85867a54987df366470" }  # 99cffc7d: v0.3.48
-ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "99cffc7d8717b75d1fa1e85867a54987df366470" }  # 99cffc7d: v0.3.48
-ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "99cffc7d8717b75d1fa1e85867a54987df366470" }  # 99cffc7d: v0.3.48
-ds-extensions = { git = "https://github.com/PoHsuanLai/quire.git", rev = "99cffc7d8717b75d1fa1e85867a54987df366470" }  # 99cffc7d: v0.3.48
-ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "99cffc7d8717b75d1fa1e85867a54987df366470" }  # 99cffc7d: v0.3.48
+ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d17e19da64c8845d8eb413784b2d84f177a86767" }  # d17e19da: v0.3.49
+ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d17e19da64c8845d8eb413784b2d84f177a86767" }  # d17e19da: v0.3.49
+ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d17e19da64c8845d8eb413784b2d84f177a86767" }  # d17e19da: v0.3.49
+ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d17e19da64c8845d8eb413784b2d84f177a86767" }  # d17e19da: v0.3.49
+ds-extensions = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d17e19da64c8845d8eb413784b2d84f177a86767" }  # d17e19da: v0.3.49
+ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d17e19da64c8845d8eb413784b2d84f177a86767" }  # d17e19da: v0.3.49
 # The desktop's portable keymap core (actions, chords, Primary per platform); files owns no keymap.
 chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "99eec9ddd03ee345b669fcc7954ed44590724290" }
 # anyview, the desktop's viewer: Quick Look is its light tier, `anyview-peek`'s worker and card, hosted as
 # mailo hosts them (headless otherwise: no media player, no D-Bus). The rev is anyview's main, which names
 # the quire rev above. `anyview-core` is the vocabulary (`FilePath`), `anyview-fs` opens a path as an input.
-anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "a3705f0811d6be69e625613c491759612d803398" }  # a3705f08 (quire v0.3.48)
-anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "a3705f0811d6be69e625613c491759612d803398" }  # a3705f08 (quire v0.3.48)
-anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "a3705f0811d6be69e625613c491759612d803398" }  # a3705f08 (quire v0.3.48)
-anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "a3705f0811d6be69e625613c491759612d803398" }  # a3705f08 (quire v0.3.48)
-anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "a3705f0811d6be69e625613c491759612d803398", default-features = false }  # a3705f08 (quire v0.3.48)
+anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "d0a5c0ba2bedd4b9eac9a656324904574dd8ad54" }  # d0a5c0ba (quire v0.3.49)
+anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "d0a5c0ba2bedd4b9eac9a656324904574dd8ad54" }  # d0a5c0ba (quire v0.3.49)
+anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "d0a5c0ba2bedd4b9eac9a656324904574dd8ad54" }  # d0a5c0ba (quire v0.3.49)
+anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "d0a5c0ba2bedd4b9eac9a656324904574dd8ad54" }  # d0a5c0ba (quire v0.3.49)
+anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "d0a5c0ba2bedd4b9eac9a656324904574dd8ad54", default-features = false }  # d0a5c0ba (quire v0.3.49)
 # Copied from quire/docs/workspace-deps.toml at the rev above.
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
 # Dates in the list view, in the person's own time zone.
@@ -65,7 +65,7 @@ porter-rig = { git = "https://github.com/PoHsuanLai/porter.git", rev = "b95df10e
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Desktop entries and the file-type database (`ds_helpers::mime`), UI-free without its default feature.
-ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "99cffc7d8717b75d1fa1e85867a54987df366470", default-features = false }  # 99cffc7d (v0.3.47)
+ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "d17e19da64c8845d8eb413784b2d84f177a86767", default-features = false }  # d17e19da (v0.3.49)
 tempfile = "3"
 # The binary finds an app's icon file in the person's icon theme (detent's version). MIT.
 freedesktop-icons = "0.4"
@@ -106,16 +106,16 @@ strip = "debuginfo"
 # every CSS `filter` function paints on both backends. Move back to crates.io once upstream has
 # them (blitz-kit docs/blitz-gaps.md tracks the PRs).
 [patch.crates-io]
-vello_common = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
-vello_cpu = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
-vello_hybrid = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
-vello_sparse_shaders = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
-glifo = { git = "https://github.com/PoHsuanLai/vello", rev = "84b2c9f7debed7d15f48d0ec9ea8575c16a56938" }
-anyrender = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
-anyrender_vello_cpu = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
-anyrender_vello_hybrid = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
-wgpu_context = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
-pixels_window_renderer = { git = "https://github.com/PoHsuanLai/anyrender", rev = "d4ae3885f89a58351ff7e99cd75d9b7de5865337" }
+vello_common = { git = "https://github.com/PoHsuanLai/vello", rev = "5c986661c9e943d26dac8e8ea7812895947722b8" }
+vello_cpu = { git = "https://github.com/PoHsuanLai/vello", rev = "5c986661c9e943d26dac8e8ea7812895947722b8" }
+vello_hybrid = { git = "https://github.com/PoHsuanLai/vello", rev = "5c986661c9e943d26dac8e8ea7812895947722b8" }
+vello_sparse_shaders = { git = "https://github.com/PoHsuanLai/vello", rev = "5c986661c9e943d26dac8e8ea7812895947722b8" }
+glifo = { git = "https://github.com/PoHsuanLai/vello", rev = "5c986661c9e943d26dac8e8ea7812895947722b8" }
+anyrender = { git = "https://github.com/PoHsuanLai/anyrender", rev = "03fcbe4c746d2334d3fb91e63641741f3dacc826" }
+anyrender_vello_cpu = { git = "https://github.com/PoHsuanLai/anyrender", rev = "03fcbe4c746d2334d3fb91e63641741f3dacc826" }
+anyrender_vello_hybrid = { git = "https://github.com/PoHsuanLai/anyrender", rev = "03fcbe4c746d2334d3fb91e63641741f3dacc826" }
+wgpu_context = { git = "https://github.com/PoHsuanLai/anyrender", rev = "03fcbe4c746d2334d3fb91e63641741f3dacc826" }
+pixels_window_renderer = { git = "https://github.com/PoHsuanLai/anyrender", rev = "03fcbe4c746d2334d3fb91e63641741f3dacc826" }
 # dioxus-core 0.7.10 can spin forever in VirtualDom::wait_for_work: a task woken and then cancelled
 # before it is polled (a use_resource restart) leaves an empty entry in the dirty-task queue that
 # pop_task never removes. Fixed upstream in DioxusLabs/dioxus#5554 (0.8-alpha only); this fork
