@@ -46,14 +46,14 @@ notify = "8.2"
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "process"] }
 zbus = { version = "5.19", default-features = false, features = ["tokio"] }
 # files-desktop: the only crate that names docket or porter (scripts/check-boundary.sh), as
-# temor-desktop is for temor. The revs are the desktop manifest's (quire v0.3.49 round): docket
-# ec949633 locks porter dcc16ada, the porter pinned here, so one porter is locked. docket-client is
-# feature `dbus` only: no router, no cedar. No [patch] is needed for docket or porter.
-docket-client = { git = "https://github.com/PoHsuanLai/docket.git", rev = "ec949633f4141c100abbafcd903a19c66c857707", default-features = false, features = ["dbus"] }
-docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "ec949633f4141c100abbafcd903a19c66c857707" }
+# temor-desktop is for temor. The revs follow docket: docket 7724aca6 locks porter dcc16ada and
+# prov bf8d316f (prov left porter for its own repo), the revs pinned here, so one of each is
+# locked. docket-client is feature `dbus` only: no router, no cedar. No [patch] is needed.
+docket-client = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7724aca663a2e09309439582c5f66e2a739c873c", default-features = false, features = ["dbus"] }
+docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7724aca663a2e09309439582c5f66e2a739c873c" }
 # Who may call Files' provider (intentd's unit), and the stand-in a test names for it.
-docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "ec949633f4141c100abbafcd903a19c66c857707" }
-prov = { git = "https://github.com/PoHsuanLai/porter.git", rev = "dcc16ada850559c7c8ae213cd7a9b153672e5031" }
+docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7724aca663a2e09309439582c5f66e2a739c873c" }
+prov = { git = "https://github.com/PoHsuanLai/prov", rev = "bf8d316f45c9856f72abfb9ab214db424a60cbbb" }
 porter-core = { git = "https://github.com/PoHsuanLai/porter.git", rev = "dcc16ada850559c7c8ae213cd7a9b153672e5031" }
 # org.quire.Storage1, the cloud drives (files-desktop only): the same porter rev as above, which
 # holds storage S1.
