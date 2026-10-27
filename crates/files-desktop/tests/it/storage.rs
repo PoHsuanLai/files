@@ -1,4 +1,4 @@
-//! The cloud service over a private bus, against porter's own fake of it (`porter-rig`): the
+//! The cloud service over a private bus, against porter's own fake of it (`syncd-fakes`): the
 //! drives, where items stand, the three asks, the news, and the service going away and back.
 
 use std::time::Duration;
@@ -8,7 +8,7 @@ use files_core::{
 };
 use files_desktop::{DesktopClouds, Storage};
 use files_fs::{CloudError, Clouds};
-use porter_rig::storage_fake::{FakeStorage, World, serve};
+use syncd_fakes::storage::{FakeStorage, World, serve};
 use tokio::sync::mpsc::{UnboundedReceiver, unbounded_channel};
 
 use crate::bus::PrivateBus;

@@ -32,7 +32,7 @@ zbus = { workspace = true }
 files-desktop = { path = ".", features = ["testing"] }
 files-fs = { workspace = true, features = ["testing"] }
 # Porter's fake Storage1, served on the tests' private bus (test tooling, never shipped).
-porter-rig = { workspace = true }
+syncd-fakes = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
