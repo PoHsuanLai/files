@@ -20,22 +20,22 @@ files-ops = { path = "crates/files-ops" }
 files-desktop = { path = "crates/files-desktop" }
 files-ui = { path = "crates/files-ui" }
 # quire, pinned the desktop-wide way (.git + full rev; the tag is a comment), as temor and anyview do.
-ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "8760244b938ff2603af5e5b3f59b55ad0aab9246" }  # 8760244b: v0.3.57
-ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "8760244b938ff2603af5e5b3f59b55ad0aab9246" }  # 8760244b: v0.3.57
-ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "8760244b938ff2603af5e5b3f59b55ad0aab9246" }  # 8760244b: v0.3.57
-ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "8760244b938ff2603af5e5b3f59b55ad0aab9246" }  # 8760244b: v0.3.57
-ds-extensions = { git = "https://github.com/PoHsuanLai/quire.git", rev = "8760244b938ff2603af5e5b3f59b55ad0aab9246" }  # 8760244b: v0.3.57
-ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "8760244b938ff2603af5e5b3f59b55ad0aab9246" }  # 8760244b: v0.3.57
+ds = { git = "https://github.com/PoHsuanLai/quire.git", rev = "e19728b7ee9e369d360c646bf5e7ed559bc3d6f9" }  # e19728b7: v0.3.58
+ds-blitz = { git = "https://github.com/PoHsuanLai/quire.git", rev = "e19728b7ee9e369d360c646bf5e7ed559bc3d6f9" }  # e19728b7: v0.3.58
+ds-settings = { git = "https://github.com/PoHsuanLai/quire.git", rev = "e19728b7ee9e369d360c646bf5e7ed559bc3d6f9" }  # e19728b7: v0.3.58
+ds-harness = { git = "https://github.com/PoHsuanLai/quire.git", rev = "e19728b7ee9e369d360c646bf5e7ed559bc3d6f9" }  # e19728b7: v0.3.58
+ds-extensions = { git = "https://github.com/PoHsuanLai/quire.git", rev = "e19728b7ee9e369d360c646bf5e7ed559bc3d6f9" }  # e19728b7: v0.3.58
+ds-lint = { git = "https://github.com/PoHsuanLai/quire.git", rev = "e19728b7ee9e369d360c646bf5e7ed559bc3d6f9" }  # e19728b7: v0.3.58
 # The desktop's portable keymap core (actions, chords, Primary per platform); files owns no keymap.
 chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "99eec9ddd03ee345b669fcc7954ed44590724290" }
 # anyview, the desktop's viewer: Quick Look is its light tier, `anyview-peek`'s worker and card, hosted as
 # mailo hosts them (headless otherwise: no media player, no D-Bus). The rev is anyview's main, which names
 # the quire rev above. `anyview-core` is the vocabulary (`FilePath`), `anyview-fs` opens a path as an input.
-anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "30d90f528af197e6c2e2643a5f121dd2c275acf2" }  # 30d90f52 (quire v0.3.57)
-anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "30d90f528af197e6c2e2643a5f121dd2c275acf2" }  # 30d90f52 (quire v0.3.57)
-anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "30d90f528af197e6c2e2643a5f121dd2c275acf2" }  # 30d90f52 (quire v0.3.57)
-anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "30d90f528af197e6c2e2643a5f121dd2c275acf2" }  # 30d90f52 (quire v0.3.57)
-anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "30d90f528af197e6c2e2643a5f121dd2c275acf2", default-features = false }  # 30d90f52 (quire v0.3.57)
+anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3d5c3a453a866791fe691ed8fdc72a57fa62383d" }  # 3d5c3a45 (quire v0.3.58)
+anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3d5c3a453a866791fe691ed8fdc72a57fa62383d" }  # 3d5c3a45 (quire v0.3.58)
+anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3d5c3a453a866791fe691ed8fdc72a57fa62383d" }  # 3d5c3a45 (quire v0.3.58)
+anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3d5c3a453a866791fe691ed8fdc72a57fa62383d" }  # 3d5c3a45 (quire v0.3.58)
+anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "3d5c3a453a866791fe691ed8fdc72a57fa62383d", default-features = false }  # 3d5c3a45 (quire v0.3.58)
 # Copied from quire/docs/workspace-deps.toml at the rev above.
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
 # Dates in the list view, in the person's own time zone.
@@ -46,17 +46,17 @@ notify = "8.2"
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "process"] }
 zbus = { version = "5.19", default-features = false, features = ["tokio"] }
 # files-desktop: the only crate that names docket or porter (scripts/check-boundary.sh), as
-# temor-desktop is for temor. The revs and URLs follow docket: docket 7bb397e5 locks porter
+# temor-desktop is for temor. The revs and URLs follow docket: docket 2df55f2a locks porter
 # ad54ea46 and prov f6cc175c (spelt without .git), the ones pinned here, so one of each is
 # locked. docket-provider's `dbus` feature serves the provider: no router, no cedar. No [patch]
 # is needed.
-docket-provider = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67", features = ["dbus"] }
-docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
-docket-manifest = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
-docket-vocab = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
-docket-wire = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
+docket-provider = { git = "https://github.com/PoHsuanLai/docket.git", rev = "2df55f2a724db9ce0a4b6cd6a74a6e7ca2d5301e", features = ["dbus"] }
+docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "2df55f2a724db9ce0a4b6cd6a74a6e7ca2d5301e" }
+docket-manifest = { git = "https://github.com/PoHsuanLai/docket.git", rev = "2df55f2a724db9ce0a4b6cd6a74a6e7ca2d5301e" }
+docket-vocab = { git = "https://github.com/PoHsuanLai/docket.git", rev = "2df55f2a724db9ce0a4b6cd6a74a6e7ca2d5301e" }
+docket-wire = { git = "https://github.com/PoHsuanLai/docket.git", rev = "2df55f2a724db9ce0a4b6cd6a74a6e7ca2d5301e" }
 # Who may call Files' provider (intentd's unit), and the stand-in a test names for it.
-docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
+docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "2df55f2a724db9ce0a4b6cd6a74a6e7ca2d5301e" }
 prov = { git = "https://github.com/PoHsuanLai/prov", rev = "f6cc175c4c6d815b6faa3d58b7875ca00def836d" }
 porter-core = { git = "https://github.com/PoHsuanLai/porter", rev = "ad54ea46a9d6ef23039371f5f12c1ed8fccb4cb7" }
 porter-ids      = { git = "https://github.com/PoHsuanLai/porter", rev = "ad54ea46a9d6ef23039371f5f12c1ed8fccb4cb7" }
@@ -69,7 +69,7 @@ syncd-fakes = { git = "https://github.com/PoHsuanLai/porter", rev = "ad54ea46a9d
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Desktop entries and the file-type database (`ds_helpers::mime`), UI-free without its default feature.
-ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "8760244b938ff2603af5e5b3f59b55ad0aab9246", default-features = false }  # 8760244b (v0.3.57)
+ds-helpers = { git = "https://github.com/PoHsuanLai/quire.git", rev = "e19728b7ee9e369d360c646bf5e7ed559bc3d6f9", default-features = false }  # 8760244b (v0.3.57)
 tempfile = "3"
 # The binary finds an app's icon file in the person's icon theme (detent's version). MIT.
 freedesktop-icons = "0.4"

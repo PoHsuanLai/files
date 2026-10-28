@@ -58,7 +58,6 @@ pub fn App() -> Element {
         Ds {
             appearance: now.settings.appearance.appearance(),
             system: now.system,
-            typeface: Some(now.settings.appearance.typeface()),
             material: Material::Window,
             extent: RootExtent::Window,
             AppStyle { css: STYLE }
