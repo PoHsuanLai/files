@@ -5,12 +5,12 @@ use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use docket_client::{ContextSource, IntentProvider, SummonTarget};
 use docket_core::{
     AppRefusal, ContextScope, ContextSnapshot, EntityRef, FailText, Follow, Here, Hit, Invocation,
     LabelText, Outcome, Preview, Selection, SuggestAsk, SummonAnswer, SummonOrigin, SummonSerial,
     TextTarget, UndoFault, UndoToken, Undoable, ValidManifest, Value, Visible, WindowPrivacy,
 };
+use docket_provider::{ContextSource, IntentProvider, SummonTarget};
 use files_core::{Location, OpKind};
 use porter_core::{AppName, Count, DataClass, SpaceId};
 use prov::{Actor, Confidentiality, EntityId, Integrity, Label, Labelled, Source};
