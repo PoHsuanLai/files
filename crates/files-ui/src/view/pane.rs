@@ -1,7 +1,7 @@
 //! The folder pane: the toolbar over what the folder holds.
 
 use dioxus::prelude::*;
-use ds::components::chrome::column::model::{ColumnExtent, ColumnGap};
+use ds::components::chrome::column::model::ColumnExtent;
 use ds::components::chrome::column::view::Column;
 use ds::components::overlays::empty_state::EmptyForm;
 use ds::prelude::{EmptyState, Shown};
@@ -101,7 +101,7 @@ pub(super) fn FolderPane(
         },
     };
     rsx! {
-        Column { gap: ColumnGap::None, extent: ColumnExtent::Fill,
+        Column { gap: None, extent: ColumnExtent::Fill,
             FolderBar { browse, sidebar }
             TabStrip { browse }
             {body}

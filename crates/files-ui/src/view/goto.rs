@@ -2,7 +2,6 @@
 //! Cancel puts it away; a folder that is not there is said under the field and the sheet stays.
 
 use dioxus::prelude::*;
-use ds::components::chrome::column::model::ColumnGap;
 use ds::components::controls::button_model::Answers;
 use ds::components::fields::text_field_model::Invalid;
 use ds::motion::detail::stamp::EventStamp;
@@ -41,8 +40,7 @@ pub(super) fn GoToSheet(browse: Browse) -> Element {
                     validity,
                     oninput: move |text: String| browse.send(Input::GoToTyped(text)),
                 }
-                Column { align: ColumnAlign::End, gap: ColumnGap::default(),
-                    Button {
+                Column { align: ColumnAlign::End,                     Button {
                         label: "Go",
                         answers: Answers::Return,
                         onclick: move |_| go.call(()),

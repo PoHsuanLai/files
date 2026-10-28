@@ -1,7 +1,7 @@
 //! The folder's toolbar: Back and Forward, the folder's name over the view switcher.
 
 use dioxus::prelude::*;
-use ds::components::chrome::column::model::{ColumnAlign, ColumnGap};
+use ds::components::chrome::column::model::ColumnAlign;
 use ds::components::chrome::column::view::Column;
 use ds::components::chrome::toolbar::model::{Picked, ToolbarItem};
 use ds::components::chrome::toolbar::view::Toolbar;
@@ -62,7 +62,7 @@ pub(super) fn FolderBar(browse: Browse, sidebar: Signal<Shown>) -> Element {
         Toolbar::<Tool> {
             leading,
             center: rsx! {
-                Column { gap: ColumnGap::None, align: ColumnAlign::Center,
+                Column { gap: None, align: ColumnAlign::Center,
                     Label { text: title, style: LabelStyle::Headline }
                     SegmentedControl::<ViewMode> {
                         label: "View".to_owned(),

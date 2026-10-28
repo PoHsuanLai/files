@@ -2,7 +2,7 @@
 //! two or more tabs (as Finder does).
 
 use dioxus::prelude::*;
-use ds::components::chrome::column::model::{ColumnAlign, ColumnGap};
+use ds::components::chrome::column::model::ColumnAlign;
 use ds::components::chrome::column::view::Column;
 use ds::components::controls::choice::Choice;
 use ds::components::controls::segmented::Tracking;
@@ -28,7 +28,7 @@ pub(super) fn TabStrip(browse: Browse) -> Element {
         (choices, tabs.front_id())
     };
     rsx! {
-        Column { gap: ColumnGap::None, align: ColumnAlign::Center,
+        Column { gap: None, align: ColumnAlign::Center,
             SegmentedControl::<TabId> {
                 label: "Tabs".to_owned(),
                 choices,

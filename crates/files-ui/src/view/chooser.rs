@@ -3,7 +3,6 @@
 
 use dioxus::prelude::*;
 use ds::base::vocab::RowState;
-use ds::components::chrome::column::model::ColumnGap;
 use ds::components::controls::button_model::Answers;
 use ds::prelude::{
     Button, Column, ColumnAlign, Form, Icon, IconSize, List, ListItem, Row, RowLeading, Selection,
@@ -87,8 +86,7 @@ fn ChooserSheet(browse: Browse) -> Element {
                     onselect: Some(select),
                     onpick: Some(pick),
                 }
-                Column { align: ColumnAlign::End, gap: ColumnGap::default(),
-                    Button {
+                Column { align: ColumnAlign::End,                     Button {
                         label: "Cancel",
                         answers: Answers::Escape,
                         onclick: move |_| cancel.call(()),

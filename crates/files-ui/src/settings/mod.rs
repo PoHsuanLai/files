@@ -93,6 +93,7 @@ pub fn schema() -> Schema {
         key,
         // The file holds no tables of another program's.
         foreign: Default::default(),
+        footnotes: Vec::new(),
         // Every key sits on files' own page; none is declared.
         pages: Vec::new(),
     }

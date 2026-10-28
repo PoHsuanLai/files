@@ -7,9 +7,7 @@ use anyview_peek::{AnyPeeked, Card, Part, Parts};
 use dioxus::prelude::*;
 use ds::components::content::label::LabelStyle;
 use ds::components::lists::preview::content::PaneContent;
-use ds::prelude::{
-    Column, ColumnAlign, ColumnGap, Fact, FactList, Icon, IconSource, Label, PreviewPane,
-};
+use ds::prelude::{Column, ColumnAlign, Fact, FactList, Icon, IconSource, Label, PreviewPane};
 use files_core::{Entry, Info, ItemRef};
 use files_model::Preview;
 
@@ -62,8 +60,7 @@ fn one(
     PaneContent::Slot {
         label: name,
         element: rsx! {
-            Column { align: ColumnAlign::Center, gap: ColumnGap::default(),
-                {head}
+            Column { align: ColumnAlign::Center,                 {head}
                 FactList { facts }
             }
         },

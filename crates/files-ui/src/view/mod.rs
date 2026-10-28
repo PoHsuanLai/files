@@ -58,8 +58,6 @@ pub fn App() -> Element {
         Ds {
             appearance: now.settings.appearance.appearance(),
             system: now.system,
-            tint_alpha: Some(now.tint_alpha()),
-            stack: Some(now.material_stack()),
             typeface: Some(now.settings.appearance.typeface()),
             material: Material::Window,
             extent: RootExtent::Window,

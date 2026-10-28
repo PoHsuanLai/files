@@ -2,7 +2,6 @@
 //! Name and extension are read-only for now.
 
 use dioxus::prelude::*;
-use ds::components::chrome::column::model::ColumnGap;
 use ds::components::content::label::LabelStyle;
 use ds::components::controls::button_model::Answers;
 use ds::prelude::{
@@ -33,8 +32,7 @@ fn unread(icons: &Icons, item: &ItemRef) -> FileIconChoice {
 /// The item's icon over its name.
 fn heading(choice: FileIconChoice, name: String) -> Element {
     rsx! {
-        Column { align: ColumnAlign::Center, gap: ColumnGap::default(),
-            FileIcon { choice, size: IconSize::Px(IconPx(64)) }
+        Column { align: ColumnAlign::Center,             FileIcon { choice, size: IconSize::Px(IconPx(64)) }
             Label { text: name, style: LabelStyle::Title }
         }
     }
