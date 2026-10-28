@@ -13,7 +13,7 @@ mod follow;
 
 use files_core::{CloudDrive, CloudItem, ItemRef, Refused, SavedCopies};
 use files_fs::{CloudError, CloudGuard, Clouds, News};
-use porter_dbus::StorageProxy;
+use porter_dbus::sync::StorageProxy;
 use tokio::runtime::Handle;
 use tokio::task::JoinHandle;
 use zbus::Connection;

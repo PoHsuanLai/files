@@ -6,9 +6,10 @@ use files_core::{
     DriveState, FolderPath, ItemRef, OnlineUrl, ProviderName, Refused, Saved, SavedCopies, Share,
     Usage,
 };
-use porter_dbus::{
+use porter_dbus::Details;
+use porter_dbus::sync::{
     DRIVE_KEY_LABEL, DRIVE_KEY_LOCAL, DRIVE_KEY_PATH, DRIVE_KEY_PROVIDER, DRIVE_KEY_STATE,
-    DRIVE_KEY_TOTAL, DRIVE_KEY_USED, DRIVE_KEY_WORDS, Details, ITEM_KEY_FRACTION, ITEM_KEY_KEPT,
+    DRIVE_KEY_TOTAL, DRIVE_KEY_USED, DRIVE_KEY_WORDS, ITEM_KEY_FRACTION, ITEM_KEY_KEPT,
     ITEM_KEY_KIND, ITEM_KEY_OTHER, ITEM_KEY_STATE, ITEM_KEY_URL, ITEM_KEY_WORDS, ItemKind,
     ItemState, Refused as WireRefused, Saved as WireSaved,
 };
@@ -37,15 +38,15 @@ fn flag(details: &Details, key: &str) -> Option<bool> {
 }
 
 fn wire_state(word: Option<String>) -> DriveState {
-    let state = word.and_then(|word| porter_dbus::DriveState::from_word(&word));
+    let state = word.and_then(|word| porter_dbus::sync::DriveState::from_word(&word));
     match state {
-        Some(porter_dbus::DriveState::Starting) => DriveState::Starting,
-        Some(porter_dbus::DriveState::Ready) => DriveState::Ready,
-        Some(porter_dbus::DriveState::Syncing) => DriveState::Syncing,
-        Some(porter_dbus::DriveState::Offline) => DriveState::Offline,
-        Some(porter_dbus::DriveState::Paused) => DriveState::Paused,
-        Some(porter_dbus::DriveState::NeedsSignIn) => DriveState::NeedsSignIn,
-        Some(porter_dbus::DriveState::Error) | Some(_) | None => DriveState::Error,
+        Some(porter_dbus::sync::DriveState::Starting) => DriveState::Starting,
+        Some(porter_dbus::sync::DriveState::Ready) => DriveState::Ready,
+        Some(porter_dbus::sync::DriveState::Syncing) => DriveState::Syncing,
+        Some(porter_dbus::sync::DriveState::Offline) => DriveState::Offline,
+        Some(porter_dbus::sync::DriveState::Paused) => DriveState::Paused,
+        Some(porter_dbus::sync::DriveState::NeedsSignIn) => DriveState::NeedsSignIn,
+        Some(porter_dbus::sync::DriveState::Error) | Some(_) | None => DriveState::Error,
     }
 }
 

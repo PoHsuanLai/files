@@ -2,7 +2,7 @@
 
 use files_core::{CloudNews, DriveId};
 use futures_util::StreamExt;
-use porter_dbus::StorageProxy;
+use porter_dbus::sync::StorageProxy;
 
 use super::decode;
 use files_fs::News;
