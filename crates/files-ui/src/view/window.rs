@@ -10,7 +10,6 @@ use ds::file_drop::hook::use_file_drop;
 use ds::focus::soon::focus_soon;
 use ds::prelude::{ActionTaken, Px, Shown};
 use ds::window::host::use_window_title;
-use files_model::Pane;
 
 use super::busy::Busy;
 use super::chooser::AppChooser;
@@ -107,7 +106,7 @@ pub(super) fn Window() -> Element {
                     div { class: "files-main",
                         FolderPane { browse, sidebar, menu, zone: launch.zone }
                     }
-                    if browse.state.read().pane() == Pane::Shown {
+                    if browse.state.read().pane_shown() {
                         div { class: "files-preview",
                             PreviewColumn { browse, zone: launch.zone }
                         }

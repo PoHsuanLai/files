@@ -31,20 +31,20 @@ mod keep_both;
 mod location;
 mod plan;
 mod progress;
+mod report;
 mod size;
 mod trashed;
 mod view;
 mod volume;
 
-pub use behaviour::{Asking, Behaviour, FoldersOnTop};
+pub use behaviour::Behaviour;
 pub use cloud::{
     AccountLabel, CloudDrive, CloudItem, CloudKind, CloudNews, CloudState, CloudWords, DriveId,
-    DriveState, Keeping, OnlineUrl, ProviderName, Refused, Saved, SavedCopies, Share, UrlError,
-    Usage,
+    DriveState, OnlineUrl, ProviderName, Refused, Saved, SavedCopies, Share, UrlError, Usage,
 };
-pub use conflict::{Answer, Conflict, ConflictKind, Reach, Resolution};
+pub use conflict::{Answer, Conflict, ConflictKind, Resolution};
 pub use ds_helpers::mime::{FileName, MimeError, MimeType, NameError};
-pub use entry::{Entry, EntryKind, LinkTo, Special, Visibility};
+pub use entry::{Entry, EntryKind, LinkTo, Special};
 pub use error::{ItemError, PathError};
 pub use failure::OpFailure;
 pub use info::{Info, ItemCount};
@@ -53,10 +53,11 @@ pub use keep_both::{Split, keep_both};
 pub use location::{FolderPath, Location};
 pub use plan::{OpKind, OpPlan, Summary, Transfer};
 pub use progress::Progress;
+pub use report::{Finish, OpEvent, Outcome};
 pub use size::ByteSize;
 pub use trashed::{TrashId, TrashedItem};
-pub use view::{FolderPrefs, HiddenFiles, Sort, SortKey, SortOrder, ViewMode};
+pub use view::{FolderPrefs, Sort, SortKey, SortOrder, ViewMode};
 pub use volume::{
-    Eject, EjectFailure, Mount, MountFailure, ProgramName, Volume, VolumeId, VolumeKind,
-    VolumeName, VolumeTrouble,
+    EjectFailure, MountFailure, ProgramName, Volume, VolumeId, VolumeKind, VolumeName,
+    VolumeTrouble,
 };

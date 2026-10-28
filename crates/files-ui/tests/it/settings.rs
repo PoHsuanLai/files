@@ -7,10 +7,10 @@ use std::time::Duration;
 
 use ds_settings::ConfigRoot;
 use ds_settings::schema::Schema;
-use files_core::{Asking, Behaviour, FileName, FolderPath, FoldersOnTop, ItemRef};
+use files_core::{Behaviour, FileName, FolderPath, ItemRef};
 use files_trash::{FakeTrash, Trash};
 use files_ui::settings::{self, FilesDoc, NewWindow, Switch};
-use files_ui::{DiskRows, PlaceKind, Preferences, Sidebar};
+use files_ui::{PlaceKind, Preferences, Sidebar};
 use tempfile::TempDir;
 use tokio::runtime::Handle;
 
@@ -37,9 +37,9 @@ fn with_no_file_every_choice_is_finders() {
     assert_eq!(doc, FilesDoc::default());
     assert_eq!(doc.new_window(), NewWindow::Home);
     let finders = Behaviour {
-        folders: FoldersOnTop::Mixed,
-        emptying_trash: Asking::Ask,
-        changing_extension: Asking::Ask,
+        folders_first: false,
+        ask_before_emptying_trash: true,
+        ask_before_changing_extension: true,
     };
     assert_eq!(doc.preferences(), behaving(finders));
     assert_eq!(doc.preferences().sidebar, Sidebar::default());
@@ -48,34 +48,34 @@ fn with_no_file_every_choice_is_finders() {
 
 #[test]
 fn each_choice_changes_what_the_window_does() {
-    let ask = |emptying_trash, changing_extension| Behaviour {
-        emptying_trash,
-        changing_extension,
+    let ask = |ask_before_emptying_trash, ask_before_changing_extension| Behaviour {
+        ask_before_emptying_trash,
+        ask_before_changing_extension,
         ..Behaviour::default()
     };
     let hidden = Sidebar::default()
         .leaving_out(PlaceKind::Home)
         .leaving_out(PlaceKind::Videos)
         .leaving_out(PlaceKind::Computer)
-        .with_disks(DiskRows::Left);
+        .with_disks(false);
     let table = [
         (
             "folders on top",
             "[advanced]\nfolders_on_top = \"on\"\n",
             behaving(Behaviour {
-                folders: FoldersOnTop::First,
+                folders_first: true,
                 ..Behaviour::default()
             }),
         ),
         (
             "no warning about an extension",
             "[advanced]\nwarn_changing_extension = \"off\"\n",
-            behaving(ask(Asking::Ask, Asking::Skip)),
+            behaving(ask(true, false)),
         ),
         (
             "no warning about the Trash",
             "[advanced]\nwarn_emptying_trash = \"off\"\n",
-            behaving(ask(Asking::Skip, Asking::Ask)),
+            behaving(ask(false, true)),
         ),
         (
             "rows left out of the sidebar",
@@ -106,7 +106,7 @@ fn a_bad_value_costs_only_its_own_key() {
     let doc = settings::load(&root);
     assert_eq!(doc.new_window(), NewWindow::Home);
     let preferences = doc.preferences();
-    assert_eq!(preferences.behaviour.folders, FoldersOnTop::First);
+    assert!(preferences.behaviour.folders_first);
     assert_eq!(
         preferences.sidebar,
         Sidebar::default().leaving_out(PlaceKind::Desktop)
@@ -231,7 +231,7 @@ async fn a_change_of_the_file_reaches_the_window() {
         .await
         .unwrap()
         .unwrap();
-    assert_eq!(feed.borrow().behaviour.folders, FoldersOnTop::First);
+    assert!(feed.borrow().behaviour.folders_first);
 }
 
 #[tokio::test]

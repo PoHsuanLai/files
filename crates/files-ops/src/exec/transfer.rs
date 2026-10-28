@@ -5,11 +5,11 @@ use std::os::unix::fs::MetadataExt;
 
 use files_core::{
     Answer, ByteSize, Conflict, ConflictKind, FileName, FolderPath, ItemRef, OpFailure, Progress,
-    Reach, Resolution, Split, Transfer, keep_both,
+    Resolution, Split, Transfer, keep_both,
 };
 
 use super::tree::{bytes_under, remove_tree};
-use super::{Next, Run, Step};
+use super::{Run, Step};
 use crate::error;
 use crate::host::Flow;
 use crate::journal::Inverse;
@@ -55,16 +55,16 @@ impl Run<'_> {
         let count = transfer.sources.len();
         for (index, source) in transfer.sources.iter().enumerate() {
             if self.host.flow() == Flow::Stop {
-                return Ok(Next::Stop);
+                return Ok(Flow::Stop);
             }
             let rest = count - index - 1;
-            if self.one(how, source, destination, folder.dev(), rest)? == Next::Stop {
-                return Ok(Next::Stop);
+            if self.one(how, source, destination, folder.dev(), rest)? == Flow::Stop {
+                return Ok(Flow::Stop);
             }
             self.progress = self.progress.finished_one();
             self.emit();
         }
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     fn one(
@@ -88,7 +88,7 @@ impl Run<'_> {
         }
         let here = source.folder == *destination;
         if here && mode == Mode::Move {
-            return Ok(Next::Go);
+            return Ok(Flow::Go);
         }
         let split = if meta.is_dir() {
             Split::Whole
@@ -97,8 +97,8 @@ impl Run<'_> {
         };
         let name = match self.settle(source, destination, mode, split, here, rest)? {
             Place::At(name) => name,
-            Place::Skip => return Ok(Next::Go),
-            Place::Stop => return Ok(Next::Stop),
+            Place::Skip => return Ok(Flow::Go),
+            Place::Stop => return Ok(Flow::Stop),
         };
         let target = ItemRef::new(destination.clone(), name);
         match mode {
@@ -109,13 +109,13 @@ impl Run<'_> {
 
     fn copy_one(&mut self, from: &std::path::Path, target: &ItemRef) -> Step {
         match self.copy_tree(from, &target.path()) {
-            Ok(Next::Go) => {
+            Ok(Flow::Go) => {
                 self.steps.push(Inverse::Trash(vec![target.clone()]));
-                Ok(Next::Go)
+                Ok(Flow::Go)
             }
-            Ok(Next::Stop) => {
+            Ok(Flow::Stop) => {
                 let _ = remove_tree(&target.path());
-                Ok(Next::Stop)
+                Ok(Flow::Stop)
             }
             Err(failure) => {
                 let _ = remove_tree(&target.path());
@@ -125,15 +125,15 @@ impl Run<'_> {
     }
 
     fn move_one(&mut self, source: &ItemRef, target: &ItemRef) -> Step {
-        if self.move_path(&source.path(), &target.path())? == Next::Stop {
-            return Ok(Next::Stop);
+        if self.move_path(&source.path(), &target.path())? == Flow::Stop {
+            return Ok(Flow::Stop);
         }
         self.steps.push(Inverse::MoveBack {
             now: target.clone(),
             back: source.clone(),
         });
         self.touch_folder(&source.folder);
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     /// The name `source` takes in `destination`: its own when free; when taken, what the person
@@ -171,7 +171,7 @@ impl Run<'_> {
             Some(resolution) => resolution,
             None => self.host.ask(&conflict),
         };
-        if resolution.reach == Reach::Rest {
+        if resolution.to_rest {
             self.sticky = Some(Resolution::for_rest(resolution.answer));
         }
         match resolution.answer {

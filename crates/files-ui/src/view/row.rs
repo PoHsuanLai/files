@@ -11,15 +11,6 @@ use super::menu::{ContextAt, point_of};
 use crate::menu::Over;
 use crate::state::Browse;
 
-/// Whether files can be dropped on a row.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum Takes {
-    /// The row is a folder: a drop lands inside it.
-    Drops,
-    /// The row is not: a drop on it lands in the folder shown.
-    Nothing,
-}
-
 /// The input for files let go from outside the window, on the folder row `onto` or, with `None`,
 /// on the folder shown. quire offers the drop as a copy to the source, so it is a copy.
 pub(super) fn dropped(files: FileDrop, onto: Option<FileName>) -> Input {
@@ -60,16 +51,18 @@ pub(super) fn RowCell(
     browse: Browse,
     menu: Signal<Option<ContextAt>>,
     name: FileName,
-    takes: Takes,
+    drops: bool,
     content: Element,
 ) -> Element {
-    match takes {
-        Takes::Drops => rsx! {
+    // A folder row takes a drop inside it; any other row lands it in the folder shown.
+    if drops {
+        rsx! {
             FolderCell { browse, menu, name, content }
-        },
-        Takes::Nothing => rsx! {
+        }
+    } else {
+        rsx! {
             PlainCell { browse, menu, name, content }
-        },
+        }
     }
 }
 

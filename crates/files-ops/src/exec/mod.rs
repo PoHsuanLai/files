@@ -8,28 +8,19 @@ use std::fs;
 use std::sync::Arc;
 
 use files_core::{
-    FileName, FolderPath, ItemRef, Location, OpFailure, OpPlan, Progress, Resolution, Summary,
-    TrashedItem,
+    FileName, Finish, FolderPath, ItemRef, Location, OpFailure, OpPlan, Progress, Resolution,
+    Summary, TrashedItem,
 };
 use files_trash::Trash;
 
 use self::transfer::How;
 use crate::error;
-use crate::host::Host;
+use crate::host::{Flow, Host};
 use crate::journal::Inverse;
-use crate::ran::{Finish, Ran};
-
-/// Whether a step lets the work go on.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Next {
-    /// On to the next step.
-    Go,
-    /// Stop here.
-    Stop,
-}
+use crate::ran::Ran;
 
 /// The result of one step.
-pub(crate) type Step = Result<Next, OpFailure>;
+pub(crate) type Step = Result<Flow, OpFailure>;
 
 /// Runs plans on the disk, with a [`Trash`] for the trash and for what a replace puts aside.
 ///
@@ -72,8 +63,8 @@ impl Executor {
 
 fn finish_of(step: Step) -> Finish {
     match step {
-        Ok(Next::Go) => Finish::Done,
-        Ok(Next::Stop) => Finish::Stopped,
+        Ok(Flow::Go) => Finish::Done,
+        Ok(Flow::Stop) => Finish::Stopped,
         Err(failure) => Finish::Failed(failure),
     }
 }
@@ -152,7 +143,7 @@ impl<'a> Run<'a> {
         fs::create_dir(made.path()).map_err(error::io)?;
         self.steps.push(Inverse::RemoveEmpty(made));
         self.touch_folder(parent);
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     fn rename(&mut self, item: &ItemRef, to: &FileName) -> Step {
@@ -167,7 +158,7 @@ impl<'a> Run<'a> {
             was: item.name.clone(),
         });
         self.touch_folder(&item.folder);
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     fn trash_items(&mut self, items: &[ItemRef]) -> Step {
@@ -183,7 +174,7 @@ impl<'a> Run<'a> {
         self.touch_trash();
         self.progress.items_done = items.len();
         self.emit();
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     fn put_back(&mut self, items: &[TrashedItem]) -> Step {
@@ -198,18 +189,18 @@ impl<'a> Run<'a> {
         self.steps.push(Inverse::Trash(originals));
         self.progress.items_done = items.len();
         self.emit();
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     fn delete_for_good(&mut self, items: &[TrashedItem]) -> Step {
         self.trash.delete_for_good(items).map_err(error::trash)?;
         self.touch_trash();
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     fn empty_trash(&mut self) -> Step {
         self.trash.empty().map_err(error::trash)?;
         self.touch_trash();
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 }

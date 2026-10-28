@@ -2,7 +2,7 @@
 
 use std::sync::{Mutex, PoisonError};
 
-use files_core::{Eject, EjectFailure, FolderPath, Mount, MountFailure, Volume, VolumeId};
+use files_core::{EjectFailure, FolderPath, MountFailure, Volume, VolumeId};
 
 use super::volumes::{Changed, Volumes, WatchGuard};
 use crate::error::VolumeError;
@@ -98,7 +98,7 @@ impl Volumes for FakeVolumes {
             .iter_mut()
             .find(|volume| volume.id == *id)
             .ok_or(MountFailure::Gone)?;
-        volume.mount = Mount::At(folder.clone());
+        volume.mount = Some(folder.clone());
         Ok(folder)
     }
 
@@ -127,7 +127,7 @@ impl Volumes for FakeVolumes {
 /// Takes the disk out of the list if it can be ejected, else says it is gone.
 fn take_away(state: &mut State, id: &VolumeId) -> Result<(), EjectFailure> {
     match state.volumes.iter().find(|volume| volume.id == *id) {
-        Some(volume) if volume.eject == Eject::Allowed => {}
+        Some(volume) if volume.can_eject => {}
         Some(_) | None => return Err(EjectFailure::Gone),
     }
     state.volumes.retain(|volume| volume.id != *id);

@@ -1,8 +1,7 @@
 //! Disks in the sidebar: the list as told, opening one, ejecting one, and the answers.
 
 use files_core::{
-    Eject, EjectFailure, FolderPath, Location, MountFailure, Volume, VolumeId, VolumeName,
-    VolumeTrouble,
+    EjectFailure, FolderPath, Location, MountFailure, Volume, VolumeId, VolumeName, VolumeTrouble,
 };
 
 use crate::browser::Browser;
@@ -69,9 +68,10 @@ impl Browser {
 
     /// Eject a disk, when the sidebar offers to.
     pub(crate) fn eject(self, id: VolumeId) -> Stepped {
-        match self.volume(&id).map(|volume| volume.eject) {
-            Some(Eject::Allowed) => (self, vec![Effect::EjectVolume(id)]),
-            Some(Eject::Never | _) | None => (self, Vec::new()),
+        if self.volume(&id).is_some_and(|volume| volume.can_eject) {
+            (self, vec![Effect::EjectVolume(id)])
+        } else {
+            (self, Vec::new())
         }
     }
 

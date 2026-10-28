@@ -4,14 +4,14 @@ use std::time::Duration;
 
 use files_core::{
     Behaviour, CloudDrive, CloudItem, EjectFailure, Entry, FileName, FolderPath, FolderPrefs, Info,
-    ItemRef, Location, MountFailure, Refused, Resolution, SavedCopies, Sort, ViewMode, Volume,
-    VolumeId,
+    ItemRef, Location, MountFailure, OpEvent, Refused, Resolution, SavedCopies, Sort, ViewMode,
+    Volume, VolumeId,
 };
 
 use crate::app::AppPick;
 use crate::asked::Bring;
 use crate::error::ListFailure;
-use crate::ops::{DropHow, OpEvent};
+use crate::ops::DropHow;
 use crate::tabs::TabId;
 
 /// The time, as the caller reads a monotonic clock: since an arbitrary origin, never going back.

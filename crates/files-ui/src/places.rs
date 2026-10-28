@@ -6,6 +6,8 @@
 use ds::prelude::FolderKind;
 use files_core::{CloudDrive, DriveId, FolderPath, Location, Volume, VolumeId};
 
+use crate::words;
+
 /// A place the sidebar can list.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PlaceKind {
@@ -43,17 +45,7 @@ impl PlaceKind {
 
     /// The row's name.
     pub fn label(self) -> &'static str {
-        match self {
-            PlaceKind::Home => "Home",
-            PlaceKind::Desktop => "Desktop",
-            PlaceKind::Documents => "Documents",
-            PlaceKind::Downloads => "Downloads",
-            PlaceKind::Pictures => "Pictures",
-            PlaceKind::Music => "Music",
-            PlaceKind::Videos => "Videos",
-            PlaceKind::Computer => "Computer",
-            PlaceKind::Trash => "Trash",
-        }
+        words::place_label(self)
     }
 }
 
@@ -88,11 +80,7 @@ pub enum Heading {
 impl Heading {
     /// The heading's words.
     pub fn label(self) -> &'static str {
-        match self {
-            Heading::Favorites => "Favorites",
-            Heading::Locations => "Locations",
-            Heading::Cloud => "Cloud",
-        }
+        words::heading_label(self)
     }
 }
 
@@ -132,21 +120,20 @@ pub(crate) fn cloud_key(clouds: &[CloudDrive], location: &Location) -> Option<Pl
         .map(|drive| PlaceKey::Cloud(drive.id.clone()))
 }
 
-/// Whether the sidebar lists the attached disks under Locations.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum DiskRows {
-    /// Each attached disk has a row.
-    #[default]
-    Listed,
-    /// No disk has a row; the person opens them some other way.
-    Left,
-}
-
 /// Which rows the person chose to leave out of the sidebar. The Trash cannot be left out.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Sidebar {
     left_out: Vec<PlaceKind>,
-    disks: DiskRows,
+    disks: bool,
+}
+
+impl Default for Sidebar {
+    fn default() -> Sidebar {
+        Sidebar {
+            left_out: Vec::new(),
+            disks: true,
+        }
+    }
 }
 
 impl Sidebar {
@@ -158,8 +145,8 @@ impl Sidebar {
         self
     }
 
-    /// The same sidebar with its disks `disks`.
-    pub fn with_disks(self, disks: DiskRows) -> Sidebar {
+    /// The same sidebar listing the attached disks (a row each) or not.
+    pub fn with_disks(self, disks: bool) -> Sidebar {
         Sidebar { disks, ..self }
     }
 
@@ -169,7 +156,7 @@ impl Sidebar {
     }
 
     /// Whether the attached disks are listed.
-    pub fn disks(&self) -> DiskRows {
+    pub fn disks(&self) -> bool {
         self.disks
     }
 }

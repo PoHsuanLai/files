@@ -7,7 +7,7 @@ use std::path::Path;
 
 use files_core::OpFailure;
 
-use super::{Next, Run, Step};
+use super::{Run, Step};
 use crate::error;
 use crate::host::Flow;
 
@@ -25,25 +25,25 @@ impl Run<'_> {
         if kind.is_symlink() {
             let target = fs::read_link(from).map_err(error::io)?;
             symlink(target, to).map_err(error::io)?;
-            return Ok(Next::Go);
+            return Ok(Flow::Go);
         }
         if kind.is_dir() {
             fs::create_dir(to).map_err(error::io)?;
             for child in fs::read_dir(from).map_err(error::io)? {
                 let child = child.map_err(error::io)?;
                 let step = self.copy_tree(&child.path(), &to.join(child.file_name()))?;
-                if step == Next::Stop {
-                    return Ok(Next::Stop);
+                if step == Flow::Stop {
+                    return Ok(Flow::Stop);
                 }
             }
             // After the contents, so a read-only folder can still be filled.
             let _ = fs::set_permissions(to, meta.permissions());
-            return Ok(Next::Go);
+            return Ok(Flow::Go);
         }
         if kind.is_file() {
             return self.copy_file(from, to, &meta);
         }
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     fn copy_file(&mut self, from: &Path, to: &Path, meta: &fs::Metadata) -> Step {
@@ -56,7 +56,7 @@ impl Run<'_> {
         let mut buffer = vec![0u8; CHUNK];
         loop {
             if self.host.flow() == Flow::Stop {
-                return Ok(Next::Stop);
+                return Ok(Flow::Stop);
             }
             let read = match input.read(&mut buffer) {
                 Ok(0) => break,
@@ -73,14 +73,14 @@ impl Run<'_> {
         if let Ok(modified) = meta.modified() {
             let _ = output.set_modified(modified);
         }
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     /// Moves `from` to `to`, which must not exist: a rename, or when the two are on different
     /// disks a copy followed by removing the original.
     pub(super) fn move_path(&mut self, from: &Path, to: &Path) -> Step {
         match fs::rename(from, to) {
-            Ok(()) => Ok(Next::Go),
+            Ok(()) => Ok(Flow::Go),
             Err(err) if err.kind() == io::ErrorKind::CrossesDevices => self.move_across(from, to),
             Err(err) => Err(error::io(err)),
         }
@@ -88,10 +88,10 @@ impl Run<'_> {
 
     fn move_across(&mut self, from: &Path, to: &Path) -> Step {
         match self.copy_tree(from, to) {
-            Ok(Next::Go) => remove_tree(from).map(|()| Next::Go),
-            Ok(Next::Stop) => {
+            Ok(Flow::Go) => remove_tree(from).map(|()| Flow::Go),
+            Ok(Flow::Stop) => {
                 let _ = remove_tree(to);
-                Ok(Next::Stop)
+                Ok(Flow::Stop)
             }
             Err(failure) => {
                 let _ = remove_tree(to);

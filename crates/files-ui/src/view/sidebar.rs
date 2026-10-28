@@ -9,13 +9,11 @@ use ds::components::chrome::sidebar_model::SidebarSection;
 use ds::prelude::{
     Accessory, Icon, ListItem, Row, RowAction, RowLeading, SectionHeader, Selection,
 };
-use files_core::{CloudDrive, Eject, Location, Volume, VolumeId, VolumeKind};
+use files_core::{CloudDrive, Location, Volume, VolumeId, VolumeKind};
 use files_model::Input;
 
 use crate::cloud::drive_mark;
-use crate::places::{
-    DiskRows, Heading, PlaceKey, PlaceKind, Places, cloud_key, groups, volume_key,
-};
+use crate::places::{Heading, PlaceKey, PlaceKind, Places, cloud_key, groups, volume_key};
 use crate::state::Browse;
 
 /// The glyph of a place. quire has no Home, Desktop or Videos glyph yet, so the nearest stand in.
@@ -95,7 +93,7 @@ pub(super) fn sidebar_rows(
             if group.heading == Heading::Locations {
                 // The disks go before the last row, the Trash.
                 let at = rows.len().saturating_sub(1);
-                let listed = places.sidebar().disks() == DiskRows::Listed;
+                let listed = places.sidebar().disks();
                 let disks = volumes.iter().filter(|_| listed).map(|volume| {
                     let key = PlaceKey::Volume(volume.id.clone());
                     let selection = selection_of(key.clone());
@@ -194,21 +192,20 @@ fn VolumeRow(volume: Volume, selection: Selection, hears: Hears) -> Element {
     let title = volume.name.as_str().to_owned();
     let key = PlaceKey::Volume(volume.id.clone());
     let onclick = EventHandler::new(move |_: Press| hears.onselect.call(key.clone()));
-    match volume.eject {
-        Eject::Allowed => {
-            let id = volume.id.clone();
-            let action = RowAction::new(
-                Icon::ChevronUp,
-                format!("Eject {}", volume.name),
-                EventHandler::new(move |_| hears.oneject.call(id.clone())),
-            );
-            rsx! {
-                Row { leading, title, state, action, onclick }
-            }
+    if volume.can_eject {
+        let id = volume.id.clone();
+        let action = RowAction::new(
+            Icon::ChevronUp,
+            format!("Eject {}", volume.name),
+            EventHandler::new(move |_| hears.oneject.call(id.clone())),
+        );
+        rsx! {
+            Row { leading, title, state, action, onclick }
         }
-        Eject::Never | _ => rsx! {
+    } else {
+        rsx! {
             Row { leading, title, state, onclick }
-        },
+        }
     }
 }
 

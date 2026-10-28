@@ -6,7 +6,7 @@ use std::sync::Arc;
 use ds_helpers::mime::{Associations, DesktopId, MimeApps, MimeDb, MimeLayer};
 use files_desktop::{
     ActivateCall, ActivationToken, AppChoice, AppEntry, Catalog, DesktopLauncher, EntryError,
-    FakeActivate, FakeIcons, FakeSpawn, LaunchError, Launcher, Standing, installed_check,
+    FakeActivate, FakeIcons, FakeSpawn, LaunchError, Launcher, installed_check,
 };
 
 const GLOBS: &str = "50:text/plain:*.txt\n50:image/png:*.png\n50:application/pdf:*.pdf\n\
@@ -271,16 +271,16 @@ fn entries_that_are_not_apps_are_refused() {
     }
 }
 
-fn offers(rig: &Rig, paths: &[&str]) -> Vec<(String, Standing)> {
+fn offers(rig: &Rig, paths: &[&str]) -> Vec<(String, bool)> {
     rig.launcher
         .apps_for(&targets(paths))
         .into_iter()
-        .map(|offer| (offer.name, offer.standing))
+        .map(|offer| (offer.name, offer.is_default))
         .collect()
 }
 
 /// A label, the files, and the apps offered for them in order.
-type OfferCase<'a> = (&'a str, Vec<&'a str>, Vec<(&'a str, Standing)>);
+type OfferCase<'a> = (&'a str, Vec<&'a str>, Vec<(&'a str, bool)>);
 
 #[test]
 fn the_apps_offered_for_files_put_the_default_first() {
@@ -290,30 +290,26 @@ fn the_apps_offered_for_files_put_the_default_first() {
         (
             "one type, two apps",
             vec!["/p/a.txt"],
-            vec![("Editor", Standing::Default), ("Viewer", Standing::Other)],
+            vec![("Editor", true), ("Viewer", false)],
         ),
-        (
-            "one default only",
-            vec!["/p/c.png"],
-            vec![("Viewer", Standing::Default)],
-        ),
+        ("one default only", vec!["/p/c.png"], vec![("Viewer", true)]),
         (
             "the apps both types share",
             vec!["/p/c.png", "/p/d.pdf"],
-            vec![("Viewer", Standing::Default)],
+            vec![("Viewer", true)],
         ),
         (
             "the first type leads",
             vec!["/p/a.txt", "/p/c.png"],
-            vec![("Viewer", Standing::Other)],
+            vec![("Viewer", false)],
         ),
         ("no type is known", vec!["/p/noext"], vec![]),
         ("no files", vec![], vec![]),
     ];
     for (label, files, want) in cases {
-        let want: Vec<(String, Standing)> = want
+        let want: Vec<(String, bool)> = want
             .into_iter()
-            .map(|(name, standing)| (name.to_owned(), standing))
+            .map(|(name, is_default)| (name.to_owned(), is_default))
             .collect();
         assert_eq!(offers(&rig, &files), want, "{label}");
     }
@@ -343,7 +339,7 @@ fn a_folder_is_offered_the_apps_for_folders() {
     );
     let shown = rig.launcher.apps_for(&[dir.path().to_path_buf()]);
     assert_eq!(shown.len(), 1);
-    assert_eq!(shown[0].standing, Standing::Default);
+    assert!(shown[0].is_default);
 }
 
 #[test]

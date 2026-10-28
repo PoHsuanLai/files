@@ -54,7 +54,7 @@ use files_model::{Effect, Input, Now, OpenTarget, TabId, Tabbed};
 use files_ops::{Job, Worker};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
-pub use apps::{AppChoiceView, AppRole, Apps, NoApps};
+pub use apps::{AppChoiceView, Apps, NoApps};
 #[cfg(feature = "testing")]
 pub use fake_volumes::{FakeVolumes, VolumeCall};
 pub use file_icons::IconSources;
@@ -201,7 +201,7 @@ impl Edge {
             Effect::CloudDownload(items) => self.clouds.download(tab, items),
             Effect::CloudRemove(items) => self.clouds.remove(tab, items),
             Effect::CloudSaveCopy(items) => self.clouds.copy(tab, items),
-            Effect::CloudKeep(items, keeping) => self.clouds.keep(tab, items, keeping),
+            Effect::CloudKeep(items, keep) => self.clouds.keep(tab, items, keep),
             Effect::OpenUrl(url) => {
                 if let Err(failure) = self.seams.opener.open_url(&url) {
                     self.say(Heard::Told(failure.to_string()));

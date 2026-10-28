@@ -1,6 +1,6 @@
 //! What Get Info, the status line and the drive's empty state say about cloud drives. Pure.
 
-use files_core::{CloudDrive, CloudItem, CloudKind, CloudState, DriveState, Keeping, Usage};
+use files_core::{CloudDrive, CloudItem, CloudKind, CloudState, DriveState, Usage};
 
 use super::{InfoRow, size_words};
 
@@ -93,7 +93,7 @@ pub fn drive_rows(drive: &CloudDrive) -> Vec<InfoRow> {
 /// The rows Get Info adds for an item of a drive.
 pub fn item_rows(item: &CloudItem) -> Vec<InfoRow> {
     let mut rows = vec![InfoRow::new("Status", item_state_words(item))];
-    if item.keeping == Keeping::Kept && item.kind != CloudKind::Online {
+    if item.kept && item.kind != CloudKind::Online {
         rows.push(InfoRow::new("Keep Downloaded", "Yes".to_owned()));
     }
     rows

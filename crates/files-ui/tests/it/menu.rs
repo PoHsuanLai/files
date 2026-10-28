@@ -6,11 +6,9 @@ use std::time::{Duration, SystemTime};
 use files_core::{
     ByteSize, Entry, EntryKind, FileName, FolderPath, ItemRef, Location, TrashId, TrashedItem,
 };
-use files_model::{AppPick, Availability, Browser, Input, Modifier, Now};
+use files_model::{AppPick, Browser, Input, Modifier, Now};
+use files_ui::AppChoiceView;
 use files_ui::menu::{AppLine, Command, OTHER_APP, Over, Pick, app_lines, app_names, groups_for};
-use files_ui::{AppChoiceView, AppRole};
-
-use Availability::{Available, Unavailable};
 
 fn name(text: &str) -> FileName {
     FileName::new(text).unwrap()
@@ -48,52 +46,49 @@ fn click(browser: Browser, text: &str) -> Browser {
     step(browser, Input::Click(name(text), Modifier::None))
 }
 
-type Group = Vec<(Command, Availability)>;
+type Group = Vec<(Command, bool)>;
 
 #[test]
 fn a_row_in_a_folder_offers_what_the_selection_allows_in_finders_order() {
     let one = click(folder_browser(), "a.txt");
     let want: Vec<Group> = vec![
-        vec![(Command::Open, Available), (Command::OpenWith, Available)],
-        vec![(Command::MoveToTrash, Available)],
+        vec![(Command::Open, true), (Command::OpenWith, true)],
+        vec![(Command::MoveToTrash, true)],
         vec![
-            (Command::GetInfo, Available),
-            (Command::Rename, Available),
-            (Command::QuickLook, Available),
+            (Command::GetInfo, true),
+            (Command::Rename, true),
+            (Command::QuickLook, true),
         ],
-        vec![
-            (Command::Copy, Available),
-            (Command::CopyAsPathname, Available),
-        ],
-        vec![(Command::NewFolder, Available)],
+        vec![(Command::Copy, true), (Command::CopyAsPathname, true)],
+        vec![(Command::NewFolder, true)],
     ];
     assert_eq!(groups_for(&one, Over::Row), want);
 
     // Two selected: nothing to rename.
     let two = step(one, Input::Click(name("b.txt"), Modifier::Toggle));
     let rename = groups_for(&two, Over::Row)[2][1];
-    assert_eq!(rename, (Command::Rename, Unavailable));
+    assert_eq!(rename, (Command::Rename, false));
 }
 
 #[test]
 fn the_background_of_a_folder_makes_folders_shows_its_info_pastes_and_toggles_the_preview() {
     let copied = step(click(folder_browser(), "a.txt"), Input::Copy);
     let want: Vec<Group> = vec![
-        vec![(Command::NewFolder, Available)],
-        vec![(Command::GetInfoFolder, Available)],
-        vec![(Command::Paste, Available)],
-        vec![(Command::ShowPreview, Available)],
+        vec![(Command::NewFolder, true)],
+        vec![(Command::GetInfoFolder, true)],
+        vec![(Command::Paste, true)],
+        vec![(Command::ShowPreview, true)],
     ];
     assert_eq!(groups_for(&copied, Over::Background), want);
     // With the pane up the same line puts it away.
     let up = step(copied, Input::TogglePreview);
     assert_eq!(
         groups_for(&up, Over::Background)[3],
-        vec![(Command::HidePreview, Available)]
+        vec![(Command::HidePreview, true)]
     );
     assert_eq!(
         groups_for(&folder_browser(), Over::Background)[2],
-        vec![(Command::Paste, Unavailable)]
+        vec![(Command::Paste, false)]
     );
 }
 
@@ -101,11 +96,11 @@ fn the_background_of_a_folder_makes_folders_shows_its_info_pastes_and_toggles_th
 fn the_trash_offers_put_back_and_erasing() {
     let selected = click(trash_browser(), "a.txt");
     let row: Vec<Group> = vec![vec![
-        (Command::PutBack, Available),
-        (Command::DeleteImmediately, Available),
+        (Command::PutBack, true),
+        (Command::DeleteImmediately, true),
     ]];
     assert_eq!(groups_for(&selected, Over::Row), row);
-    let background: Vec<Group> = vec![vec![(Command::EmptyTrash, Available)]];
+    let background: Vec<Group> = vec![vec![(Command::EmptyTrash, true)]];
     assert_eq!(groups_for(&selected, Over::Background), background);
 }
 
@@ -154,11 +149,11 @@ fn each_command_asks_the_browser_for_its_input_and_says_its_words() {
     assert_eq!(Command::OpenWith.title(), "Open With");
 }
 
-fn app(id: &str, name: &str, role: AppRole) -> AppChoiceView {
+fn app(id: &str, name: &str, is_default: bool) -> AppChoiceView {
     AppChoiceView {
         pick: AppPick::new(id),
         name: name.to_owned(),
-        role,
+        is_default,
         icon: None,
     }
 }
@@ -174,10 +169,10 @@ fn line(id: &str, title: &str) -> AppLine {
 #[test]
 fn open_with_lists_the_default_first_and_marks_it_then_the_rest_by_name() {
     let apps = vec![
-        app("zed", "Zed", AppRole::Other),
-        app("viewer", "Viewer", AppRole::Default),
-        app("editor", "editor", AppRole::Other),
-        app("calc", "Calculator", AppRole::Other),
+        app("zed", "Zed", false),
+        app("viewer", "Viewer", true),
+        app("editor", "editor", false),
+        app("calc", "Calculator", false),
     ];
     assert_eq!(
         app_lines(apps),
@@ -189,10 +184,7 @@ fn open_with_lists_the_default_first_and_marks_it_then_the_rest_by_name() {
         ]
     );
     // With no default, the apps are just sorted.
-    let plain = vec![
-        app("b", "Bee", AppRole::Other),
-        app("a", "Ant", AppRole::Other),
-    ];
+    let plain = vec![app("b", "Bee", false), app("a", "Ant", false)];
     assert_eq!(app_lines(plain), vec![line("a", "Ant"), line("b", "Bee")]);
     assert!(app_lines(Vec::new()).is_empty());
 }
@@ -203,12 +195,7 @@ fn an_apps_icon_goes_with_its_line_in_the_menu_and_the_sheet() {
         view.icon = Some(PathBuf::from("/icons/v.png"));
         view
     };
-    let apps = || {
-        vec![
-            with_icon(app("v", "Viewer", AppRole::Default)),
-            app("z", "Zed", AppRole::Other),
-        ]
-    };
+    let apps = || vec![with_icon(app("v", "Viewer", true)), app("z", "Zed", false)];
     let icons = |lines: Vec<AppLine>| -> Vec<(String, Option<PathBuf>)> {
         lines.into_iter().map(|l| (l.title, l.icon)).collect()
     };
@@ -229,10 +216,7 @@ fn an_apps_icon_goes_with_its_line_in_the_menu_and_the_sheet() {
 
 #[test]
 fn the_other_sheet_lists_every_app_by_name_with_no_default_mark() {
-    let apps = vec![
-        app("z", "Zed", AppRole::Other),
-        app("v", "Viewer", AppRole::Default),
-    ];
+    let apps = vec![app("z", "Zed", false), app("v", "Viewer", true)];
     assert_eq!(app_names(apps), vec![line("v", "Viewer"), line("z", "Zed")]);
 }
 
@@ -271,16 +255,16 @@ fn open_in_new_tab_follows_open_on_a_lone_folder_and_is_left_out_otherwise() {
     assert_eq!(
         first,
         vec![
-            (Command::Open, Available),
-            (Command::OpenInNewTab, Available),
-            (Command::OpenWith, Available),
+            (Command::Open, true),
+            (Command::OpenInNewTab, true),
+            (Command::OpenWith, true),
         ]
     );
     let file = click(with_folder(), "a.txt");
     let first = groups_for(&file, Over::Row)[0].clone();
     assert_eq!(
         first,
-        vec![(Command::Open, Available), (Command::OpenWith, Available)]
+        vec![(Command::Open, true), (Command::OpenWith, true)]
     );
     // Two folders-or-more selected: not a lone folder.
     let two = step(folder, Input::Click(name("a.txt"), Modifier::Toggle));

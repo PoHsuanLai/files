@@ -1,20 +1,8 @@
 //! What a piece of work did.
 
-use files_core::{Location, OpFailure, Summary};
+use files_core::{Finish, Location, Summary};
 
 use crate::journal::Inverse;
-
-/// How a piece of work ended.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum Finish {
-    /// All of it was done.
-    Done,
-    /// It was stopped (cancelled, or answered Stop); what was done stays done.
-    Stopped,
-    /// It failed at some point; what was done before stays done.
-    Failed(OpFailure),
-}
 
 /// A piece of work that has ended: what it was, how it ended, where it changed things, and how
 /// to undo what it did.

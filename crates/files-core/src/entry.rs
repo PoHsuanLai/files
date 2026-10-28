@@ -67,11 +67,8 @@ impl Entry {
     }
 
     /// Whether a person sees it by default: a name that starts with a dot is hidden.
-    pub fn visibility(&self) -> Visibility {
-        match self.name.as_os_str().as_bytes() {
-            [b'.', ..] => Visibility::Hidden,
-            _ => Visibility::Shown,
-        }
+    pub fn is_hidden(&self) -> bool {
+        matches!(self.name.as_os_str().as_bytes(), [b'.', ..])
     }
 }
 
@@ -111,13 +108,4 @@ pub enum Special {
     Socket,
     /// A character or block device.
     Device,
-}
-
-/// Whether an entry is shown when hidden files are not.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Visibility {
-    /// Shown by default.
-    Shown,
-    /// Shown only while hidden files are (its name starts with a dot).
-    Hidden,
 }

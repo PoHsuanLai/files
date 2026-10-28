@@ -1,14 +1,14 @@
 //! Changing files: new folder, Trash, copy and paste, drops, undo, and the workers' reports.
 
 use files_core::{
-    Answer, Asking, FileName, ItemRef, Location, OpKind, OpPlan, Resolution, Split, Transfer,
-    TrashedItem, keep_both,
+    Answer, FileName, Finish, ItemRef, Location, OpEvent, OpKind, OpPlan, Resolution, Split,
+    Transfer, TrashedItem, keep_both,
 };
 
 use crate::browser::Browser;
 use crate::effect::Effect;
 use crate::open::{Opens, opens};
-use crate::ops::{DropHow, End, OpEvent, Question, Work};
+use crate::ops::{DropHow, Question, Work};
 use crate::rename::Rename;
 use crate::selection::Selection;
 
@@ -95,9 +95,10 @@ impl Browser {
         if self.location != Location::Trash || self.rows.is_empty() {
             return (self, Vec::new());
         }
-        match self.behaviour.emptying_trash {
-            Asking::Ask => self.asking(Question::EmptyTrash),
-            Asking::Skip => self.run(OpPlan::EmptyTrash),
+        if self.behaviour.ask_before_emptying_trash {
+            self.asking(Question::EmptyTrash)
+        } else {
+            self.run(OpPlan::EmptyTrash)
         }
     }
 
@@ -315,12 +316,12 @@ impl Browser {
                 Vec::new(),
             ),
             OpEvent::Finished(outcome) => {
-                let effects = match outcome.end {
-                    End::Failed(failure) => vec![Effect::Tell(failure)],
-                    End::Done if outcome.summary.kind == OpKind::Trash => {
+                let effects = match outcome.finish {
+                    Finish::Failed(failure) => vec![Effect::Tell(failure)],
+                    Finish::Done if outcome.summary.kind == OpKind::Trash => {
                         vec![Effect::Announce(outcome.summary.clone())]
                     }
-                    End::Done | End::Stopped => Vec::new(),
+                    Finish::Done | Finish::Stopped => Vec::new(),
                 };
                 let question = match self.question {
                     Question::Conflict(_) => Question::None,
@@ -330,9 +331,9 @@ impl Browser {
                     | Question::ForceEject(_)
                     | Question::ChangeExtension(_)) => kept.clone(),
                 };
-                let starting = match outcome.end {
-                    End::Done if outcome.summary.kind == OpKind::NewFolder => self.starting,
-                    End::Done | End::Stopped | End::Failed(_) => None,
+                let starting = match outcome.finish {
+                    Finish::Done if outcome.summary.kind == OpKind::NewFolder => self.starting,
+                    Finish::Done | Finish::Stopped | Finish::Failed(_) => None,
                 };
                 let browser = Browser {
                     work: Work::Idle,

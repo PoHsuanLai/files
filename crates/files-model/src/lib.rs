@@ -66,13 +66,13 @@ pub use cloud::{
 pub use effect::{Effect, OpenTarget};
 pub use error::{GoToProblem, ListFailure, RenameProblem};
 pub use goto::{GoTo, expand};
-pub use history::{Availability, History};
+pub use history::History;
 pub use input::{Change, Direction, Input, Modifier, Now};
 pub use listing::Listing;
-pub use look::{InfoView, Looking};
+pub use look::InfoView;
 pub use open::{Opens, opens};
-pub use ops::{BusyDisk, DropHow, End, ExtensionChange, OpEvent, Outcome, Question, Work};
-pub use preview::{Pane, Preview};
+pub use ops::{BusyDisk, DropHow, ExtensionChange, Question, Work};
+pub use preview::Preview;
 pub use rename::Rename;
 pub use selection::Selection;
 pub use sort::compare;

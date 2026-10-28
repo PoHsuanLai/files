@@ -4,9 +4,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use files_desktop::{AppOffer, DesktopLauncher, Standing};
+use files_desktop::{AppOffer, DesktopLauncher};
 use files_model::AppPick;
-use files_ui::{AppChoiceView, AppRole, Apps};
+use files_ui::{AppChoiceView, Apps};
 
 /// Answers Open With from the launcher's entries and associations.
 pub struct InstalledApps {
@@ -31,10 +31,7 @@ fn view_of(offer: AppOffer) -> AppChoiceView {
     AppChoiceView {
         pick: AppPick::new(offer.id.as_str()),
         name: offer.name,
-        role: match offer.standing {
-            Standing::Default => AppRole::Default,
-            Standing::Other => AppRole::Other,
-        },
+        is_default: offer.is_default,
         icon: offer.icon,
     }
 }

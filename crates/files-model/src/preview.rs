@@ -14,26 +14,6 @@ use crate::error::ListFailure;
 
 type Stepped = (Browser, Vec<Effect>);
 
-/// Whether the preview pane is up.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Pane {
-    /// Not up.
-    #[default]
-    Hidden,
-    /// Up, beside the folder.
-    Shown,
-}
-
-impl Pane {
-    /// The other state: what Show Preview or Hide Preview asks for.
-    pub fn flipped(self) -> Pane {
-        match self {
-            Pane::Hidden => Pane::Shown,
-            Pane::Shown => Pane::Hidden,
-        }
-    }
-}
-
 /// What the pane is about, from the selection.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
@@ -64,13 +44,13 @@ fn weight(entry: &Entry) -> u64 {
 
 impl Browser {
     /// Whether the preview pane is up.
-    pub fn pane(&self) -> Pane {
-        self.pane
+    pub fn pane_shown(&self) -> bool {
+        self.show_pane
     }
 
     /// What the pane is about now.
     pub fn preview(&self) -> Preview {
-        if self.pane == Pane::Hidden {
+        if !self.show_pane {
             return Preview::Hidden;
         }
         let rows = self.selected_rows();
@@ -96,7 +76,7 @@ impl Browser {
     /// The row of the item the pane shows (see [`Browser::previewed_item`]).
     pub fn previewed_entry(&self) -> Option<&Entry> {
         match self.selected_rows().as_slice() {
-            [(row, _)] if self.pane == Pane::Shown => Some(*row),
+            [(row, _)] if self.show_pane => Some(*row),
             _ => None,
         }
     }
@@ -108,8 +88,8 @@ impl Browser {
 
     /// Show the pane, or put it away (⇧⌘P).
     pub(crate) fn toggle_pane(self) -> Stepped {
-        let pane = self.pane.flipped();
-        (Browser { pane, ..self }, Vec::new())
+        let show_pane = !self.show_pane;
+        (Browser { show_pane, ..self }, Vec::new())
     }
 
     /// The answer to [`Effect::ReadDetails`]. One for an item the pane is not about is ignored,

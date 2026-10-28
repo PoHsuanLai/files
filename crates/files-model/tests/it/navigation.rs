@@ -1,6 +1,6 @@
 //! Going places: Go, Back, Forward, Enclosing and the effects each asks for.
 
-use files_model::{Availability, Browser, Effect, Input};
+use files_model::{Browser, Effect, Input};
 
 use crate::common::*;
 
@@ -16,7 +16,7 @@ fn a_new_browser_asks_to_list_watch_and_load_prefs() {
         ]
     );
     assert_eq!(browser.location(), &home());
-    assert_eq!(browser.can_go_back(), Availability::Unavailable);
+    assert!(!browser.can_go_back());
 }
 
 #[test]
@@ -34,8 +34,8 @@ fn going_somewhere_unwatches_the_old_place_and_loads_the_new() {
         ]
     );
     assert_eq!(browser.location(), &docs);
-    assert_eq!(browser.can_go_back(), Availability::Available);
-    assert_eq!(browser.can_go_forward(), Availability::Unavailable);
+    assert!(browser.can_go_back());
+    assert!(!browser.can_go_forward());
 }
 
 #[test]
@@ -65,7 +65,7 @@ fn going_somewhere_new_forgets_what_lay_ahead() {
         loaded(vec![]),
         vec![Input::Go(dir("/a")), Input::Back, Input::Go(dir("/b"))],
     );
-    assert_eq!(browser.can_go_forward(), Availability::Unavailable);
+    assert!(!browser.can_go_forward());
     let (browser, effects) = browser.step(Input::Forward, at(0));
     assert_eq!(path_of(browser.location()), "/b");
     assert!(effects.is_empty());
@@ -77,19 +77,19 @@ fn back_and_enclosing_stop_at_their_ends() {
     let (after, effects) = browser.clone().step(Input::Back, at(0));
     assert_eq!((after, effects), (browser, vec![]), "nowhere behind");
     let (browser, _) = Browser::new(dir("/"));
-    assert_eq!(browser.can_go_enclosing(), Availability::Unavailable);
+    assert!(!browser.can_go_enclosing());
     let (after, effects) = browser.clone().step(Input::Enclosing, at(0));
     assert_eq!(after, browser);
     assert!(effects.is_empty());
     let (browser, _) = Browser::new(home());
-    assert_eq!(browser.can_go_enclosing(), Availability::Available);
+    assert!(browser.can_go_enclosing());
 }
 
 #[test]
 fn going_to_the_same_place_reads_it_again_without_a_history_entry() {
     let (browser, effects) = loaded(vec![file("a")]).step(Input::Go(home()), at(0));
     assert_eq!(effects, vec![Effect::List(home())]);
-    assert_eq!(browser.can_go_back(), Availability::Unavailable);
+    assert!(!browser.can_go_back());
     assert_eq!(shown(&browser), vec!["a"]);
 }
 
@@ -107,5 +107,5 @@ fn arriving_forgets_the_old_listing_and_selection_but_keeps_the_hidden_choice() 
     assert_eq!(browser.listing(), &files_model::Listing::Loading);
     assert!(browser.rows().is_empty());
     assert!(browser.selection().is_empty());
-    assert_eq!(browser.hidden(), files_core::HiddenFiles::Shown);
+    assert!(browser.show_hidden());
 }

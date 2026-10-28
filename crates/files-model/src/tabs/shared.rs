@@ -4,7 +4,6 @@ use files_core::{ItemRef, Location, Summary};
 
 use super::{Effect, Tab, Tabbed, Tabs};
 use crate::browser::Browser;
-use crate::preview::Pane;
 
 /// What is the window's, not one tab's: what was copied, what Undo would take back and whether
 /// the preview pane is up.
@@ -12,7 +11,7 @@ use crate::preview::Pane;
 pub(super) struct Shared {
     clipboard: Vec<ItemRef>,
     undo: Option<files_core::Summary>,
-    pane: Pane,
+    show_pane: bool,
 }
 
 impl Shared {
@@ -20,14 +19,14 @@ impl Shared {
         Shared {
             clipboard: browser.clipboard.clone(),
             undo: browser.undo.clone(),
-            pane: browser.pane,
+            show_pane: browser.show_pane,
         }
     }
 
     pub(super) fn put(&self, browser: &mut Browser) {
         browser.clipboard = self.clipboard.clone();
         browser.undo = self.undo.clone();
-        browser.pane = self.pane;
+        browser.show_pane = self.show_pane;
     }
 }
 

@@ -20,89 +20,66 @@ use crate::state::Browse;
 /// files' name to chordkit: the first part of every action id.
 const APP: &str = "files";
 
-/// The actions files declares.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Own {
-    /// Back (Command+[).
-    Back,
-    /// Forward (Command+]).
-    Forward,
-    /// The folder that holds this one (Command+Up).
-    Enclosing,
-    /// Open the selection (Command+Down).
-    Open,
-    /// Show or leave out hidden files (Command+Shift+.).
-    ShowHidden,
-    /// Rename the selected item in place (Return).
-    Rename,
-    /// Move what was copied here instead of copying it (Command+Option+V).
-    PasteMove,
-    /// Show the properties of the selection (Command+I).
-    GetInfo,
-    /// Go to a folder typed by path (Command+Shift+G).
-    GoToFolder,
-    /// Put the paths of the selection on the clipboard (Command+Option+C).
-    CopyAsPathname,
-    /// Show the folder as icons (Command+1).
-    AsIcons,
-    /// Show the folder as a list (Command+2).
-    AsList,
-    /// Show the preview pane, or put it away (Command+Shift+P).
-    TogglePreview,
-    /// Open a new tab on this folder (Command+T).
-    NewTab,
-    /// Show the next tab (Command+Shift+]).
-    NextTab,
-    /// Show the previous tab (Command+Shift+[).
-    PreviousTab,
-}
+/// What an action of files asks of the window.
+type Asks = fn() -> Input;
 
-/// Each action with its id and its default chords. `Primary` is Command or Ctrl. A symbol typed
-/// with Shift is written both ways, as a layout may report either.
-const OWN: &[(Own, &str, &[&str])] = &[
-    (Own::Back, "files.back", &["Primary+["]),
-    (Own::Forward, "files.forward", &["Primary+]"]),
-    (Own::Enclosing, "files.enclosing", &["Primary+Up"]),
-    (Own::Open, "files.open", &["Primary+Down"]),
+/// Each action of files with its id, its default chords and what it asks for. `Primary` is
+/// Command or Ctrl. A symbol typed with Shift is written both ways, as a layout may report either.
+const OWN: &[(&str, &[&str], Asks)] = &[
+    // Back (Command+[), Forward (Command+]), the folder that holds this one (Command+Up) and
+    // Open the selection (Command+Down).
+    ("files.back", &["Primary+["], || Input::Back),
+    ("files.forward", &["Primary+]"], || Input::Forward),
+    ("files.enclosing", &["Primary+Up"], || Input::Enclosing),
+    ("files.open", &["Primary+Down"], || Input::Open),
+    // Show or leave out hidden files, and rename the selected item in place.
     (
-        Own::ShowHidden,
         "files.show-hidden",
         &["Primary+Shift+.", "Primary+Shift+>"],
+        || Input::ToggleHidden,
     ),
-    (Own::Rename, "files.rename", &["Return"]),
-    (Own::PasteMove, "files.paste-move", &["Primary+Alt+V"]),
-    (Own::GetInfo, "files.get-info", &["Primary+I"]),
-    (Own::GoToFolder, "files.go-to-folder", &["Primary+Shift+G"]),
+    ("files.rename", &["Return"], || Input::BeginRename),
+    // Move what was copied here instead of copying it.
+    ("files.paste-move", &["Primary+Alt+V"], || Input::PasteMove),
+    // Show the properties of the selection, go to a folder typed by path, and put the paths of the
+    // selection on the clipboard.
+    ("files.get-info", &["Primary+I"], || Input::GetInfo),
+    ("files.go-to-folder", &["Primary+Shift+G"], || {
+        Input::GoToFolder
+    }),
+    ("files.copy-pathname", &["Primary+Alt+C"], || {
+        Input::CopyAsPathname
+    }),
+    // Show the folder as icons (Command+1) or as a list (Command+2), and the preview pane or
+    // put it away.
+    ("files.as-icons", &["Primary+1"], || {
+        Input::SetView(ViewMode::Icons)
+    }),
+    ("files.as-list", &["Primary+2"], || {
+        Input::SetView(ViewMode::List)
+    }),
+    ("files.toggle-preview", &["Primary+Shift+P"], || {
+        Input::TogglePreview
+    }),
+    // A new tab, and the next and previous tab.
+    ("files.new-tab", &["Primary+T"], || Input::NewTab),
     (
-        Own::CopyAsPathname,
-        "files.copy-pathname",
-        &["Primary+Alt+C"],
-    ),
-    (Own::AsIcons, "files.as-icons", &["Primary+1"]),
-    (Own::AsList, "files.as-list", &["Primary+2"]),
-    (
-        Own::TogglePreview,
-        "files.toggle-preview",
-        &["Primary+Shift+P"],
-    ),
-    (Own::NewTab, "files.new-tab", &["Primary+T"]),
-    (
-        Own::NextTab,
         "files.next-tab",
         &["Primary+Shift+]", "Primary+Shift+}"],
+        || Input::NextTab,
     ),
     (
-        Own::PreviousTab,
         "files.previous-tab",
         &["Primary+Shift+[", "Primary+Shift+{"],
+        || Input::PreviousTab,
     ),
 ];
 
-/// The action an id names.
-fn own_of(action: &AppAction) -> Option<Own> {
+/// What the action an id names asks for.
+fn own_input(action: &AppAction) -> Option<Input> {
     OWN.iter()
-        .find(|(_, id, _)| *id == action.id())
-        .map(|(own, _, _)| *own)
+        .find(|(id, _, _)| *id == action.id())
+        .map(|(_, _, asks)| asks())
 }
 
 /// The rows of one action: its id with each chord.
@@ -144,7 +121,7 @@ fn register(keys: &Keys) {
         return;
     };
     let mut taken: Vec<Vec<(AppAction, DefaultChord)>> = Vec::new();
-    for (_, id, chords) in OWN {
+    for (id, chords, _) in OWN {
         taken.push(rows(id, chords));
         if let Err(conflict) = keys.register(&app, &registration(&app, &taken)) {
             eprintln!("files: keys: {conflict}");
@@ -221,25 +198,7 @@ fn act(action: &Action, browse: Browse, mut sidebar: Signal<Shown>) -> ActionTak
             sidebar.set(next);
             ActionTaken::Yes
         }
-        Action::App(app) => match own_of(app) {
-            Some(Own::Back) => send(Input::Back),
-            Some(Own::Forward) => send(Input::Forward),
-            Some(Own::Enclosing) => send(Input::Enclosing),
-            Some(Own::Open) => send(Input::Open),
-            Some(Own::ShowHidden) => send(Input::ToggleHidden),
-            Some(Own::Rename) => send(Input::BeginRename),
-            Some(Own::PasteMove) => send(Input::PasteMove),
-            Some(Own::GetInfo) => send(Input::GetInfo),
-            Some(Own::GoToFolder) => send(Input::GoToFolder),
-            Some(Own::CopyAsPathname) => send(Input::CopyAsPathname),
-            Some(Own::AsIcons) => send(Input::SetView(ViewMode::Icons)),
-            Some(Own::AsList) => send(Input::SetView(ViewMode::List)),
-            Some(Own::TogglePreview) => send(Input::TogglePreview),
-            Some(Own::NewTab) => send(Input::NewTab),
-            Some(Own::NextTab) => send(Input::NextTab),
-            Some(Own::PreviousTab) => send(Input::PreviousTab),
-            None => ActionTaken::No,
-        },
+        Action::App(app) => own_input(app).map_or(ActionTaken::No, send),
         // A standard action the window does not offer, or one chordkit adds later.
         Action::Standard(_) | _ => ActionTaken::No,
     }

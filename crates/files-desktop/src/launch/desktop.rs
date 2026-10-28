@@ -9,7 +9,7 @@ use files_core::{FileName, MimeType};
 
 use super::activate::Activate;
 use super::build::{Catalog, LauncherBuilder};
-use super::entry::{AppEntry, Start, Terminal};
+use super::entry::AppEntry;
 use super::exec::{ExecLine, Expand, Takes};
 use super::icons::AppIcons;
 use super::spawn::{Spawn, SpawnCommand};
@@ -120,45 +120,41 @@ impl DesktopLauncher {
             app: app.name.clone(),
             reason,
         };
-        match app.terminal {
-            Terminal::Needed => return Err(LaunchError::NeedsTerminal(app.name.clone())),
-            Terminal::NotNeeded => {}
+        if app.needs_terminal {
+            return Err(LaunchError::NeedsTerminal(app.name.clone()));
         }
-        match app.start {
-            Start::Bus => {
-                let uris: Vec<String> = files.iter().map(|file| file_uri(file)).collect();
-                self.activate
-                    .open(app.bus_name(), &uris, token)
-                    .map_err(|error| failed(error.reason))
-            }
-            Start::Command => {
-                let exec = app.exec.as_deref().unwrap_or_default();
-                let line = ExecLine::parse(exec).map_err(|error| failed(error.to_string()))?;
-                let none: &[PathBuf] = &[];
-                let rounds: Vec<&[PathBuf]> = match line.takes() {
-                    Takes::NoFiles => vec![none],
-                    Takes::ManyFiles => vec![files],
-                    Takes::OneFile if files.is_empty() => vec![none],
-                    Takes::OneFile => files.chunks(1).collect(),
+        if app.bus_activatable {
+            let uris: Vec<String> = files.iter().map(|file| file_uri(file)).collect();
+            self.activate
+                .open(app.bus_name(), &uris, token)
+                .map_err(|error| failed(error.reason))
+        } else {
+            let exec = app.exec.as_deref().unwrap_or_default();
+            let line = ExecLine::parse(exec).map_err(|error| failed(error.to_string()))?;
+            let none: &[PathBuf] = &[];
+            let rounds: Vec<&[PathBuf]> = match line.takes() {
+                Takes::NoFiles => vec![none],
+                Takes::ManyFiles => vec![files],
+                Takes::OneFile if files.is_empty() => vec![none],
+                Takes::OneFile => files.chunks(1).collect(),
+            };
+            for round in rounds {
+                let argv = line.expand(&Expand {
+                    files: round,
+                    icon: app.icon.as_deref(),
+                    name: &app.name,
+                    entry_path: &app.path,
+                });
+                let command = SpawnCommand {
+                    argv,
+                    env: token_env(token),
+                    work_dir: app.work_dir.clone(),
                 };
-                for round in rounds {
-                    let argv = line.expand(&Expand {
-                        files: round,
-                        icon: app.icon.as_deref(),
-                        name: &app.name,
-                        entry_path: &app.path,
-                    });
-                    let command = SpawnCommand {
-                        argv,
-                        env: token_env(token),
-                        work_dir: app.work_dir.clone(),
-                    };
-                    self.spawn
-                        .spawn(&command)
-                        .map_err(|error| failed(error.reason))?;
-                }
-                Ok(())
+                self.spawn
+                    .spawn(&command)
+                    .map_err(|error| failed(error.reason))?;
             }
+            Ok(())
         }
     }
 }

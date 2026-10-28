@@ -2,12 +2,10 @@
 
 use dioxus::prelude::*;
 use ds::host::measure::Anchor;
-use ds::prelude::{
-    Availability, Check, IconSize, Menu, MenuImage, MenuItem, MenuPlacement, Point, Px,
-};
-use files_model::{Availability as Can, KeptMark};
+use ds::prelude::{Check, IconSize, Menu, MenuImage, MenuItem, MenuPlacement, Point, Px};
+use files_model::KeptMark;
 
-use crate::menu::{Command, OTHER_APP, Over, Pick, app_lines, groups_for};
+use crate::menu::{Command, OTHER_APP, Over, Pick, app_lines, enabled, groups_for};
 use crate::state::Browse;
 
 use super::icon::app_icon;
@@ -27,13 +25,6 @@ pub(super) fn point_of(event: &MouseEvent) -> Point {
     Point {
         x: Px(at.x as f32),
         y: Px(at.y as f32),
-    }
-}
-
-fn availability(can: Can) -> Availability {
-    match can {
-        Can::Available => Availability::Enabled,
-        Can::Unavailable => Availability::Disabled,
     }
 }
 
@@ -85,12 +76,12 @@ fn items(browse: Browse, over: Over) -> Vec<MenuItem<Pick>> {
                 MenuItem::Submenu {
                     title: command.title().to_owned(),
                     image: None,
-                    availability: availability(can),
+                    availability: enabled(can),
                     children: open_with(browse),
                 }
             } else {
                 let line = MenuItem::new(Pick::Command(command), command.title())
-                    .with_availability(availability(can));
+                    .with_availability(enabled(can));
                 match (command, kept) {
                     (Command::KeepDownloaded, Some(kept)) => line.with_check(check_of(kept)),
                     _ => line,

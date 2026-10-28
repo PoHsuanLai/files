@@ -4,7 +4,7 @@ use std::fs;
 
 use files_core::{ItemRef, OpFailure};
 
-use super::{Next, Run, Step};
+use super::{Run, Step};
 use crate::error;
 use crate::host::Flow;
 use crate::journal::Inverse;
@@ -15,11 +15,11 @@ impl Run<'_> {
     pub(super) fn undo_steps(&mut self, steps: Vec<Inverse>) -> Step {
         for step in steps.into_iter().rev() {
             if self.host.flow() == Flow::Stop {
-                return Ok(Next::Stop);
+                return Ok(Flow::Stop);
             }
             self.undo_step(step)?;
         }
-        Ok(Next::Go)
+        Ok(Flow::Go)
     }
 
     fn undo_step(&mut self, step: Inverse) -> Result<(), OpFailure> {
@@ -29,7 +29,7 @@ impl Run<'_> {
                 if fs::symlink_metadata(back.path()).is_ok() {
                     return Err(OpFailure::Taken);
                 }
-                if self.move_path(&now.path(), &back.path())? == Next::Stop {
+                if self.move_path(&now.path(), &back.path())? == Flow::Stop {
                     return Err(OpFailure::Other);
                 }
                 self.touch_folder(&now.folder);

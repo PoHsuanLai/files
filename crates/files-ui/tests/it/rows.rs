@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use ds::base::selection::PickHow;
 use ds::components::lists::table::model::SortDirection;
-use files_core::{ByteSize, Entry, EntryKind, FileName, FolderPath, Location, SortKey, SortOrder};
+use files_core::{ByteSize, Entry, EntryKind, FileName, FolderPath, Location, SortOrder};
 use files_model::{Browser, Direction, Input, Modifier, Now};
 use files_ui::rows::{Column, cursor_of, direction_of, modifier_of, order_of, selection_of};
 
@@ -93,17 +93,14 @@ fn columns_sort_keys_and_directions_round_trip() {
         SortDirection::Descending
     );
     for column in Column::ALL {
-        assert_eq!(Column::of_key(column.key()), column);
+        let key = column.sort_key().unwrap();
+        assert_eq!(Column::Sort(key), column);
     }
-    let keys = [
-        SortKey::Name,
-        SortKey::Modified,
-        SortKey::Size,
-        SortKey::Kind,
-    ];
-    for key in keys {
-        assert_eq!(Column::of_key(key).key(), key);
-    }
+    assert_eq!(
+        Column::WhereFrom.sort_key(),
+        None,
+        "its header does not sort"
+    );
 }
 
 #[test]

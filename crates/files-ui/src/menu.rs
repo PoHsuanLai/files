@@ -3,9 +3,19 @@
 use std::path::PathBuf;
 
 use files_core::Location;
-use files_model::{AppPick, Availability, Browser, Input, Pane};
+use files_model::{AppPick, Browser, Input};
 
-use crate::edge::{AppChoiceView, AppRole};
+use crate::edge::AppChoiceView;
+use crate::words;
+
+/// quire's availability for a yes/no.
+pub fn enabled(can: bool) -> ds::prelude::Availability {
+    if can {
+        ds::prelude::Availability::Enabled
+    } else {
+        ds::prelude::Availability::Disabled
+    }
+}
 
 /// One command of the context menu.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -57,28 +67,7 @@ pub enum Command {
 impl Command {
     /// The menu item's words.
     pub fn title(self) -> &'static str {
-        match self {
-            Command::Open => "Open",
-            Command::OpenInNewTab => "Open in New Tab",
-            Command::OpenWith => "Open With",
-            Command::QuickLook => "Quick Look",
-            Command::GetInfo | Command::GetInfoFolder => "Get Info",
-            Command::CopyAsPathname => "Copy as Pathname",
-            Command::MoveToTrash => "Move to Trash",
-            Command::Rename => "Rename",
-            Command::Copy => "Copy",
-            Command::Paste => "Paste",
-            Command::NewFolder => "New Folder",
-            Command::PutBack => "Put Back",
-            Command::DeleteImmediately => "Delete Immediately\u{2026}",
-            Command::EmptyTrash => "Empty Trash\u{2026}",
-            Command::DownloadNow => "Download Now",
-            Command::RemoveDownload => "Remove Download",
-            Command::KeepDownloaded => "Keep Downloaded",
-            Command::SaveCopy => "Save a Copy",
-            Command::ShowPreview => "Show Preview",
-            Command::HidePreview => "Hide Preview",
-        }
+        words::command_title(self)
     }
 
     /// What picking it asks of the browser; `None` for a parent of a submenu, which is not picked.
@@ -130,8 +119,7 @@ impl Pick {
     }
 }
 
-/// The words of the line that opens the sheet of every installed app.
-pub const OTHER_APP: &str = "Other\u{2026}";
+pub use crate::words::OTHER_APP;
 
 /// One app line of the Open With submenu.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -147,15 +135,14 @@ pub struct AppLine {
 /// The Open With lines for `apps`: the default first with "(default)" after its name, the others
 /// sorted by name (ignoring case).
 pub fn app_lines(apps: Vec<AppChoiceView>) -> Vec<AppLine> {
-    let (mut defaults, mut others): (Vec<_>, Vec<_>) = apps
-        .into_iter()
-        .partition(|app| app.role == AppRole::Default);
+    let (mut defaults, mut others): (Vec<_>, Vec<_>) =
+        apps.into_iter().partition(|app| app.is_default);
     others.sort_by_cached_key(|app| (app.name.to_lowercase(), app.name.clone()));
     defaults.truncate(1);
     defaults
         .into_iter()
         .map(|app| AppLine {
-            title: format!("{} (default)", app.name),
+            title: words::default_app_title(&app.name),
             pick: app.pick,
             icon: app.icon,
         })
@@ -192,23 +179,11 @@ pub enum Over {
 
 /// The menu for a press `over` something in `browser`: groups of commands, each with whether it
 /// can be picked now.
-pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, Availability)>> {
+pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, bool)>> {
     let selected = browser.selection().len();
-    let some = if selected > 0 {
-        Availability::Available
-    } else {
-        Availability::Unavailable
-    };
-    let one = if selected == 1 {
-        Availability::Available
-    } else {
-        Availability::Unavailable
-    };
-    let rows = if browser.rows().is_empty() {
-        Availability::Unavailable
-    } else {
-        Availability::Available
-    };
+    let some = selected > 0;
+    let one = selected == 1;
+    let rows = !browser.rows().is_empty();
     match (browser.location(), over) {
         (Location::Trash, Over::Row) => vec![vec![
             (Command::PutBack, some),
@@ -226,28 +201,28 @@ pub fn groups_for(browser: &Browser, over: Over) -> Vec<Vec<(Command, Availabili
                     (Command::QuickLook, some),
                 ],
                 vec![(Command::Copy, some), (Command::CopyAsPathname, some)],
-                vec![(Command::NewFolder, Availability::Available)],
+                vec![(Command::NewFolder, true)],
             ]);
             groups
         }
         (_, Over::Background) => vec![
-            vec![(Command::NewFolder, Availability::Available)],
-            vec![(Command::GetInfoFolder, Availability::Available)],
+            vec![(Command::NewFolder, true)],
+            vec![(Command::GetInfoFolder, true)],
             vec![(Command::Paste, browser.can_paste())],
-            vec![(preview_command(browser), Availability::Available)],
+            vec![(preview_command(browser), true)],
         ],
     }
 }
 
 /// Download Now, Remove Download and Keep Downloaded, for a selection in a cloud drive.
-fn cloud_group(browser: &Browser) -> Option<Vec<(Command, Availability)>> {
+fn cloud_group(browser: &Browser) -> Option<Vec<(Command, bool)>> {
     let menu = browser.cloud_menu()?;
     let mut group = vec![
         (Command::DownloadNow, menu.download),
         (Command::RemoveDownload, menu.remove),
         (Command::KeepDownloaded, menu.keep),
     ];
-    if menu.copy == Availability::Available {
+    if menu.copy {
         group.push((Command::SaveCopy, menu.copy));
     }
     Some(group)
@@ -255,17 +230,18 @@ fn cloud_group(browser: &Browser) -> Option<Vec<(Command, Availability)>> {
 
 /// Show Preview while the pane is away, Hide Preview while it is up.
 fn preview_command(browser: &Browser) -> Command {
-    match browser.pane() {
-        Pane::Hidden => Command::ShowPreview,
-        Pane::Shown => Command::HidePreview,
+    if browser.pane_shown() {
+        Command::HidePreview
+    } else {
+        Command::ShowPreview
     }
 }
 
 /// Open, Open in New Tab (only on a lone folder, right after Open) and Open With.
-fn open_group(browser: &Browser, some: Availability) -> Vec<(Command, Availability)> {
+fn open_group(browser: &Browser, some: bool) -> Vec<(Command, bool)> {
     let mut group = vec![(Command::Open, some)];
-    if browser.can_open_in_new_tab() == Availability::Available {
-        group.push((Command::OpenInNewTab, Availability::Available));
+    if browser.can_open_in_new_tab() {
+        group.push((Command::OpenInNewTab, true));
     }
     group.push((Command::OpenWith, some));
     group

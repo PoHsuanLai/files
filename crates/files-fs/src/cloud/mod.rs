@@ -7,7 +7,7 @@
 use std::any::Any;
 use std::fmt;
 
-use files_core::{CloudDrive, CloudItem, CloudNews, ItemRef, Keeping, Refused, SavedCopies};
+use files_core::{CloudDrive, CloudItem, CloudNews, ItemRef, Refused, SavedCopies};
 
 #[cfg(any(test, feature = "testing"))]
 mod fake;
@@ -61,7 +61,7 @@ pub trait Clouds: Send + Sync {
     fn save_copy(&self, items: &[ItemRef]) -> Result<SavedCopies, CloudError>;
 
     /// "Keep Downloaded" on or off: the items that were not taken, with the reasons.
-    fn keep(&self, items: &[ItemRef], keeping: Keeping) -> Result<Vec<Refused>, CloudError>;
+    fn keep(&self, items: &[ItemRef], keep: bool) -> Result<Vec<Refused>, CloudError>;
 
     /// Calls `news` with every change until the guard drops. The service going away or coming
     /// back is news too (`CloudNews::Drives`): the caller asks for the drives again.
@@ -93,7 +93,7 @@ impl Clouds for NoClouds {
         Err(CloudError::Unavailable)
     }
 
-    fn keep(&self, _items: &[ItemRef], _keeping: Keeping) -> Result<Vec<Refused>, CloudError> {
+    fn keep(&self, _items: &[ItemRef], _keep: bool) -> Result<Vec<Refused>, CloudError> {
         Err(CloudError::Unavailable)
     }
 

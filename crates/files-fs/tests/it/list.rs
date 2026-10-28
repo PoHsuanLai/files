@@ -5,7 +5,7 @@ use std::fs;
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::os::unix::net::UnixListener;
 
-use files_core::{ByteSize, EntryKind, FileName, FolderPath, LinkTo, Special, Visibility};
+use files_core::{ByteSize, EntryKind, FileName, FolderPath, LinkTo, Special};
 use files_fs::{DiskLister, ListError, Lister, Skipped};
 use tempfile::TempDir;
 
@@ -52,7 +52,7 @@ fn lists_every_kind() {
         assert_eq!(got.get(n), Some(&kind), "{n}");
     }
     let dot = listing.entries.iter().find(|e| e.name.display() == ".dot");
-    assert_eq!(dot.unwrap().visibility(), Visibility::Hidden);
+    assert!(dot.unwrap().is_hidden());
     assert!(
         listing
             .entries

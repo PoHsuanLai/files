@@ -6,15 +6,6 @@ use ds_helpers::DesktopId;
 
 use super::desktop::DesktopLauncher;
 
-/// How an app stands for the files asked about.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Standing {
-    /// It is the app the person's settings name for the first file's type.
-    Default,
-    /// It can open them, and is not the default.
-    Other,
-}
-
 /// One app offered to open files with.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppOffer {
@@ -22,8 +13,8 @@ pub struct AppOffer {
     pub id: DesktopId,
     /// Its name, from its desktop entry.
     pub name: String,
-    /// Whether it is the default.
-    pub standing: Standing,
+    /// Whether it is the app the person's settings name for the first file's type.
+    pub is_default: bool,
     /// The image file of its icon, when its entry names one and the icon theme has it.
     pub icon: Option<PathBuf>,
 }
@@ -50,16 +41,12 @@ impl DesktopLauncher {
             .filter(|id| others.iter().all(|apps| apps.contains(id)))
             .filter_map(|id| {
                 let app = self.app(&id)?;
-                let standing = if default.as_ref() == Some(&id) {
-                    Standing::Default
-                } else {
-                    Standing::Other
-                };
+                let is_default = default.as_ref() == Some(&id);
                 Some(AppOffer {
                     name: app.name.clone(),
                     icon: self.icons.resolve(app.icon.as_deref()),
                     id,
-                    standing,
+                    is_default,
                 })
             })
             .collect()
@@ -72,7 +59,7 @@ impl DesktopLauncher {
             .map(|app| AppOffer {
                 id: app.id.clone(),
                 name: app.name.clone(),
-                standing: Standing::Other,
+                is_default: false,
                 icon: self.icons.resolve(app.icon.as_deref()),
             })
             .collect()

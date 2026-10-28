@@ -11,8 +11,8 @@ use files_model::AppPick;
 use files_trash::FakeTrash;
 use files_ui::edge::Seams;
 use files_ui::{
-    AppChoiceView, AppRole, AppearanceSource, Apps, Launch, NoThumbnails, NoVolumes, OpenAs,
-    OpenFailure, Opener, Zone,
+    AppChoiceView, AppearanceSource, Apps, Launch, NoThumbnails, NoVolumes, OpenAs, OpenFailure,
+    Opener, Zone,
 };
 use tempfile::TempDir;
 
@@ -58,11 +58,11 @@ pub struct FakeApps;
 /// Where the fake Viewer's icon is; nothing reads it, the window only names it in its markup.
 pub const VIEWER_ICON: &str = "/icons/viewer.png";
 
-fn app(id: &str, name: &str, role: AppRole) -> AppChoiceView {
+fn app(id: &str, name: &str, is_default: bool) -> AppChoiceView {
     AppChoiceView {
         pick: AppPick::new(id),
         name: name.to_owned(),
-        role,
+        is_default,
         icon: (id == "viewer.desktop").then(|| PathBuf::from(VIEWER_ICON)),
     }
 }
@@ -70,17 +70,17 @@ fn app(id: &str, name: &str, role: AppRole) -> AppChoiceView {
 impl Apps for FakeApps {
     fn apps_for(&self, _targets: &[PathBuf]) -> Vec<AppChoiceView> {
         vec![
-            app("zed.desktop", "Zed", AppRole::Other),
-            app("viewer.desktop", "Viewer", AppRole::Default),
-            app("editor.desktop", "editor", AppRole::Other),
+            app("zed.desktop", "Zed", false),
+            app("viewer.desktop", "Viewer", true),
+            app("editor.desktop", "editor", false),
         ]
     }
 
     fn all_apps(&self) -> Vec<AppChoiceView> {
         vec![
-            app("zed.desktop", "Zed", AppRole::Other),
-            app("calc.desktop", "Calculator", AppRole::Other),
-            app("viewer.desktop", "Viewer", AppRole::Default),
+            app("zed.desktop", "Zed", false),
+            app("calc.desktop", "Calculator", false),
+            app("viewer.desktop", "Viewer", true),
         ]
     }
 }

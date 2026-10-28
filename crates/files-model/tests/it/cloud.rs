@@ -3,11 +3,9 @@
 
 use files_core::{
     CloudDrive, CloudItem, CloudKind, CloudState, CloudWords, DriveId, DriveState, FolderPath,
-    ItemRef, Keeping, OnlineUrl, ProviderName, Refused, Saved, SavedCopies, Share,
+    ItemRef, OnlineUrl, ProviderName, Refused, Saved, SavedCopies, Share,
 };
-use files_model::{
-    Availability, Browser, Change, CloudMenu, Effect, Input, KeptMark, OFFLINE_WORDS, OpenTarget,
-};
+use files_model::{Browser, Change, CloudMenu, Effect, Input, KeptMark, OFFLINE_WORDS, OpenTarget};
 
 use crate::common::*;
 
@@ -209,7 +207,7 @@ fn a_download_that_failed_is_told_in_its_words() {
 
 #[test]
 fn the_menu_offers_what_the_selection_can_do() {
-    use Availability::{Available as Yes, Unavailable as No};
+    let (yes, no) = (true, false);
     let states = vec![
         ("Report.docx", file_in(CloudState::Cloud)),
         ("Notes.txt", file_in(CloudState::Downloaded).kept()),
@@ -222,14 +220,14 @@ fn the_menu_offers_what_the_selection_can_do() {
         (
             "cloud-only",
             "Report.docx",
-            Some((Yes, No, Yes, KeptMark::Nothing)),
+            Some((yes, no, yes, KeptMark::Nothing)),
         ),
         (
             "downloaded and kept",
             "Notes.txt",
-            Some((No, Yes, Yes, KeptMark::All)),
+            Some((no, yes, yes, KeptMark::All)),
         ),
-        ("online", "Plan.gdoc", Some((No, No, No, KeptMark::Nothing))),
+        ("online", "Plan.gdoc", Some((no, no, no, KeptMark::Nothing))),
     ];
     for (label, row, want) in cases {
         let browser = in_drive(DriveState::Ready, states.clone());
@@ -251,14 +249,10 @@ fn keep_downloaded_turns_on_unless_all_of_the_selection_is_kept() {
         ("Notes.txt", file_in(CloudState::Downloaded).kept()),
     ];
     let cases = [
-        (
-            "one not kept",
-            vec!["Report.docx", "Notes.txt"],
-            Keeping::Kept,
-        ),
-        ("all kept", vec!["Notes.txt"], Keeping::NotKept),
+        ("one not kept", vec!["Report.docx", "Notes.txt"], true),
+        ("all kept", vec!["Notes.txt"], false),
     ];
-    for (label, rows, keeping) in cases {
+    for (label, rows, keep) in cases {
         let browser = in_drive(DriveState::Ready, states.clone());
         let clicks = rows
             .iter()
@@ -269,7 +263,7 @@ fn keep_downloaded_turns_on_unless_all_of_the_selection_is_kept() {
         let [Effect::CloudKeep(items, got)] = effects.as_slice() else {
             panic!("{label}: {effects:?}");
         };
-        assert_eq!(*got, keeping, "{label}");
+        assert_eq!(*got, keep, "{label}");
         assert_eq!(items.len(), rows.len(), "{label}");
     }
 }
@@ -302,17 +296,9 @@ fn with_documents() -> Browser {
 #[test]
 fn save_a_copy_is_offered_only_for_a_selection_with_an_online_document() {
     let cases = [
-        (
-            "an online document",
-            vec!["Plan.gdoc"],
-            Availability::Available,
-        ),
-        ("a plain file", vec!["Notes.txt"], Availability::Unavailable),
-        (
-            "both",
-            vec!["Notes.txt", "Plan.gdoc"],
-            Availability::Available,
-        ),
+        ("an online document", vec!["Plan.gdoc"], true),
+        ("a plain file", vec!["Notes.txt"], false),
+        ("both", vec!["Notes.txt", "Plan.gdoc"], true),
     ];
     for (label, rows, want) in cases {
         let clicks = rows

@@ -1,6 +1,6 @@
 //! The one step function: an input in, a new state and effects out.
 
-use files_core::{Entry, FolderPrefs, HiddenFiles, Sort, ViewMode};
+use files_core::{Entry, FolderPrefs, Sort, ViewMode};
 
 use crate::browser::Browser;
 use crate::effect::Effect;
@@ -189,11 +189,15 @@ impl Browser {
     }
 
     fn toggle_hidden(self) -> Stepped {
-        let hidden = match self.hidden {
-            HiddenFiles::Left => HiddenFiles::Shown,
-            HiddenFiles::Shown => HiddenFiles::Left,
-        };
-        (Browser { hidden, ..self }.refreshed(), Vec::new())
+        let show_hidden = !self.show_hidden;
+        (
+            Browser {
+                show_hidden,
+                ..self
+            }
+            .refreshed(),
+            Vec::new(),
+        )
     }
 
     /// Change the selection with `how`, and start a new word for type-select.

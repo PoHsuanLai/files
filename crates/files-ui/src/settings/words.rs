@@ -36,6 +36,13 @@ pub enum Switch {
     Off,
 }
 
+impl Switch {
+    /// Whether the switch is on.
+    pub fn is_on(self) -> bool {
+        self == Switch::On
+    }
+}
+
 /// A row of the sidebar.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize, Word)]
 #[serde(rename_all = "snake_case")]
@@ -46,4 +53,11 @@ pub enum Row {
     Show,
     /// Left out.
     Hide,
+}
+
+impl Row {
+    /// Whether the row is listed.
+    pub fn is_shown(self) -> bool {
+        self == Row::Show
+    }
 }

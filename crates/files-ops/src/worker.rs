@@ -6,14 +6,12 @@ use std::sync::Arc;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
 use std::time::{Duration, Instant};
 
-use files_core::OpPlan;
-use files_core::{Answer, Conflict, Location, Progress, Resolution, Summary};
+use files_core::{Answer, Conflict, OpEvent, OpPlan, Outcome, Progress, Resolution};
 use files_trash::Trash;
 
 use crate::exec::Executor;
 use crate::host::{CancelToken, Flow, Host};
 use crate::journal::Journal;
-use crate::ran::{Finish, Ran};
 
 /// How often progress is passed on at most.
 const PROGRESS_EVERY: Duration = Duration::from_millis(50);
@@ -31,54 +29,16 @@ pub enum Job {
     Undo,
 }
 
-/// What the queue reports.
-#[derive(Debug, Clone, PartialEq)]
-#[non_exhaustive]
-pub enum Event {
-    /// A piece of work began.
-    Started(Summary),
-    /// How far it has come.
-    Progress(Progress),
-    /// It is waiting for an answer to this; send it with [`Worker::answer`].
-    Asking(Conflict),
-    /// It ended.
-    Finished(Finished),
-}
-
-/// A piece of work that ended.
-#[derive(Debug, Clone, PartialEq)]
-#[non_exhaustive]
-pub struct Finished {
-    /// What the work was about.
-    pub summary: Summary,
-    /// How it ended.
-    pub finish: Finish,
-    /// The places that now hold something different.
-    pub touched: Vec<Location>,
-    /// What undoing would take back now, if anything.
-    pub undo: Option<Summary>,
-}
-
-impl Finished {
-    fn of(ran: Ran, undo: Option<Summary>) -> Finished {
-        Finished {
-            summary: ran.summary,
-            finish: ran.finish,
-            touched: ran.touched,
-            undo,
-        }
-    }
-}
-
-/// Where the queue sends its events, each with the tag its job was submitted with. Any
-/// `Fn(&T, Event)` that can be shared between threads is one.
+/// Where the queue sends its reports, each with the tag its job was submitted with. Any
+/// `Fn(&T, OpEvent)` that can be shared between threads is one. An [`OpEvent::Asking`] waits for
+/// an answer sent with [`Worker::answer`].
 pub trait Sink<T>: Send + Sync {
     /// Takes one event of the job tagged `tag`; called from the queue's thread.
-    fn send(&self, tag: &T, event: Event);
+    fn send(&self, tag: &T, event: OpEvent);
 }
 
-impl<T, F: Fn(&T, Event) + Send + Sync> Sink<T> for F {
-    fn send(&self, tag: &T, event: Event) {
+impl<T, F: Fn(&T, OpEvent) + Send + Sync> Sink<T> for F {
+    fn send(&self, tag: &T, event: OpEvent) {
         self(tag, event);
     }
 }
@@ -167,14 +127,14 @@ impl<T> Queue<T> {
         };
         let ran = match job {
             Job::Run(plan) => {
-                host.sink.send(tag, Event::Started(plan.summary()));
+                host.sink.send(tag, OpEvent::Started(plan.summary()));
                 let ran = self.exec.run(&plan, &mut host);
                 self.journal.record(&ran);
                 ran
             }
             Job::Undo => {
                 if let Some(summary) = self.journal.last() {
-                    host.sink.send(tag, Event::Started(summary.clone()));
+                    host.sink.send(tag, OpEvent::Started(summary.clone()));
                 }
                 match self.journal.undo(&self.exec, &mut host) {
                     Some(ran) => ran,
@@ -183,8 +143,8 @@ impl<T> Queue<T> {
             }
         };
         let undo = self.journal.last().cloned();
-        self.sink
-            .send(tag, Event::Finished(Finished::of(ran, undo)));
+        let outcome = Outcome::new(ran.summary, ran.finish, undo).touching(ran.touched);
+        self.sink.send(tag, OpEvent::Finished(outcome));
     }
 }
 
@@ -202,12 +162,12 @@ impl<T> Host for QueueHost<'_, T> {
         let due = self.last.is_none_or(|at| at.elapsed() >= PROGRESS_EVERY);
         if due || progress.permille() >= 1000 {
             self.last = Some(Instant::now());
-            self.sink.send(self.tag, Event::Progress(progress));
+            self.sink.send(self.tag, OpEvent::Progress(progress));
         }
     }
 
     fn ask(&mut self, conflict: &Conflict) -> Resolution {
-        self.sink.send(self.tag, Event::Asking(conflict.clone()));
+        self.sink.send(self.tag, OpEvent::Asking(conflict.clone()));
         loop {
             match self.answers.recv_timeout(LOOK_EVERY) {
                 Ok(resolution) => return resolution,

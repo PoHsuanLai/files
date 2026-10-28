@@ -13,11 +13,11 @@ mod spawn;
 pub use activate::{Activate, BusActivate};
 pub use build::{Catalog, LauncherBuilder};
 pub use desktop::DesktopLauncher;
-pub use entry::{AppEntry, Start, Terminal, installed_check, load_apps};
+pub use entry::{AppEntry, installed_check, load_apps};
 pub use error::{EntryError, ExecError, LaunchError, StartError};
 pub use exec::{ExecLine, Expand, Takes};
 pub use icons::{AppIcons, IconLookup, NoIcons};
-pub use offer::{AppOffer, Standing};
+pub use offer::AppOffer;
 pub use spawn::{Spawn, SpawnCommand, SystemSpawn};
 
 #[cfg(feature = "testing")]

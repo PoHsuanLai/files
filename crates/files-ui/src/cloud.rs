@@ -4,6 +4,8 @@
 use ds::prelude::Icon;
 use files_core::{CloudItem, CloudKind, CloudState, DriveState, Share};
 
+use crate::words;
+
 /// A small mark: a glyph and the words that name it for assistive technology.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Mark {
@@ -48,13 +50,13 @@ impl Badge {
     }
 }
 
-const IN_THE_CLOUD: Mark = Mark::new(Icon::CloudDownload, "In the cloud");
-const DOWNLOADING: Mark = Mark::new(Icon::CloudDownload, "Downloading");
-const UPLOADING: Mark = Mark::new(Icon::CloudUpload, "Uploading");
-const WAITING: Mark = Mark::new(Icon::CloudUpload, "Waiting to upload");
-const FAILED: Mark = Mark::new(Icon::TriangleAlert, "Couldn\u{2019}t sync");
-const CONFLICT: Mark = Mark::new(Icon::OctagonAlert, "Two versions");
-const ONLINE: Mark = Mark::new(Icon::Globe, "Opens in your browser");
+const IN_THE_CLOUD: Mark = Mark::new(Icon::CloudDownload, words::IN_THE_CLOUD);
+const DOWNLOADING: Mark = Mark::new(Icon::CloudDownload, words::DOWNLOADING);
+const UPLOADING: Mark = Mark::new(Icon::CloudUpload, words::UPLOADING);
+const WAITING: Mark = Mark::new(Icon::CloudUpload, words::WAITING);
+const FAILED: Mark = Mark::new(Icon::TriangleAlert, words::FAILED);
+const CONFLICT: Mark = Mark::new(Icon::OctagonAlert, words::CONFLICT);
+const ONLINE: Mark = Mark::new(Icon::Globe, words::ONLINE);
 
 /// The badge of an item whose details are `item` (`None` before they are read).
 pub fn badge_of(item: Option<&CloudItem>) -> Badge {
@@ -83,10 +85,12 @@ pub fn badge_of(item: Option<&CloudItem>) -> Badge {
 pub fn drive_mark(state: DriveState) -> Option<Mark> {
     match state {
         DriveState::Ready => None,
-        DriveState::Starting | DriveState::Syncing => Some(Mark::new(Icon::Refresh, "Syncing")),
-        DriveState::Offline => Some(Mark::new(Icon::WifiOff, "Offline")),
-        DriveState::Paused => Some(Mark::new(Icon::Pause, "Syncing paused")),
-        DriveState::NeedsSignIn => Some(Mark::new(Icon::Key, "Needs sign-in")),
-        DriveState::Error | _ => Some(Mark::new(Icon::TriangleAlert, "Something went wrong")),
+        DriveState::Starting | DriveState::Syncing => {
+            Some(Mark::new(Icon::Refresh, words::SYNCING))
+        }
+        DriveState::Offline => Some(Mark::new(Icon::WifiOff, words::OFFLINE)),
+        DriveState::Paused => Some(Mark::new(Icon::Pause, words::PAUSED)),
+        DriveState::NeedsSignIn => Some(Mark::new(Icon::Key, words::NEEDS_SIGN_IN)),
+        DriveState::Error | _ => Some(Mark::new(Icon::TriangleAlert, words::DRIVE_FAILED)),
     }
 }

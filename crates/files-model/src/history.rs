@@ -2,15 +2,6 @@
 
 use files_core::Location;
 
-/// Whether a move is possible right now.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Availability {
-    /// There is somewhere to go.
-    Available,
-    /// There is nowhere to go; the control is dimmed.
-    Unavailable,
-}
-
 /// The places behind and ahead of the current one.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct History {
@@ -49,20 +40,12 @@ impl History {
     }
 
     /// Whether going back works.
-    pub fn back_availability(&self) -> Availability {
-        availability(&self.back)
+    pub fn has_back(&self) -> bool {
+        !self.back.is_empty()
     }
 
     /// Whether going forward works.
-    pub fn forward_availability(&self) -> Availability {
-        availability(&self.forward)
-    }
-}
-
-fn availability(places: &[Location]) -> Availability {
-    if places.is_empty() {
-        Availability::Unavailable
-    } else {
-        Availability::Available
+    pub fn has_forward(&self) -> bool {
+        !self.forward.is_empty()
     }
 }

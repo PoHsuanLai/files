@@ -1,9 +1,10 @@
 //! The edge's queue of changes: rename, trash, undo and a taken name, reported and rescanned.
 
 use files_core::{
-    Answer, FolderPath, ItemRef, Location, OpFailure, OpKind, OpPlan, Resolution, Transfer,
+    Answer, Finish, FolderPath, ItemRef, Location, OpEvent, OpFailure, OpKind, OpPlan, Resolution,
+    Transfer,
 };
-use files_model::{Change, Effect, End, Input, OpEvent, TabId};
+use files_model::{Change, Effect, Input, TabId};
 use files_ui::edge::Heard;
 use tokio::sync::mpsc::UnboundedReceiver;
 
@@ -28,11 +29,11 @@ pub(super) fn finished(heard: &Heard) -> bool {
 }
 
 /// How the change that just ended ended.
-pub(super) fn end_of(heard: Heard) -> End {
+pub(super) fn finish_of(heard: Heard) -> Finish {
     let Heard::Tab(TabId::FIRST, Input::Op(OpEvent::Finished(outcome))) = heard else {
         panic!("not a finished change");
     };
-    outcome.end
+    outcome.finish
 }
 
 #[test]
@@ -48,7 +49,7 @@ fn renaming_moves_the_file_and_asks_for_the_listing_again() {
             to: name("ideas.txt"),
         }],
     );
-    assert_eq!(end_of(until(&mut rig.inbox, finished)), End::Done);
+    assert_eq!(finish_of(until(&mut rig.inbox, finished)), Finish::Done);
     assert_eq!(
         next(&mut rig.inbox),
         Heard::All(Input::Changed(at(dir.path()), Change::Rescan))
@@ -70,8 +71,8 @@ fn renaming_onto_another_file_is_refused_and_the_failure_is_reported() {
         }],
     );
     assert_eq!(
-        end_of(until(&mut rig.inbox, finished)),
-        End::Failed(OpFailure::Taken)
+        finish_of(until(&mut rig.inbox, finished)),
+        Finish::Failed(OpFailure::Taken)
     );
     assert_eq!(
         std::fs::read_to_string(dir.path().join("report.pdf")).unwrap(),
@@ -93,8 +94,8 @@ fn renaming_a_file_that_is_gone_is_reported() {
         }],
     );
     assert_eq!(
-        end_of(until(&mut rig.inbox, finished)),
-        End::Failed(OpFailure::NotFound)
+        finish_of(until(&mut rig.inbox, finished)),
+        Finish::Failed(OpFailure::NotFound)
     );
 }
 
@@ -133,7 +134,7 @@ fn trashing_reports_each_step_rescans_what_changed_and_can_be_undone() {
     let Heard::Tab(TabId::FIRST, Input::Op(OpEvent::Finished(outcome))) = done else {
         panic!("not finished");
     };
-    assert_eq!(outcome.end, End::Done);
+    assert_eq!(outcome.finish, Finish::Done);
     assert_eq!(outcome.undo.map(|s| s.kind), Some(OpKind::Trash));
     assert!(!dir.path().join("notes.txt").exists());
     let rescans = [next(&mut rig.inbox), next(&mut rig.inbox)];
@@ -143,7 +144,7 @@ fn trashing_reports_each_step_rescans_what_changed_and_can_be_undone() {
     }
 
     rig.edge.run_in(TabId::FIRST, vec![Effect::Undo]);
-    assert_eq!(end_of(until(&mut rig.inbox, finished)), End::Done);
+    assert_eq!(finish_of(until(&mut rig.inbox, finished)), Finish::Done);
     assert!(dir.path().join("notes.txt").exists());
 }
 
@@ -171,7 +172,7 @@ fn a_taken_name_is_asked_and_the_answer_goes_back_to_the_work() {
         TabId::FIRST,
         vec![Effect::Answer(Resolution::once(Answer::KeepBoth))],
     );
-    assert_eq!(end_of(until(&mut rig.inbox, finished)), End::Done);
+    assert_eq!(finish_of(until(&mut rig.inbox, finished)), Finish::Done);
     assert_eq!(
         std::fs::read_to_string(dir.path().join("notes 2.txt")).unwrap(),
         "other"

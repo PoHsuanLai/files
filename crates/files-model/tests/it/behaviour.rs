@@ -1,10 +1,7 @@
 //! The person's choices about how the window behaves: folders on top, the two warnings, and a
 //! choice changed while the window is open.
 
-use files_core::{
-    Asking, Behaviour, Entry, FolderPrefs, FoldersOnTop, HiddenFiles, OpPlan, Sort, SortKey,
-    SortOrder,
-};
+use files_core::{Behaviour, Entry, FolderPrefs, OpPlan, Sort, SortKey, SortOrder};
 use files_model::{Browser, Effect, Input, Modifier, Question, Tabs, arrange};
 
 use crate::changes::{home_folder, trash_browser};
@@ -16,15 +13,19 @@ fn behaving(behaviour: Behaviour, entries: Vec<Entry>) -> Browser {
 
 fn first() -> Behaviour {
     Behaviour {
-        folders: FoldersOnTop::First,
+        folders_first: true,
         ..Behaviour::default()
     }
 }
 
-fn ordered(entries: &[Entry], sort: Sort, folders: FoldersOnTop) -> Vec<String> {
+fn ordered(entries: &[Entry], sort: Sort, folders_first: bool) -> Vec<String> {
     let mut prefs = FolderPrefs::default();
     prefs.sort = sort;
-    arrange(entries, &prefs, HiddenFiles::Shown, folders)
+    let behaviour = Behaviour {
+        folders_first,
+        ..Behaviour::default()
+    };
+    arrange(entries, &prefs, true, behaviour)
         .into_iter()
         .map(|at| entries[at].name.display().into_owned())
         .collect()
@@ -35,9 +36,9 @@ fn the_defaults_are_finders() {
     assert_eq!(
         Behaviour::default(),
         Behaviour {
-            folders: FoldersOnTop::Mixed,
-            emptying_trash: Asking::Ask,
-            changing_extension: Asking::Ask,
+            folders_first: false,
+            ask_before_emptying_trash: true,
+            ask_before_changing_extension: true,
         }
     );
 }
@@ -50,23 +51,13 @@ fn folders_come_first_only_when_asked_and_only_by_name() {
     let name_down = by(SortKey::Name, SortOrder::Descending);
     let size_up = by(SortKey::Size, SortOrder::Ascending);
     let table = [
-        ("mixed", name_up, FoldersOnTop::Mixed, ["a", "b", "c", "d"]),
-        ("first", name_up, FoldersOnTop::First, ["c", "d", "a", "b"]),
-        (
-            "descending",
-            name_down,
-            FoldersOnTop::First,
-            ["d", "c", "b", "a"],
-        ),
-        (
-            "by size",
-            size_up,
-            FoldersOnTop::First,
-            ["c", "d", "a", "b"],
-        ),
+        ("mixed", name_up, false, ["a", "b", "c", "d"]),
+        ("first", name_up, true, ["c", "d", "a", "b"]),
+        ("descending", name_down, true, ["d", "c", "b", "a"]),
+        ("by size", size_up, true, ["c", "d", "a", "b"]),
     ];
-    for (label, sort, folders, want) in table {
-        assert_eq!(ordered(&entries, sort, folders), want, "{label}");
+    for (label, sort, folders_first, want) in table {
+        assert_eq!(ordered(&entries, sort, folders_first), want, "{label}");
     }
 }
 
@@ -93,17 +84,17 @@ fn a_changed_choice_arranges_the_rows_again_and_a_new_tab_keeps_it() {
 #[test]
 fn emptying_the_trash_asks_unless_the_person_chose_not_to_be_asked() {
     let table = [
-        ("asked", Asking::Ask, Question::EmptyTrash, vec![]),
+        ("asked", true, Question::EmptyTrash, vec![]),
         (
             "not asked",
-            Asking::Skip,
+            false,
             Question::None,
             vec![Effect::Run(OpPlan::EmptyTrash)],
         ),
     ];
-    for (label, asking, question, want) in table {
+    for (label, asks, question, want) in table {
         let behaviour = Behaviour {
-            emptying_trash: asking,
+            ask_before_emptying_trash: asks,
             ..Behaviour::default()
         };
         let (browser, effects) = trash_browser()
@@ -117,7 +108,7 @@ fn emptying_the_trash_asks_unless_the_person_chose_not_to_be_asked() {
 #[test]
 fn another_program_asking_to_empty_the_trash_is_always_asked_about() {
     let behaviour = Behaviour {
-        emptying_trash: Asking::Skip,
+        ask_before_emptying_trash: false,
         ..Behaviour::default()
     };
     let (browser, effects) = loaded(Vec::new())
@@ -191,7 +182,7 @@ fn changing_an_extension_asks_and_the_answer_decides() {
 fn a_rename_that_leaves_the_extension_or_is_not_asked_about_goes_straight_on() {
     let entries = || vec![file("a.txt"), folder("d.x")];
     let skip = Behaviour {
-        changing_extension: Asking::Skip,
+        ask_before_changing_extension: false,
         ..Behaviour::default()
     };
     let table = [

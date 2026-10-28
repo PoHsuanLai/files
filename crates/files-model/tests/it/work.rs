@@ -1,9 +1,10 @@
 //! Work under way: undo, what is shown from start to finish, questions and how a change ended.
 
 use files_core::{
-    Answer, ByteSize, Conflict, ConflictKind, OpFailure, OpKind, Progress, Resolution,
+    Answer, ByteSize, Conflict, ConflictKind, Finish, OpEvent, OpFailure, OpKind, Progress,
+    Resolution,
 };
-use files_model::{Effect, End, Input, OpEvent, Question, Work};
+use files_model::{Effect, Input, Question, Work};
 
 use super::changes::{finished, home_folder, summary, trash_browser};
 use crate::common::*;
@@ -12,19 +13,19 @@ use crate::common::*;
 fn undo_works_only_after_a_change_that_can_be_taken_back() {
     let (browser, effects) = loaded(vec![]).step(Input::Undo, at(0));
     assert!(effects.is_empty());
-    assert_eq!(browser.can_undo(), files_model::Availability::Unavailable);
+    assert!(!browser.can_undo());
 
     let (browser, _) = browser.step(
-        finished(OpKind::Trash, End::Done, Some(summary(OpKind::Trash))),
+        finished(OpKind::Trash, Finish::Done, Some(summary(OpKind::Trash))),
         at(0),
     );
-    assert_eq!(browser.can_undo(), files_model::Availability::Available);
+    assert!(browser.can_undo());
     let (browser, effects) = browser.step(Input::Undo, at(0));
     assert_eq!(effects, vec![Effect::Undo]);
 
     // The undo ends and there is nothing more to take back.
-    let (browser, _) = browser.step(finished(OpKind::Trash, End::Done, None), at(0));
-    assert_eq!(browser.can_undo(), files_model::Availability::Unavailable);
+    let (browser, _) = browser.step(finished(OpKind::Trash, Finish::Done, None), at(0));
+    assert!(!browser.can_undo());
 }
 
 #[test]
@@ -47,7 +48,7 @@ fn work_is_shown_from_start_to_finish() {
         (true, vec![Effect::Cancel])
     );
 
-    let (browser, _) = browser.step(finished(OpKind::Copy, End::Done, None), at(0));
+    let (browser, _) = browser.step(finished(OpKind::Copy, Finish::Done, None), at(0));
     assert_eq!(browser.work(), &Work::Idle);
     let (_, effects) = browser.step(Input::CancelWork, at(0));
     assert!(effects.is_empty(), "nothing to cancel");
@@ -76,24 +77,24 @@ fn a_taken_name_is_a_question_and_the_answer_goes_to_the_worker() {
 
 #[test]
 fn what_a_change_said_when_it_ended() {
-    let table: Vec<(&str, OpKind, End, Vec<Effect>)> = vec![
+    let table: Vec<(&str, OpKind, Finish, Vec<Effect>)> = vec![
         (
             "trashed: offer the undo",
             OpKind::Trash,
-            End::Done,
+            Finish::Done,
             vec![Effect::Announce(summary(OpKind::Trash))],
         ),
-        ("copied", OpKind::Copy, End::Done, vec![]),
-        ("stopped", OpKind::Move, End::Stopped, vec![]),
+        ("copied", OpKind::Copy, Finish::Done, vec![]),
+        ("stopped", OpKind::Move, Finish::Stopped, vec![]),
         (
             "failed",
             OpKind::Move,
-            End::Failed(OpFailure::NoSpace),
+            Finish::Failed(OpFailure::NoSpace),
             vec![Effect::Tell(OpFailure::NoSpace)],
         ),
     ];
-    for (why, kind, end, want) in table {
-        let (_, effects) = loaded(vec![]).step(finished(kind, end, None), at(0));
+    for (why, kind, finish, want) in table {
+        let (_, effects) = loaded(vec![]).step(finished(kind, finish, None), at(0));
         assert_eq!(effects, want, "{why}");
     }
 }
@@ -102,7 +103,7 @@ fn what_a_change_said_when_it_ended() {
 fn a_conflict_question_goes_when_its_work_ends() {
     let conflict = Conflict::new(name("a.txt"), home_folder(), ConflictKind::Copy, 0);
     let (asked, _) = loaded(vec![]).step(Input::Op(OpEvent::Asking(conflict)), at(0));
-    let (ended, _) = asked.step(finished(OpKind::Copy, End::Stopped, None), at(0));
+    let (ended, _) = asked.step(finished(OpKind::Copy, Finish::Stopped, None), at(0));
     assert_eq!(ended.question(), &Question::None);
 }
 

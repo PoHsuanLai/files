@@ -22,15 +22,6 @@ pub enum CloudState {
     Conflict,
 }
 
-/// Whether the person keeps an item downloaded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Keeping {
-    /// Kept: never removed to free space.
-    Kept,
-    /// Not kept.
-    NotKept,
-}
-
 /// What an item is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
@@ -68,8 +59,8 @@ impl Share {
 pub struct CloudItem {
     /// Where it stands.
     pub state: CloudState,
-    /// Whether it is kept downloaded.
-    pub keeping: Keeping,
+    /// Whether it is kept downloaded: never removed to free space.
+    pub kept: bool,
     /// What it is.
     pub kind: CloudKind,
     /// How far a transfer is, while one moves.
@@ -87,7 +78,7 @@ impl CloudItem {
     pub fn new(kind: CloudKind, state: CloudState) -> CloudItem {
         CloudItem {
             state,
-            keeping: Keeping::NotKept,
+            kept: false,
             kind,
             share: None,
             words: None,
@@ -98,10 +89,7 @@ impl CloudItem {
 
     /// The same item, kept downloaded.
     pub fn kept(self) -> CloudItem {
-        CloudItem {
-            keeping: Keeping::Kept,
-            ..self
-        }
+        CloudItem { kept: true, ..self }
     }
 
     /// The same item, `share` of the way through its transfer.

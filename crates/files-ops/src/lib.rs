@@ -8,7 +8,7 @@
 //! folder by trashing it if it is still empty, a rename by renaming back, a move to the Trash by
 //! putting back. Nothing here follows a symbolic link: a link is copied as a link.
 //!
-//! A [`Worker`] runs a queue of plans on a thread of its own and reports [`Event`]s to a [`Sink`];
+//! A [`Worker`] runs a queue of plans on a thread of its own and reports [`OpEvent`]s to a [`Sink`];
 //! every job is submitted with a tag of the caller's choosing (the tab that asked, say) and every
 //! event of that job comes back with it. It is plain `std` threads and channels, so the caller owns
 //! the runtime.
@@ -53,7 +53,8 @@ mod ran;
 mod worker;
 
 pub use exec::Executor;
+pub use files_core::{Finish, OpEvent, Outcome};
 pub use host::{CancelToken, Flow, Host};
 pub use journal::Journal;
-pub use ran::{Finish, Ran};
-pub use worker::{Event, Finished, Job, Sink, Worker};
+pub use ran::Ran;
+pub use worker::{Job, Sink, Worker};

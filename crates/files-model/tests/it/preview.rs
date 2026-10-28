@@ -2,7 +2,7 @@
 //! for an item it is no longer about.
 
 use files_core::{ByteSize, EntryKind, FolderPath, Info, ItemRef, Location};
-use files_model::{Browser, Effect, Input, ListFailure, Modifier, Pane, Preview, Tabbed, Tabs};
+use files_model::{Browser, Effect, Input, ListFailure, Modifier, Preview, Tabbed, Tabs};
 
 use crate::common::*;
 
@@ -29,12 +29,12 @@ fn three() -> Browser {
 #[test]
 fn the_pane_is_away_until_asked_for_and_toggles() {
     let (browser, effects) = run(three(), vec![click("a")]);
-    assert_eq!(browser.pane(), Pane::Hidden);
+    assert!(!browser.pane_shown());
     assert_eq!(browser.preview(), Preview::Hidden);
     assert!(effects.is_empty(), "nothing is asked for while it is away");
 
     let (browser, effects) = run(browser, vec![Input::TogglePreview]);
-    assert_eq!(browser.pane(), Pane::Shown);
+    assert!(browser.pane_shown());
     // Up over a selected file, it asks for that file at once.
     assert_eq!(effects, asks("a"));
 
@@ -146,11 +146,11 @@ fn the_tabs_share_the_pane_and_a_tab_brought_forward_asks_for_its_item() {
     let (tabs, _) = tabs.step(Input::Listed(home(), Ok(vec![file("a"), file("b")])), at(0));
     let (tabs, _) = tabs.step(click("a"), at(0));
     let (tabs, _) = tabs.step(Input::NewTab, at(0));
-    assert_eq!(tabs.get(first).unwrap().browser().pane(), Pane::Hidden);
+    assert!(!tabs.get(first).unwrap().browser().pane_shown());
 
     // Put up in the front tab, it is up in the other too, and only the front tab asked.
     let (tabs, effects) = tabs.step(Input::TogglePreview, at(0));
-    assert_eq!(tabs.get(first).unwrap().browser().pane(), Pane::Shown);
+    assert!(tabs.get(first).unwrap().browser().pane_shown());
     assert!(effects.is_empty(), "the new tab has nothing selected yet");
 
     // The first tab has a selection and was behind: coming forward asks for its item.

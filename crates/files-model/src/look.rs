@@ -8,16 +8,6 @@ use crate::error::ListFailure;
 
 type Stepped = (Browser, Vec<Effect>);
 
-/// Whether Quick Look is up. It shows the row the keyboard is on, so it follows the arrow keys.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Looking {
-    /// Not up.
-    #[default]
-    Closed,
-    /// Up, over the row the keyboard is on.
-    Open,
-}
-
 /// The Get Info panel: closed, waiting for the facts, showing them, or unable to.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[non_exhaustive]
@@ -47,13 +37,11 @@ impl InfoView {
 impl Browser {
     /// The entry Quick Look is showing: the row the keyboard is on, while Quick Look is up.
     pub fn quick_look(&self) -> Option<&Entry> {
-        match self.looking {
-            Looking::Closed => None,
-            Looking::Open => {
-                let cursor = self.selection.cursor()?;
-                self.rows.iter().find(|row| row.name == *cursor)
-            }
+        if !self.looking {
+            return None;
         }
+        let cursor = self.selection.cursor()?;
+        self.rows.iter().find(|row| row.name == *cursor)
     }
 
     /// The item Quick Look is showing, by where it is.
@@ -70,11 +58,10 @@ impl Browser {
     /// Open Quick Look on the row the keyboard is on, or close it. It opens only in a folder on
     /// disk, over a row, and not while Get Info is up.
     pub(crate) fn toggle_quick_look(self) -> Stepped {
-        let looking = match (self.looking, self.selection.cursor(), self.folder()) {
-            (Looking::Open, _, _) => Looking::Closed,
-            (Looking::Closed, Some(_), Some(_)) if self.info == InfoView::Closed => Looking::Open,
-            (Looking::Closed, _, _) => Looking::Closed,
-        };
+        let looking = !self.looking
+            && self.selection.cursor().is_some()
+            && self.folder().is_some()
+            && self.info == InfoView::Closed;
         (Browser { looking, ..self }, Vec::new())
     }
 
@@ -82,7 +69,7 @@ impl Browser {
     pub(crate) fn close_quick_look(self) -> Stepped {
         (
             Browser {
-                looking: Looking::Closed,
+                looking: false,
                 ..self
             },
             Vec::new(),
@@ -137,7 +124,7 @@ impl Browser {
     fn asking_info(self, item: ItemRef) -> Stepped {
         let effects = vec![Effect::ReadInfo(item.clone())];
         let browser = Browser {
-            looking: Looking::Closed,
+            looking: false,
             info: InfoView::Loading(item),
             ..self
         };

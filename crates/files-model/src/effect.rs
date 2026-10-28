@@ -4,8 +4,8 @@ use std::path::PathBuf;
 
 use crate::app::AppPick;
 use files_core::{
-    FileName, FolderPath, FolderPrefs, ItemRef, Keeping, Location, OnlineUrl, OpFailure, OpPlan,
-    Resolution, Summary, VolumeId, VolumeName, VolumeTrouble,
+    FileName, FolderPath, FolderPrefs, ItemRef, Location, OnlineUrl, OpFailure, OpPlan, Resolution,
+    Summary, VolumeId, VolumeName, VolumeTrouble,
 };
 
 /// One file to hand to an app: where it is, and what it is called.
@@ -101,8 +101,9 @@ pub enum Effect {
     CloudDownload(Vec<ItemRef>),
     /// Remove the downloaded copy of these items and answer with `Input::CloudAnswered`.
     CloudRemove(Vec<ItemRef>),
-    /// Keep these items downloaded, or not, and answer with `Input::CloudAnswered`.
-    CloudKeep(Vec<ItemRef>, Keeping),
+    /// Keep these items downloaded (`true`) or stop keeping them, and answer with
+    /// `Input::CloudAnswered`.
+    CloudKeep(Vec<ItemRef>, bool),
     /// Save these online documents as files and answer with `Input::CopiesSaved`.
     CloudSaveCopy(Vec<ItemRef>),
     /// Open this online document in the browser.

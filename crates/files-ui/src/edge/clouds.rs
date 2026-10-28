@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use files_core::{CloudDrive, CloudNews, CloudWords, ItemRef, Keeping, Refused, SavedCopies};
+use files_core::{CloudDrive, CloudNews, CloudWords, ItemRef, Refused, SavedCopies};
 use files_fs::Clouds;
 use files_model::{Input, TabId};
 use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
@@ -22,7 +22,7 @@ enum Ask {
     Read(TabId, Vec<ItemRef>),
     Download(TabId, Vec<ItemRef>),
     Remove(TabId, Vec<ItemRef>),
-    Keep(TabId, Vec<ItemRef>, Keeping),
+    Keep(TabId, Vec<ItemRef>, bool),
     Copy(TabId, Vec<ItemRef>),
     Stop,
 }
@@ -89,8 +89,8 @@ impl CloudDrives {
                             let result = clouds.remove_download(&items);
                             answer(&tell, tab, items, result);
                         }
-                        Ask::Keep(tab, items, keeping) => {
-                            let result = clouds.keep(&items, keeping);
+                        Ask::Keep(tab, items, keep) => {
+                            let result = clouds.keep(&items, keep);
                             answer(&tell, tab, items, result);
                         }
                         Ask::Copy(tab, items) => {
@@ -132,8 +132,8 @@ impl CloudDrives {
     }
 
     /// Keep Downloaded, on or off.
-    pub(super) fn keep(&self, tab: TabId, items: Vec<ItemRef>, keeping: Keeping) {
-        let _ = self.asks.send(Ask::Keep(tab, items, keeping));
+    pub(super) fn keep(&self, tab: TabId, items: Vec<ItemRef>, keep: bool) {
+        let _ = self.asks.send(Ask::Keep(tab, items, keep));
     }
 }
 

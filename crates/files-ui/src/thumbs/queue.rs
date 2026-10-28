@@ -6,33 +6,17 @@
 
 use super::key::ThumbKey;
 
-/// Where a wish stands.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Stage {
-    Waiting,
-    Making,
-}
-
-/// What to do with a finished thumbnail.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Delivery {
-    /// Its tile still wants it: send it on.
-    Deliver,
-    /// Its tile was scrolled away (or never wanted it): drop it.
-    Drop,
-}
-
-/// The wishes, oldest first.
+/// The wishes, oldest first, each with whether a worker is making it now.
 #[derive(Debug, Clone, Default)]
 pub struct Queue {
-    wishes: Vec<(ThumbKey, Stage)>,
+    wishes: Vec<(ThumbKey, bool)>,
 }
 
 impl Queue {
     /// A tile wants the thumbnail `key`. Asking again for one already wanted changes nothing.
     pub fn want(&mut self, key: ThumbKey) {
         if self.wishes.iter().all(|(held, _)| *held != key) {
-            self.wishes.push((key, Stage::Waiting));
+            self.wishes.push((key, false));
         }
     }
 
@@ -43,25 +27,17 @@ impl Queue {
 
     /// The wish to make next: the newest that nobody is making. It is marked as being made.
     pub fn take(&mut self) -> Option<ThumbKey> {
-        let wish = self
-            .wishes
-            .iter_mut()
-            .rev()
-            .find(|(_, stage)| *stage == Stage::Waiting)?;
-        wish.1 = Stage::Making;
+        let wish = self.wishes.iter_mut().rev().find(|(_, making)| !making)?;
+        wish.1 = true;
         Some(wish.0.clone())
     }
 
-    /// `key` has been made. The wish ends here: whether to deliver it depends on its tile still
-    /// wanting it.
-    pub fn finish(&mut self, key: &ThumbKey) -> Delivery {
+    /// `key` has been made. The wish ends here; the answer is whether its tile still wants it
+    /// (send it on) or was scrolled away (drop it).
+    pub fn finish(&mut self, key: &ThumbKey) -> bool {
         let before = self.wishes.len();
         self.unwant(key);
-        if self.wishes.len() < before {
-            Delivery::Deliver
-        } else {
-            Delivery::Drop
-        }
+        self.wishes.len() < before
     }
 
     /// How many wishes are held, waiting or being made.

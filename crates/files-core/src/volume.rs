@@ -55,26 +55,6 @@ pub enum VolumeKind {
     Optical,
 }
 
-/// Whether a volume is available as a folder, and where.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[non_exhaustive]
-pub enum Mount {
-    /// Its contents are at this folder.
-    At(FolderPath),
-    /// It is attached but not opened yet; opening it mounts it.
-    Not,
-}
-
-/// Whether the sidebar offers to eject a volume.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
-pub enum Eject {
-    /// An eject button is shown.
-    Allowed,
-    /// The disk stays (the computer's own).
-    Never,
-}
-
 /// One disk the sidebar lists.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
@@ -85,10 +65,11 @@ pub struct Volume {
     pub name: VolumeName,
     /// What sort of disk it is.
     pub kind: VolumeKind,
-    /// Whether it is open as a folder.
-    pub mount: Mount,
-    /// Whether it can be ejected.
-    pub eject: Eject,
+    /// The folder its contents are at; `None` while it is attached but not opened yet (opening
+    /// it mounts it).
+    pub mount: Option<FolderPath>,
+    /// Whether it can be ejected (an eject button is shown); the computer's own disk stays.
+    pub can_eject: bool,
 }
 
 impl Volume {
@@ -98,15 +79,15 @@ impl Volume {
             id,
             name,
             kind,
-            mount: Mount::Not,
-            eject: Eject::Never,
+            mount: None,
+            can_eject: false,
         }
     }
 
     /// The same volume mounted at `folder`.
     pub fn mounted_at(self, folder: FolderPath) -> Volume {
         Volume {
-            mount: Mount::At(folder),
+            mount: Some(folder),
             ..self
         }
     }
@@ -114,17 +95,14 @@ impl Volume {
     /// The same volume with an eject button.
     pub fn ejectable(self) -> Volume {
         Volume {
-            eject: Eject::Allowed,
+            can_eject: true,
             ..self
         }
     }
 
     /// The folder it is mounted at, when it is.
     pub fn folder(&self) -> Option<&FolderPath> {
-        match &self.mount {
-            Mount::At(folder) => Some(folder),
-            Mount::Not => None,
-        }
+        self.mount.as_ref()
     }
 
     /// Whether `folder` is the volume's own folder or inside it.

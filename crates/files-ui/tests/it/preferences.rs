@@ -3,8 +3,8 @@
 use std::sync::Arc;
 
 use ds_harness::harness::settle_until;
-use files_core::{Behaviour, FolderPath, FoldersOnTop};
-use files_ui::{DiskRows, PlaceKind, Places, Preferences, Sidebar};
+use files_core::{Behaviour, FolderPath};
+use files_ui::{PlaceKind, Places, Preferences, Sidebar};
 use tokio::sync::watch;
 
 use super::support::{RecordingOpener, harness, launch, scratch_folder};
@@ -44,7 +44,7 @@ fn the_rows_the_sidebar_lists_follow_the_choice() {
         .leaving_out(PlaceKind::Home)
         .leaving_out(PlaceKind::Computer)
         .leaving_out(PlaceKind::Trash)
-        .with_disks(DiskRows::Left);
+        .with_disks(false);
     let listed = |places: &Places| {
         files_ui::places::groups(places)
             .into_iter()
@@ -56,21 +56,21 @@ fn the_rows_the_sidebar_lists_follow_the_choice() {
         vec![vec![PlaceKind::Music], vec![PlaceKind::Trash]],
         "the Trash cannot be left out"
     );
-    assert_eq!(sidebar.disks(), DiskRows::Left);
-    assert_eq!(Sidebar::default().disks(), DiskRows::Listed);
+    assert!(!sidebar.disks());
+    assert!(Sidebar::default().disks());
 }
 
 #[test]
 fn folders_come_first_when_the_person_asks() {
     let table = [
-        ("mixed", FoldersOnTop::Mixed, "notes.txt", "Projects"),
-        ("first", FoldersOnTop::First, "Projects", "notes.txt"),
+        ("mixed", false, "notes.txt", "Projects"),
+        ("first", true, "Projects", "notes.txt"),
     ];
-    for (label, folders, earlier, later) in table {
+    for (label, folders_first, earlier, later) in table {
         let dir = scratch_folder();
         let preferences = Preferences {
             behaviour: Behaviour {
-                folders,
+                folders_first,
                 ..Behaviour::default()
             },
             ..Preferences::default()

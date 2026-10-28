@@ -13,7 +13,7 @@ use anyview_platform::{PlatformError, ThumbPixels, ThumbSize, ThumbnailCache};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::{Edge, Heard};
-use crate::thumbs::{Delivery, Queue, ThumbKey, Thumbed, Thumbnailer};
+use crate::thumbs::{Queue, ThumbKey, Thumbed, Thumbnailer};
 
 /// How many thumbnails are made at once: enough to keep a screenful coming, few enough that
 /// scrolling a folder of pictures leaves the machine free for typing.
@@ -128,8 +128,8 @@ fn serve(shared: &Shared, thumbnailer: &Thumbnailer, heard: &UnboundedSender<Hea
             catch_unwind(AssertUnwindSafe(|| thumbnailer.thumbnail(&file))).unwrap_or(Thumbed::Icon)
         });
         let thumbed = made.unwrap_or(Thumbed::Icon);
-        let delivery = shared.lock().queue.finish(&key);
-        if delivery == Delivery::Deliver {
+        let wanted = shared.lock().queue.finish(&key);
+        if wanted {
             // A closed channel means the window is gone.
             let _ = heard.send(Heard::Thumbed(key, thumbed));
         }

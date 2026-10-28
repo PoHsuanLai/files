@@ -5,7 +5,7 @@ use std::sync::mpsc::{Receiver, channel};
 use std::time::Duration;
 
 use files_core::{Answer, OpKind, OpPlan, Resolution};
-use files_ops::{Event, Finish, Job, Worker};
+use files_ops::{Finish, Job, OpEvent, Worker};
 use files_trash::FakeTrash;
 
 use super::support::{name, rig};
@@ -13,28 +13,28 @@ use super::support::{name, rig};
 /// Who asked for a job: stands in for the caller's tag.
 type Asker = u8;
 
-fn start(rig: &super::support::Rig) -> (Worker<Asker>, Receiver<(Asker, Event)>) {
+fn start(rig: &super::support::Rig) -> (Worker<Asker>, Receiver<(Asker, OpEvent)>) {
     let (sender, events) = channel();
     let sender = std::sync::Mutex::new(sender);
-    let sink = move |asker: &Asker, event: Event| {
+    let sink = move |asker: &Asker, event: OpEvent| {
         let _ = sender.lock().unwrap().send((*asker, event));
     };
     let trash = Arc::new(FakeTrash::new(rig.path("queue-bin")));
     (Worker::start(trash, Arc::new(sink)).unwrap(), events)
 }
 
-fn next_tagged(events: &Receiver<(Asker, Event)>) -> (Asker, Event) {
+fn next_tagged(events: &Receiver<(Asker, OpEvent)>) -> (Asker, OpEvent) {
     events.recv_timeout(Duration::from_secs(5)).unwrap()
 }
 
-fn next(events: &Receiver<(Asker, Event)>) -> Event {
+fn next(events: &Receiver<(Asker, OpEvent)>) -> OpEvent {
     next_tagged(events).1
 }
 
-/// The next `Finished`, skipping progress.
-fn finished(events: &Receiver<(Asker, Event)>) -> files_ops::Finished {
+/// The next outcome, skipping progress.
+fn finished(events: &Receiver<(Asker, OpEvent)>) -> files_ops::Outcome {
     loop {
-        if let Event::Finished(done) = next(events) {
+        if let OpEvent::Finished(done) = next(events) {
             return done;
         }
     }
@@ -50,7 +50,7 @@ fn work_is_reported_started_then_finished_and_can_be_undone() {
     };
     worker.submit(Job::Run(plan), 1);
 
-    let Event::Started(summary) = next(&events) else {
+    let OpEvent::Started(summary) = next(&events) else {
         panic!("not started first");
     };
     assert_eq!(summary.kind, OpKind::NewFolder);
@@ -75,7 +75,7 @@ fn a_conflict_waits_for_the_answer_and_the_work_goes_on() {
     worker.submit(Job::Run(OpPlan::Copy(rig.transfer(&["home/a.txt"]))), 1);
 
     let conflict = loop {
-        if let Event::Asking(conflict) = next(&events) {
+        if let OpEvent::Asking(conflict) = next(&events) {
             break conflict;
         }
     };
@@ -99,7 +99,7 @@ fn cancel_answers_a_waiting_conflict_with_stop() {
     let (worker, events) = start(&rig);
     worker.submit(Job::Run(OpPlan::Copy(rig.transfer(&["home/a.txt"]))), 1);
     loop {
-        if let Event::Asking(_) = next(&events) {
+        if let OpEvent::Asking(_) = next(&events) {
             break;
         }
     }
@@ -127,10 +127,10 @@ fn work_queued_behind_runs_after_and_a_stale_answer_is_ignored() {
     while kinds.len() < 2 {
         let (asker, event) = next_tagged(&events);
         match event {
-            Event::Started(summary) => {
+            OpEvent::Started(summary) => {
                 assert_eq!(asker, if summary.kind == OpKind::Move { 1 } else { 2 })
             }
-            Event::Finished(done) => {
+            OpEvent::Finished(done) => {
                 assert_eq!(
                     asker,
                     if done.summary.kind == OpKind::Move {
@@ -141,7 +141,7 @@ fn work_queued_behind_runs_after_and_a_stale_answer_is_ignored() {
                 );
                 kinds.push(done.summary.kind);
             }
-            Event::Progress(_) | Event::Asking(_) | _ => {}
+            OpEvent::Progress(_) | OpEvent::Asking(_) => {}
         }
     }
     assert_eq!(kinds, [OpKind::Move, OpKind::Rename]);

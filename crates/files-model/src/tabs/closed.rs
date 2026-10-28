@@ -1,10 +1,9 @@
 //! What becomes of a report for a tab that has been closed since it asked.
 
-use files_core::{Answer, Resolution};
+use files_core::{Answer, Finish, OpEvent, Resolution};
 
 use super::{Effect, Stepped, TabId, Tabbed, Tabs};
 use crate::input::Input;
-use crate::ops::{End, OpEvent};
 
 impl Tabs {
     /// `input` was the answer to something `tab` asked before it was closed. Nobody is left to
@@ -21,11 +20,11 @@ impl Tabs {
                 (self, vec![Tabbed::new(tab, stop)])
             }
             OpEvent::Finished(outcome) => {
-                let told = match outcome.end {
-                    End::Failed(failure) => {
+                let told = match outcome.finish {
+                    Finish::Failed(failure) => {
                         vec![Tabbed::new(self.front_id(), Effect::Tell(failure))]
                     }
-                    End::Done | End::Stopped => Vec::new(),
+                    Finish::Done | Finish::Stopped => Vec::new(),
                 };
                 (self.undoable(outcome.undo), told)
             }

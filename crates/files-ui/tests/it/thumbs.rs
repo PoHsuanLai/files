@@ -14,9 +14,7 @@ use anyview_platform::{ThumbPixels, ThumbnailCache};
 use ds::prelude::ImageSource;
 use files_core::{FileName, FolderPath, ItemRef};
 use files_ui::edge::{Edge, Heard, Seams};
-use files_ui::thumbs::{
-    Delivery, Made, Maker, Queue, SIZE, ThumbKey, Thumbed, Thumbnailer, Thumbs, Version,
-};
+use files_ui::thumbs::{Made, Maker, Queue, SIZE, ThumbKey, Thumbed, Thumbnailer, Thumbs, Version};
 
 use super::edge::next;
 use super::support::{RecordingOpener, scratch_folder};
@@ -162,8 +160,8 @@ fn wishes_are_made_newest_first_and_an_answer_for_a_tile_that_left_is_dropped() 
 
     // c is scrolled away while it is being made: its answer is dropped. b's tile stays.
     queue.unwant(&c);
-    assert_eq!(queue.finish(&c), Delivery::Drop);
-    assert_eq!(queue.finish(&b), Delivery::Deliver);
+    assert!(!queue.finish(&c));
+    assert!(queue.finish(&b));
 
     // a was scrolled away before it was started: it is never taken.
     queue.unwant(&a);
@@ -175,7 +173,7 @@ fn wishes_are_made_newest_first_and_an_answer_for_a_tile_that_left_is_dropped() 
     queue.want(key("a", 2));
     assert_eq!(queue.take(), Some(key("a", 2)));
     queue.unwant(&key("a", 1));
-    assert_eq!(queue.finish(&key("a", 1)), Delivery::Drop);
+    assert!(!queue.finish(&key("a", 1)));
 }
 
 #[test]

@@ -1,6 +1,6 @@
 //! The vocabulary's own rules: what is a folder location, a hidden entry.
 
-use files_core::{ByteSize, Entry, EntryKind, FileName, FolderPath, PathError, Visibility};
+use files_core::{ByteSize, Entry, EntryKind, FileName, FolderPath, PathError};
 
 #[test]
 fn a_folder_location_is_absolute_and_walks_up_and_down() {
@@ -15,7 +15,7 @@ fn a_folder_location_is_absolute_and_walks_up_and_down() {
 #[test]
 fn an_entry_is_hidden_when_its_name_starts_with_a_dot() {
     let entry = |name: &str| Entry::new(FileName::new(name).unwrap(), EntryKind::File(ByteSize(1)));
-    assert_eq!(entry(".bashrc").visibility(), Visibility::Hidden);
-    assert_eq!(entry("notes.txt").visibility(), Visibility::Shown);
-    assert_eq!(entry("a.hidden-not").visibility(), Visibility::Shown);
+    assert!(entry(".bashrc").is_hidden());
+    assert!(!entry("notes.txt").is_hidden());
+    assert!(!entry("a.hidden-not").is_hidden());
 }

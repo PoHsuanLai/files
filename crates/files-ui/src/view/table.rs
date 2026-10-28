@@ -6,13 +6,13 @@ use ds::components::controls::scroller::handle::use_scroller;
 use ds::components::lists::table::model::{CellAlign, Sort as TableSort, Sorting, TableColumn};
 use ds::components::lists::virtual_table::VirtualTable;
 use ds::prelude::{FileIcon, Label, Px, TableLook};
-use files_core::{Entry, Location, Sort};
+use files_core::{Entry, Location, Sort, SortKey};
 use files_model::{Browser, Input, Opens, Rename, opens};
 
 use super::cloud::CloudBadge;
 use super::menu::ContextAt;
 use super::rename::RenameCell;
-use super::row::{RowCell, Takes};
+use super::row::RowCell;
 use crate::cloud::badge_of;
 use crate::edge::Zone;
 use crate::rows::{Column, click_of, cursor_of, direction_of, order_of, selection_of};
@@ -22,17 +22,18 @@ use crate::words::{NONE, entry_size_words, kind_words};
 /// A column of the table: its header and width.
 fn column(id: Column, location: &Location) -> TableColumn<Column> {
     let width = match id {
-        Column::Name => Px(280.0),
         Column::WhereFrom => Px(200.0),
-        Column::Modified => Px(160.0),
-        Column::Size => Px(96.0),
-        Column::Kind => Px(140.0),
+        Column::Sort(SortKey::Modified) => Px(160.0),
+        Column::Sort(SortKey::Size) => Px(96.0),
+        Column::Sort(SortKey::Kind) => Px(140.0),
+        // The name, and a key files-core adds later.
+        Column::Sort(_) => Px(280.0),
     };
     let base = TableColumn::new(id, id.title_in(location), width);
     match id {
-        Column::Size => base.aligned(CellAlign::Trailing),
+        Column::Sort(SortKey::Size) => base.aligned(CellAlign::Trailing),
         Column::WhereFrom => base.sorting(Sorting::Fixed),
-        Column::Name | Column::Modified | Column::Kind => base,
+        Column::Sort(_) => base,
     }
 }
 
@@ -76,13 +77,10 @@ fn shell(
     entry: &Entry,
     content: Element,
 ) -> Element {
-    let takes = match opens(entry) {
-        Opens::Folder => Takes::Drops,
-        Opens::File | Opens::Nothing => Takes::Nothing,
-    };
+    let drops = opens(entry) == Opens::Folder;
     let name = entry.name.clone();
     rsx! {
-        RowCell { browse, menu, name, takes, content }
+        RowCell { browse, menu, name, drops, content }
     }
 }
 
@@ -95,7 +93,7 @@ pub(super) fn FolderTable(browse: Browse, menu: Signal<Option<ContextAt>>, zone:
         let state = browse.state.read();
         let prefs = state.prefs();
         let sort = TableSort {
-            column: Column::of_key(prefs.sort.key),
+            column: Column::Sort(prefs.sort.key),
             direction: direction_of(prefs.sort.order),
         };
         (
@@ -113,16 +111,15 @@ pub(super) fn FolderTable(browse: Browse, menu: Signal<Option<ContextAt>>, zone:
             return rsx! {};
         };
         let content = match id {
-            Column::Name => name_cell(browse, &state, entry),
-            Column::Modified => {
+            Column::Sort(SortKey::Modified) => {
                 let words = zone.words(entry.modified);
                 rsx! { "{words}" }
             }
-            Column::Size => {
+            Column::Sort(SortKey::Size) => {
                 let words = entry_size_words(entry);
                 rsx! { "{words}" }
             }
-            Column::Kind => {
+            Column::Sort(SortKey::Kind) => {
                 let words = kind_words(entry);
                 rsx! { "{words}" }
             }
@@ -130,6 +127,8 @@ pub(super) fn FolderTable(browse: Browse, menu: Signal<Option<ContextAt>>, zone:
                 let words = origin_words(entry);
                 rsx! { "{words}" }
             }
+            // The name, and a key files-core adds later.
+            Column::Sort(_) => name_cell(browse, &state, entry),
         };
         shell(browse, menu, entry, content)
     });
@@ -145,11 +144,13 @@ pub(super) fn FolderTable(browse: Browse, menu: Signal<Option<ContextAt>>, zone:
             scroller,
             sort: Some(sort),
             on_sort: move |sort: TableSort<Column>| {
-                let sort = Sort {
-                    key: sort.column.key(),
-                    order: order_of(sort.direction),
-                };
-                browse.send(Input::SetSort(sort));
+                if let Some(key) = sort.column.sort_key() {
+                    let sort = Sort {
+                        key,
+                        order: order_of(sort.direction),
+                    };
+                    browse.send(Input::SetSort(sort));
+                }
             },
             cursor,
             selection: Some(selection),

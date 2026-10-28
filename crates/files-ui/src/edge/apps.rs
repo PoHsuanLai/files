@@ -4,15 +4,6 @@ use std::path::PathBuf;
 
 use files_model::AppPick;
 
-/// Whether an app is the one the person's settings name for the files.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AppRole {
-    /// It is the default.
-    Default,
-    /// It can open them and is not the default.
-    Other,
-}
-
 /// One app, as the window shows it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppChoiceView {
@@ -20,8 +11,8 @@ pub struct AppChoiceView {
     pub pick: AppPick,
     /// The name its desktop entry gives it.
     pub name: String,
-    /// Whether it is the default.
-    pub role: AppRole,
+    /// Whether it is the app the person's settings name for the files.
+    pub is_default: bool,
     /// The image file of its icon, when it has one; the window draws it as it is. An app with
     /// none shows no image in the menu and the plain app glyph in the sheet.
     pub icon: Option<PathBuf>,

@@ -63,7 +63,7 @@ impl Browser {
         };
         let browser = Browser {
             goto,
-            looking: crate::look::Looking::Closed,
+            looking: false,
             ..self
         };
         (browser, Vec::new())

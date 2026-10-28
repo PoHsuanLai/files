@@ -3,12 +3,10 @@
 use std::time::SystemTime;
 
 use files_core::{
-    ByteSize, Entry, EntryKind, FolderPath, ItemRef, Location, OpFailure, OpKind, OpPlan, Summary,
-    Transfer, TrashId, TrashedItem,
+    ByteSize, Entry, EntryKind, Finish, FolderPath, ItemRef, Location, OpEvent, OpFailure, OpKind,
+    OpPlan, Outcome, Summary, Transfer, TrashId, TrashedItem,
 };
-use files_model::{
-    Browser, Change, DropHow, Effect, End, Input, Modifier, OpEvent, Outcome, Question, Rename,
-};
+use files_model::{Browser, Change, DropHow, Effect, Input, Modifier, Question, Rename};
 
 use crate::common::*;
 
@@ -57,8 +55,8 @@ pub(super) fn summary(kind: OpKind) -> Summary {
     Summary::new(kind, 1, Some(name("x")))
 }
 
-pub(super) fn finished(kind: OpKind, end: End, undo: Option<Summary>) -> Input {
-    Input::Op(OpEvent::Finished(Outcome::new(summary(kind), end, undo)))
+pub(super) fn finished(kind: OpKind, finish: Finish, undo: Option<Summary>) -> Input {
+    Input::Op(OpEvent::Finished(Outcome::new(summary(kind), finish, undo)))
 }
 
 #[test]
@@ -132,7 +130,7 @@ fn a_new_folder_that_failed_does_not_start_a_rename_later() {
     let (browser, effects) = browser.step(
         finished(
             OpKind::NewFolder,
-            End::Failed(OpFailure::NoPermission),
+            Finish::Failed(OpFailure::NoPermission),
             None,
         ),
         at(0),

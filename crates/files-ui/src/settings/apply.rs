@@ -2,11 +2,11 @@
 
 use std::path::PathBuf;
 
-use files_core::{Asking, Behaviour, FoldersOnTop};
+use files_core::Behaviour;
 
-use super::words::{NewWindowsShow, Row, Switch};
+use super::words::{NewWindowsShow, Row};
 use super::{FilesDoc, SidebarSettings};
-use crate::places::{DiskRows, PlaceKind, Sidebar};
+use crate::places::{PlaceKind, Sidebar};
 use crate::preferences::Preferences;
 
 /// Where a new window opens, before the program has found the user folders.
@@ -43,18 +43,11 @@ impl FilesDoc {
     /// What the window follows while it is open.
     pub fn preferences(&self) -> Preferences {
         let advanced = &self.advanced;
-        let warns = |switch: Switch| match switch {
-            Switch::On => Asking::Ask,
-            Switch::Off => Asking::Skip,
-        };
         Preferences {
             behaviour: Behaviour {
-                folders: match advanced.folders_on_top {
-                    Switch::On => FoldersOnTop::First,
-                    Switch::Off => FoldersOnTop::Mixed,
-                },
-                emptying_trash: warns(advanced.warn_emptying_trash),
-                changing_extension: warns(advanced.warn_changing_extension),
+                folders_first: advanced.folders_on_top.is_on(),
+                ask_before_emptying_trash: advanced.warn_emptying_trash.is_on(),
+                ask_before_changing_extension: advanced.warn_changing_extension.is_on(),
             },
             sidebar: sidebar_of(&self.sidebar),
         }
@@ -73,15 +66,11 @@ fn sidebar_of(rows: &SidebarSettings) -> Sidebar {
         (rows.videos, PlaceKind::Videos),
         (rows.computer, PlaceKind::Computer),
     ];
-    let disks = match rows.disks {
-        Row::Show => DiskRows::Listed,
-        Row::Hide => DiskRows::Left,
-    };
     places
         .into_iter()
         .filter(|(row, _)| *row == Row::Hide)
         .fold(Sidebar::default(), |sidebar, (_, kind)| {
             sidebar.leaving_out(kind)
         })
-        .with_disks(disks)
+        .with_disks(rows.disks.is_shown())
 }

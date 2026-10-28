@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use files_core::{
     CloudDrive, CloudItem, CloudKind, CloudNews, CloudState, DriveId, DriveState, FileName,
-    FolderPath, ItemRef, Keeping, ProviderName, Share,
+    FolderPath, ItemRef, ProviderName, Share,
 };
 use files_fs::{CloudCall, CloudError, Clouds, FakeClouds, NO_FILE_FORMAT_WORDS, OFFLINE_WORDS};
 
@@ -61,18 +61,15 @@ fn an_offline_drive_refuses_a_download_with_words() {
 #[test]
 fn keeping_downloads_and_removing_a_download_unkeeps() {
     let clouds = fake(DriveState::Ready);
-    clouds.keep(&[report()], Keeping::Kept).unwrap();
+    clouds.keep(&[report()], true).unwrap();
     let details = clouds.items(&[report()]).unwrap()[0].1.clone();
     assert_eq!(
-        (details.state, details.keeping),
-        (CloudState::Downloading, Keeping::Kept)
+        (details.state, details.kept),
+        (CloudState::Downloading, true)
     );
     clouds.remove_download(&[report()]).unwrap();
     let details = clouds.items(&[report()]).unwrap()[0].1.clone();
-    assert_eq!(
-        (details.state, details.keeping),
-        (CloudState::Cloud, Keeping::NotKept)
-    );
+    assert_eq!((details.state, details.kept), (CloudState::Cloud, false));
 }
 
 #[test]

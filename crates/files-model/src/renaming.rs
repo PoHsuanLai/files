@@ -3,7 +3,7 @@
 use std::ffi::OsString;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 
-use files_core::{Asking, Entry, FileName, FolderPath};
+use files_core::{Entry, FileName, FolderPath};
 
 use crate::browser::Browser;
 use crate::effect::Effect;
@@ -77,7 +77,7 @@ impl Browser {
             .iter()
             .find(|entry| entry.name == from)
             .is_some_and(|entry| opens(entry) != Opens::Folder);
-        let asks = self.behaviour.changing_extension == Asking::Ask
+        let asks = self.behaviour.ask_before_changing_extension
             && a_file
             && lowered_extension(&from) != lowered_extension(&to);
         if !asks {

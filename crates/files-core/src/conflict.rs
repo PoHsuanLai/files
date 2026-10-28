@@ -52,23 +52,14 @@ pub enum Answer {
     Stop,
 }
 
-/// How far an answer reaches.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Reach {
-    /// Only this item.
-    ThisOne,
-    /// This item and every later one that finds its name taken.
-    Rest,
-}
-
 /// An answer and how far it reaches.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct Resolution {
     /// What to do.
     pub answer: Answer,
-    /// For how many.
-    pub reach: Reach,
+    /// Whether it also holds for every later item that finds its name taken, not only this one.
+    pub to_rest: bool,
 }
 
 impl Resolution {
@@ -76,7 +67,7 @@ impl Resolution {
     pub fn once(answer: Answer) -> Resolution {
         Resolution {
             answer,
-            reach: Reach::ThisOne,
+            to_rest: false,
         }
     }
 
@@ -84,7 +75,7 @@ impl Resolution {
     pub fn for_rest(answer: Answer) -> Resolution {
         Resolution {
             answer,
-            reach: Reach::Rest,
+            to_rest: true,
         }
     }
 }

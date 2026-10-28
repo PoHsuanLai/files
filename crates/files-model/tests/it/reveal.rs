@@ -1,7 +1,7 @@
 //! Revealing entries: another program asked to show them in their folder.
 
 use files_core::FolderPath;
-use files_model::{Availability, Browser, Change, Effect, Input, Modifier};
+use files_model::{Browser, Change, Effect, Input, Modifier};
 
 use crate::common::*;
 
@@ -35,11 +35,7 @@ fn names_are_selected_in_the_folder_already_shown_and_the_first_is_the_cursor() 
             "{asked:?}"
         );
         // Same place: no visit, but the folder is read again.
-        assert_eq!(
-            browser.can_go_back(),
-            Availability::Unavailable,
-            "{asked:?}"
-        );
+        assert!(!browser.can_go_back(), "{asked:?}");
         assert_eq!(effects, vec![Effect::List(home())], "{asked:?}");
     }
 }
@@ -89,7 +85,7 @@ fn a_reveal_in_another_folder_is_a_visit_that_selects_once_that_folder_is_listed
     let there = dir("/srv/data");
     let (browser, effects) = loaded(entries()).step(reveal("/srv/data", &["x.txt"]), at(0));
     assert_eq!(path_of(browser.location()), "/srv/data");
-    assert_eq!(browser.can_go_back(), Availability::Available);
+    assert!(browser.can_go_back());
     assert_eq!(effects.first(), Some(&Effect::Unwatch(home())));
     assert!(effects.contains(&Effect::List(there.clone())));
 

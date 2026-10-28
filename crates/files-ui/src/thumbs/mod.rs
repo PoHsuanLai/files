@@ -21,6 +21,6 @@ mod shelf;
 
 pub use key::{ThumbKey, Thumbed, Version};
 pub use make::{Anyview, Made, Maker, SIZE};
-pub use queue::{Delivery, Queue};
+pub use queue::Queue;
 pub use run::Thumbnailer;
 pub use shelf::Thumbs;

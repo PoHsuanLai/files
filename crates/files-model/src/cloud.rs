@@ -4,12 +4,11 @@
 
 use files_core::{
     CloudDrive, CloudItem, CloudKind, CloudState, DriveState, FileName, FolderPath, ItemRef,
-    Keeping, Refused, SavedCopies,
+    Refused, SavedCopies,
 };
 
 use crate::browser::Browser;
 use crate::effect::{Effect, OpenTarget};
-use crate::history::Availability;
 
 type Stepped = (Browser, Vec<Effect>);
 
@@ -41,15 +40,15 @@ pub enum KeptMark {
 #[non_exhaustive]
 pub struct CloudMenu {
     /// Download Now.
-    pub download: Availability,
+    pub download: bool,
     /// Remove Download.
-    pub remove: Availability,
+    pub remove: bool,
     /// Keep Downloaded.
-    pub keep: Availability,
+    pub keep: bool,
     /// Whether Keep Downloaded is checked.
     pub kept: KeptMark,
     /// Save a Copy: available when the selection holds an online document.
-    pub copy: Availability,
+    pub copy: bool,
 }
 
 impl Browser {
@@ -83,17 +82,11 @@ impl Browser {
             return None;
         }
         let when = |test: fn(Option<&CloudItem>) -> bool| {
-            if self
-                .real_selection()
+            self.real_selection()
                 .iter()
                 .any(|(name, _)| test(self.cloud.get(name)))
-            {
-                Availability::Available
-            } else {
-                Availability::Unavailable
-            }
         };
-        let kept = |item: &Option<&CloudItem>| item.is_some_and(|i| i.keeping == Keeping::Kept);
+        let kept = |item: &Option<&CloudItem>| item.is_some_and(|i| i.kept);
         let items: Vec<Option<&CloudItem>> =
             real.iter().map(|(name, _)| self.cloud.get(name)).collect();
         let kept_mark = if items.is_empty() || !items.iter().any(kept) {
@@ -108,11 +101,7 @@ impl Browser {
             remove: when(can_remove),
             keep: when(|_| true),
             kept: kept_mark,
-            copy: if self.selected_online().is_empty() {
-                Availability::Unavailable
-            } else {
-                Availability::Available
-            },
+            copy: !self.selected_online().is_empty(),
         })
     }
 
@@ -270,18 +259,11 @@ impl Browser {
         let all_kept = {
             let real = self.real_selection();
             !real.is_empty()
-                && real.iter().all(|(name, _)| {
-                    self.cloud
-                        .get(name)
-                        .is_some_and(|i| i.keeping == Keeping::Kept)
-                })
+                && real
+                    .iter()
+                    .all(|(name, _)| self.cloud.get(name).is_some_and(|i| i.kept))
         };
-        let keeping = if all_kept {
-            Keeping::NotKept
-        } else {
-            Keeping::Kept
-        };
-        self.asking_cloud(items, move |items| Effect::CloudKeep(items, keeping))
+        self.asking_cloud(items, move |items| Effect::CloudKeep(items, !all_kept))
     }
 
     fn selected_where(&self, wanted: impl Fn(Option<&CloudItem>) -> bool) -> Vec<ItemRef> {

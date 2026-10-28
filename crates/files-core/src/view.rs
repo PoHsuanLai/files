@@ -45,16 +45,6 @@ pub struct Sort {
     pub order: SortOrder,
 }
 
-/// Whether hidden entries are shown.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum HiddenFiles {
-    /// Entries whose name starts with a dot are left out.
-    #[default]
-    Left,
-    /// Every entry is shown.
-    Shown,
-}
-
 /// How one folder is shown; remembered per folder.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[non_exhaustive]

@@ -8,24 +8,6 @@ use ds_helpers::{ApplicationEntry, DESKTOP_ENTRY_CAP, DesktopFile, DesktopId};
 
 use super::EntryError;
 
-/// Whether the app wants a terminal window (`Terminal=true`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Terminal {
-    /// It runs in a terminal.
-    Needed,
-    /// It has a window of its own.
-    NotNeeded,
-}
-
-/// How the app is started.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Start {
-    /// By running its `Exec` command.
-    Command,
-    /// By asking its bus name to open the files (`DBusActivatable=true`).
-    Bus,
-}
-
 /// What launching needs to know about one app.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppEntry {
@@ -39,10 +21,11 @@ pub struct AppEntry {
     pub icon: Option<String>,
     /// Its `Exec` value, with the key-file escapes taken.
     pub exec: Option<String>,
-    /// Whether it wants a terminal.
-    pub terminal: Terminal,
-    /// How it is started.
-    pub start: Start,
+    /// Whether it runs in a terminal (`Terminal=true`) rather than a window of its own.
+    pub needs_terminal: bool,
+    /// Whether it is started by asking its bus name to open the files (`DBusActivatable=true`)
+    /// rather than by running its `Exec` command.
+    pub bus_activatable: bool,
     /// The folder to run it in (`Path`).
     pub work_dir: Option<PathBuf>,
 }
@@ -67,12 +50,8 @@ impl AppEntry {
             return Err(EntryError::NotAnApp(id.to_string()));
         }
         let exec = group.string("Exec").map(|exec| exec.into_owned());
-        let start = if group.is_true("DBusActivatable") {
-            Start::Bus
-        } else {
-            Start::Command
-        };
-        if matches!(start, Start::Command) && exec.is_none() {
+        let bus_activatable = group.is_true("DBusActivatable");
+        if !bus_activatable && exec.is_none() {
             return Err(EntryError::NoCommand(id.to_string()));
         }
         let text = |key: &str| {
@@ -84,16 +63,12 @@ impl AppEntry {
         Ok(AppEntry {
             name: text("Name").unwrap_or_else(|| id.to_string()),
             icon: text("Icon"),
-            terminal: if group.is_true("Terminal") {
-                Terminal::Needed
-            } else {
-                Terminal::NotNeeded
-            },
+            needs_terminal: group.is_true("Terminal"),
             work_dir: text("Path").map(PathBuf::from),
             id,
             path: path.to_owned(),
             exec,
-            start,
+            bus_activatable,
         })
     }
 

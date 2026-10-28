@@ -1,8 +1,8 @@
-//! Work in progress, questions waiting for an answer, and what the workers report.
+//! Work in progress and questions waiting for an answer.
 
 use files_core::{
-    Conflict, FileName, FolderPath, OpFailure, ProgramName, Progress, Summary, TrashedItem,
-    VolumeId, VolumeName,
+    Conflict, FileName, FolderPath, ProgramName, Progress, Summary, TrashedItem, VolumeId,
+    VolumeName,
 };
 
 /// How a drop was meant, as the window says it (the model never reads modifier keys).
@@ -111,49 +111,4 @@ impl BusyDisk {
     pub fn new(id: VolumeId, name: VolumeName, programs: Vec<ProgramName>) -> BusyDisk {
         BusyDisk { id, name, programs }
     }
-}
-
-/// How a piece of work ended.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum End {
-    /// All of it was done.
-    Done,
-    /// It was stopped; what was done stays done.
-    Stopped,
-    /// It failed at some point.
-    Failed(OpFailure),
-}
-
-/// A piece of work that ended.
-#[derive(Debug, Clone, PartialEq)]
-#[non_exhaustive]
-pub struct Outcome {
-    /// What it was about.
-    pub summary: Summary,
-    /// How it ended.
-    pub end: End,
-    /// What undoing would take back now, if anything.
-    pub undo: Option<Summary>,
-}
-
-impl Outcome {
-    /// `summary` ended as `end`, leaving `undo` to take back.
-    pub fn new(summary: Summary, end: End, undo: Option<Summary>) -> Outcome {
-        Outcome { summary, end, undo }
-    }
-}
-
-/// What the workers tell the browser about a change.
-#[derive(Debug, Clone, PartialEq)]
-#[non_exhaustive]
-pub enum OpEvent {
-    /// A change began.
-    Started(Summary),
-    /// How far it has come.
-    Progress(Progress),
-    /// It is waiting for an answer to a taken name.
-    Asking(Conflict),
-    /// It ended.
-    Finished(Outcome),
 }

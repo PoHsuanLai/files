@@ -3,19 +3,18 @@
 use std::collections::HashMap;
 
 use files_core::{
-    Behaviour, CloudDrive, CloudItem, Entry, FileName, FolderPath, FolderPrefs, HiddenFiles, Info,
-    ItemRef, Location, Summary, Volume,
+    Behaviour, CloudDrive, CloudItem, Entry, FileName, FolderPath, FolderPrefs, Info, ItemRef,
+    Location, Summary, Volume,
 };
 
 use crate::app::Chooser;
 use crate::arrange::arrange;
 use crate::effect::Effect;
 use crate::goto::GoTo;
-use crate::history::{Availability, History};
+use crate::history::History;
 use crate::listing::Listing;
-use crate::look::{InfoView, Looking};
+use crate::look::InfoView;
 use crate::ops::{Question, Work};
-use crate::preview::Pane;
 use crate::rename::Rename;
 use crate::reveal;
 use crate::selection::Selection;
@@ -34,7 +33,7 @@ pub struct Browser {
     pub(crate) typeselect: TypeSelect,
     pub(crate) rename: Rename,
     pub(crate) prefs: FolderPrefs,
-    pub(crate) hidden: HiddenFiles,
+    pub(crate) show_hidden: bool,
     /// The person's choices about how a window behaves (the window's, shared by its tabs).
     pub(crate) behaviour: Behaviour,
     /// The names an `Input::Reveal` asked to select, until the person selects something.
@@ -50,11 +49,11 @@ pub struct Browser {
     /// The folder just made, whose name is opened for editing once it is listed.
     pub(crate) starting: Option<FileName>,
     /// Whether Quick Look is up.
-    pub(crate) looking: Looking,
+    pub(crate) looking: bool,
     /// The Get Info panel.
     pub(crate) info: InfoView,
     /// Whether the preview pane is up (the window's, shared by its tabs).
-    pub(crate) pane: Pane,
+    pub(crate) show_pane: bool,
     /// The facts read for the item the pane shows, once they have arrived.
     pub(crate) details: Option<Info>,
     /// The person's home folder, which `~` means in Go to Folder; `None` until the caller says.
@@ -86,7 +85,7 @@ impl Browser {
             typeselect: TypeSelect::default(),
             rename: Rename::Idle,
             prefs: FolderPrefs::default(),
-            hidden: HiddenFiles::default(),
+            show_hidden: false,
             behaviour: Behaviour::default(),
             reveal: Vec::new(),
             work: Work::Idle,
@@ -94,9 +93,9 @@ impl Browser {
             question: Question::None,
             clipboard: Vec::new(),
             starting: None,
-            looking: Looking::Closed,
+            looking: false,
             info: InfoView::Closed,
-            pane: Pane::Hidden,
+            show_pane: false,
             details: None,
             home: None,
             goto: GoTo::Closed,
@@ -154,8 +153,8 @@ impl Browser {
     }
 
     /// Whether hidden files are shown.
-    pub fn hidden(&self) -> HiddenFiles {
-        self.hidden
+    pub fn show_hidden(&self) -> bool {
+        self.show_hidden
     }
 
     /// How the window behaves where the person has a choice.
@@ -184,19 +183,13 @@ impl Browser {
     }
 
     /// Whether Undo works.
-    pub fn can_undo(&self) -> Availability {
-        match self.undo {
-            Some(_) => Availability::Available,
-            None => Availability::Unavailable,
-        }
+    pub fn can_undo(&self) -> bool {
+        self.undo.is_some()
     }
 
     /// Whether Paste works: something was copied and this is a folder.
-    pub fn can_paste(&self) -> Availability {
-        match (self.folder(), self.clipboard.is_empty()) {
-            (Some(_), false) => Availability::Available,
-            _ => Availability::Unavailable,
-        }
+    pub fn can_paste(&self) -> bool {
+        self.folder().is_some() && !self.clipboard.is_empty()
     }
 
     /// What was copied, for a paste.
@@ -210,21 +203,18 @@ impl Browser {
     }
 
     /// Whether Back works.
-    pub fn can_go_back(&self) -> Availability {
-        self.history.back_availability()
+    pub fn can_go_back(&self) -> bool {
+        self.history.has_back()
     }
 
     /// Whether Forward works.
-    pub fn can_go_forward(&self) -> Availability {
-        self.history.forward_availability()
+    pub fn can_go_forward(&self) -> bool {
+        self.history.has_forward()
     }
 
     /// Whether Enclosing Folder works.
-    pub fn can_go_enclosing(&self) -> Availability {
-        match self.enclosing() {
-            Some(_) => Availability::Available,
-            None => Availability::Unavailable,
-        }
+    pub fn can_go_enclosing(&self) -> bool {
+        self.enclosing().is_some()
     }
 
     /// The location above this one.
@@ -248,11 +238,11 @@ impl Browser {
         let (browser, _) = Browser::new(location.clone());
         let browser = Browser {
             home: self.home.clone(),
-            hidden: self.hidden,
+            show_hidden: self.show_hidden,
             behaviour: self.behaviour,
             volumes: self.volumes.clone(),
             clouds: self.clouds.clone(),
-            pane: self.pane,
+            show_pane: self.show_pane,
             clipboard: self.clipboard.clone(),
             undo: self.undo.clone(),
             ..browser
@@ -280,7 +270,7 @@ impl Browser {
     /// hidden-files choice.
     pub(crate) fn refreshed(self) -> Browser {
         let entries = self.listing.entries();
-        let order = arrange(entries, &self.prefs, self.hidden, self.behaviour.folders);
+        let order = arrange(entries, &self.prefs, self.show_hidden, self.behaviour);
         let rows: Vec<Entry> = order
             .into_iter()
             .filter_map(|at| entries.get(at).cloned())
@@ -291,10 +281,7 @@ impl Browser {
         let (starting, selection, rename) =
             Browser::started(self.starting.clone(), &rows, selection, rename);
         // Quick Look has nothing to show once the row it was over is gone.
-        let looking = match (self.looking, selection.cursor()) {
-            (Looking::Open, Some(_)) => Looking::Open,
-            (Looking::Open | Looking::Closed, _) => Looking::Closed,
-        };
+        let looking = self.looking && selection.cursor().is_some();
         Browser {
             rows,
             selection,

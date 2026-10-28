@@ -4,9 +4,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use files_core::{
-    Eject, EjectFailure, FolderPath, Mount, MountFailure, ProgramName, VolumeId, VolumeKind,
-};
+use files_core::{EjectFailure, FolderPath, MountFailure, ProgramName, VolumeId, VolumeKind};
 use files_desktop::disks::FakeUsers;
 use files_desktop::{DiskUsers, Disks, NoUsers};
 
@@ -130,49 +128,39 @@ async fn only_the_disks_a_person_would_see_are_listed() {
     let volumes = within(rig.disks.list()).await.unwrap();
     // (name, kind, mounted at, can eject), in the sidebar's order: external, then the
     // computer's own, then discs.
-    let got: Vec<(String, VolumeKind, Option<String>, Eject)> = volumes
+    let got: Vec<(String, VolumeKind, Option<String>, bool)> = volumes
         .iter()
         .map(|v| {
             (
                 v.name.as_str().to_owned(),
                 v.kind,
                 v.folder().map(|f| f.as_path().display().to_string()),
-                v.eject,
+                v.can_eject,
             )
         })
         .collect();
     let mount = |text: &str| Some(text.to_owned());
     let want = vec![
-        (
-            "CARD".to_owned(),
-            VolumeKind::External,
-            None,
-            Eject::Allowed,
-        ),
+        ("CARD".to_owned(), VolumeKind::External, None, true),
         (
             "STICK".to_owned(),
             VolumeKind::External,
             mount("/run/media/p/STICK"),
-            Eject::Allowed,
+            true,
         ),
         (
             "Untitled".to_owned(),
             VolumeKind::External,
             mount("/run/media/p/NOLABEL"),
-            Eject::Allowed,
+            true,
         ),
         (
             "Data".to_owned(),
             VolumeKind::Internal,
             mount("/mnt/data"),
-            Eject::Never,
+            false,
         ),
-        (
-            "Movie".to_owned(),
-            VolumeKind::Optical,
-            None,
-            Eject::Allowed,
-        ),
+        ("Movie".to_owned(), VolumeKind::Optical, None, true),
     ];
     assert_eq!(got, want);
 }
@@ -186,7 +174,7 @@ async fn opening_an_unmounted_disk_mounts_it_and_gives_the_folder() {
     assert_eq!(folder, FolderPath::new("/run/media/p/sdc1").unwrap());
     let volumes = within(rig.disks.list()).await.unwrap();
     let card = volumes.iter().find(|v| v.name.as_str() == "CARD").unwrap();
-    assert_eq!(card.mount, Mount::At(folder));
+    assert_eq!(card.mount, Some(folder));
 }
 
 #[tokio::test]

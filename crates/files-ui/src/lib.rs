@@ -45,14 +45,14 @@ mod view;
 pub mod words;
 
 pub use edge::{
-    AppChoiceView, AppRole, Apps, Changed, IconSources, NoApps, NoThumbnails, NoVolumes, OpenAs,
-    Opener, Seams, Volumes, WatchGuard, Zone,
+    AppChoiceView, Apps, Changed, IconSources, NoApps, NoThumbnails, NoVolumes, OpenAs, Opener,
+    Seams, Volumes, WatchGuard, Zone,
 };
 #[cfg(feature = "testing")]
 pub use edge::{FakeVolumes, VolumeCall};
 pub use error::{OpenFailure, ReadError, VolumeError};
 pub use launch::{AppearanceSource, Launch};
-pub use places::{DiskRows, Heading, PlaceKey, PlaceKind, Places, Sidebar};
+pub use places::{Heading, PlaceKey, PlaceKind, Places, Sidebar};
 pub use preferences::Preferences;
 pub use requests::{Answer, Query, RaiseToken, Reading, Request, RequestSender, Requests, channel};
 pub use run::{APP_ID, run};

@@ -3,8 +3,8 @@
 
 use files_core::{
     AccountLabel, ByteSize, CloudDrive, CloudItem, CloudKind, CloudState, CloudWords, DriveId,
-    DriveState, FolderPath, ItemRef, Keeping, OnlineUrl, ProviderName, Refused, Saved, SavedCopies,
-    Share, Usage,
+    DriveState, FolderPath, ItemRef, OnlineUrl, ProviderName, Refused, Saved, SavedCopies, Share,
+    Usage,
 };
 use porter_dbus::{
     DRIVE_KEY_LABEL, DRIVE_KEY_LOCAL, DRIVE_KEY_PATH, DRIVE_KEY_PROVIDER, DRIVE_KEY_STATE,
@@ -125,14 +125,6 @@ pub(super) fn item(path: &str, details: &Details) -> Result<(ItemRef, CloudItem)
         found = found.beside(other);
     }
     Ok((item, found))
-}
-
-/// What `Keeping` is on the wire: the flag `Keep` takes.
-pub(super) fn keeps(keeping: Keeping) -> bool {
-    match keeping {
-        Keeping::Kept => true,
-        Keeping::NotKept => false,
-    }
 }
 
 /// The refused paths of an ask, in path order.

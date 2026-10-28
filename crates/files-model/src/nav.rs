@@ -8,7 +8,7 @@ use crate::effect::{Effect, OpenTarget};
 use crate::goto::GoTo;
 use crate::history::History;
 use crate::listing::Listing;
-use crate::look::{InfoView, Looking};
+use crate::look::InfoView;
 use crate::open::{Opens, opens};
 use crate::rename::Rename;
 use crate::selection::Selection;
@@ -31,14 +31,14 @@ impl Browser {
             typeselect: TypeSelect::default(),
             rename: Rename::Idle,
             prefs: Default::default(),
-            hidden: self.hidden,
+            show_hidden: self.show_hidden,
             reveal: Vec::new(),
             work: self.work,
             undo: self.undo,
             question: self.question,
             clipboard: self.clipboard,
             starting: None,
-            looking: Looking::Closed,
+            looking: false,
             info: InfoView::Closed,
             home: self.home,
             behaviour: self.behaviour,
@@ -48,7 +48,7 @@ impl Browser {
             clouds: self.clouds,
             cloud: Default::default(),
             opening: Vec::new(),
-            pane: self.pane,
+            show_pane: self.show_pane,
             details: None,
         };
         (browser, effects)
@@ -105,11 +105,8 @@ impl Browser {
     }
 
     /// Whether the selection is one folder, which "Open in New Tab" can open.
-    pub fn can_open_in_new_tab(&self) -> crate::history::Availability {
-        match self.lone_folder() {
-            Some(_) => crate::history::Availability::Available,
-            None => crate::history::Availability::Unavailable,
-        }
+    pub fn can_open_in_new_tab(&self) -> bool {
+        self.lone_folder().is_some()
     }
 
     /// Open the selection: a lone folder is entered, files go to their apps, and anything else

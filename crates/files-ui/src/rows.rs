@@ -8,17 +8,14 @@ use ds::components::lists::table::model::SortDirection;
 use files_core::{FileName, Location, SortKey, SortOrder};
 use files_model::{Browser, Input, Modifier};
 
+use crate::words;
+
 /// The table's columns, left to right.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Column {
-    /// The name, with its icon. Pinned: it stays while the others scroll sideways.
-    Name,
-    /// When the entry last changed.
-    Modified,
-    /// How big a file is.
-    Size,
-    /// What the entry is.
-    Kind,
+    /// A column the folder can be sorted by: a press on its header sorts by the key. The name is
+    /// pinned, so it stays while the others scroll sideways.
+    Sort(SortKey),
     /// Where a trashed item was before it was thrown away. Only in the Trash; its header does not
     /// sort.
     WhereFrom,
@@ -26,15 +23,20 @@ pub enum Column {
 
 impl Column {
     /// Every column of a folder, in order.
-    pub const ALL: [Column; 4] = [Column::Name, Column::Modified, Column::Size, Column::Kind];
+    pub const ALL: [Column; 4] = [
+        Column::Sort(SortKey::Name),
+        Column::Sort(SortKey::Modified),
+        Column::Sort(SortKey::Size),
+        Column::Sort(SortKey::Kind),
+    ];
 
     /// Every column of the Trash, in order.
     pub const TRASH: [Column; 5] = [
-        Column::Name,
+        Column::Sort(SortKey::Name),
         Column::WhereFrom,
-        Column::Modified,
-        Column::Size,
-        Column::Kind,
+        Column::Sort(SortKey::Modified),
+        Column::Sort(SortKey::Size),
+        Column::Sort(SortKey::Kind),
     ];
 
     /// The columns `location` is shown with.
@@ -47,44 +49,19 @@ impl Column {
 
     /// The header's words.
     pub fn title(self) -> &'static str {
-        match self {
-            Column::Name => "Name",
-            Column::Modified => "Date Modified",
-            Column::Size => "Size",
-            Column::Kind => "Kind",
-            Column::WhereFrom => "Where From",
-        }
+        words::column_title(self)
     }
 
     /// The header's words in `location`: the date in the Trash is when the item was thrown away.
     pub fn title_in(self, location: &Location) -> &'static str {
-        match (self, location) {
-            (Column::Modified, Location::Trash) => "Date Deleted",
-            _ => self.title(),
-        }
+        words::column_title_in(self, location)
     }
 
-    /// The column a pressed sort key is drawn under.
-    pub fn of_key(key: SortKey) -> Column {
-        match key {
-            SortKey::Name => Column::Name,
-            SortKey::Modified => Column::Modified,
-            SortKey::Size => Column::Size,
-            SortKey::Kind => Column::Kind,
-            // A key files-core adds later sorts like the name until a column is drawn for it.
-            _ => Column::Name,
-        }
-    }
-
-    /// The key a press on this column's header sorts by.
-    pub fn key(self) -> SortKey {
+    /// The key a press on this column's header sorts by; `None` for a column that does not sort.
+    pub fn sort_key(self) -> Option<SortKey> {
         match self {
-            Column::Name => SortKey::Name,
-            Column::Modified => SortKey::Modified,
-            Column::Size => SortKey::Size,
-            Column::Kind => SortKey::Kind,
-            // Not sortable (its header is a plain title); the name is a harmless answer.
-            Column::WhereFrom => SortKey::Name,
+            Column::Sort(key) => Some(key),
+            Column::WhereFrom => None,
         }
     }
 }

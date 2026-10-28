@@ -1,9 +1,9 @@
 //! The edge with several tabs: an answer goes back to the tab that asked, a watch belongs to one
 //! tab.
 
-use files_core::{Answer, FolderPath, ItemRef, Location, OpPlan, Resolution, Transfer};
+use files_core::{Answer, FolderPath, ItemRef, Location, OpEvent, OpPlan, Resolution, Transfer};
 use files_fs::FolderEvent;
-use files_model::{Change, Effect, Input, OpEvent, TabId, Tabbed};
+use files_model::{Change, Effect, Input, TabId, Tabbed};
 use files_ui::edge::Heard;
 
 use super::edge::{file, folder, name, next, rig};
@@ -100,7 +100,7 @@ fn reports(rig: &mut super::edge::Rig, ends: usize) -> Vec<(TabId, String)> {
             }
             Heard::Tab(tab, Input::Op(OpEvent::Finished(outcome))) => {
                 finished += 1;
-                said.push((tab, format!("{:?}", outcome.end)));
+                said.push((tab, format!("{:?}", outcome.finish)));
             }
             Heard::Tab(..)
             | Heard::All(_)

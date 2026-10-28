@@ -3,9 +3,11 @@
 
 use std::sync::Arc;
 
-use files_core::{Entry, FileName, FolderPath, ItemRef, Location, OpFailure, OpPlan, TrashedItem};
-use files_model::{Change, End, Input, ListFailure, OpEvent, Outcome, TabId};
-use files_ops::{Event, Finish, Finished, Job, Sink};
+use files_core::{
+    Entry, FileName, FolderPath, ItemRef, Location, OpEvent, OpFailure, OpPlan, TrashedItem,
+};
+use files_model::{Change, Input, ListFailure, TabId};
+use files_ops::{Job, Sink};
 use files_trash::TrashError;
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -14,7 +16,7 @@ use super::{Edge, Heard};
 /// A sink that turns the queue's events into what the window hears. Every report goes to the tab
 /// that asked for the job it belongs to; the rescans of the places it touched go to every tab.
 pub(super) fn sink(heard: UnboundedSender<Heard>) -> Arc<dyn Sink<TabId>> {
-    Arc::new(move |asked: &TabId, event: Event| {
+    Arc::new(move |asked: &TabId, event: OpEvent| {
         for said in heard_of(event, *asked) {
             // A closed channel means the window is gone.
             let _ = heard.send(said);
@@ -24,40 +26,18 @@ pub(super) fn sink(heard: UnboundedSender<Heard>) -> Arc<dyn Sink<TabId>> {
 
 /// What the window hears of `event`: the report itself and, when work ended, a rescan of every
 /// place it changed (the watcher usually says so first; this makes sure the listing catches up).
-fn heard_of(event: Event, tab: TabId) -> Vec<Heard> {
-    match event {
-        Event::Started(summary) => vec![op(tab, OpEvent::Started(summary))],
-        Event::Progress(progress) => vec![op(tab, OpEvent::Progress(progress))],
-        Event::Asking(conflict) => vec![op(tab, OpEvent::Asking(conflict))],
-        Event::Finished(done) => finished(done, tab),
-        // An event files-ops adds later is not told until this names it.
-        _ => Vec::new(),
-    }
-}
-
-fn op(tab: TabId, event: OpEvent) -> Heard {
-    Heard::Tab(tab, Input::Op(event))
-}
-
-fn finished(done: Finished, tab: TabId) -> Vec<Heard> {
-    let outcome = Outcome::new(done.summary, end_of(done.finish), done.undo);
-    let mut heard = vec![op(tab, OpEvent::Finished(outcome))];
-    heard.extend(done.touched.into_iter().map(rescan));
+fn heard_of(event: OpEvent, tab: TabId) -> Vec<Heard> {
+    let touched = match &event {
+        OpEvent::Finished(outcome) => outcome.touched.clone(),
+        OpEvent::Started(_) | OpEvent::Progress(_) | OpEvent::Asking(_) => Vec::new(),
+    };
+    let mut heard = vec![Heard::Tab(tab, Input::Op(event))];
+    heard.extend(touched.into_iter().map(rescan));
     heard
 }
 
 fn rescan(place: Location) -> Heard {
     Heard::All(Input::Changed(place, Change::Rescan))
-}
-
-fn end_of(finish: Finish) -> End {
-    match finish {
-        Finish::Done => End::Done,
-        Finish::Stopped => End::Stopped,
-        Finish::Failed(failure) => End::Failed(failure),
-        // An ending files-ops adds later is a failure until this names it.
-        _ => End::Failed(OpFailure::Other),
-    }
 }
 
 /// The row for a trashed item: named as the Trash stores it (unique there), with the date it was

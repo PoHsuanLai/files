@@ -5,7 +5,7 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use files_core::{
     CloudDrive, CloudItem, CloudKind, CloudNews, CloudState, CloudWords, DriveId, DriveState,
-    ItemRef, Keeping, Refused, Saved, SavedCopies, Share,
+    ItemRef, Refused, Saved, SavedCopies, Share,
 };
 
 use super::{CloudError, CloudGuard, Clouds, News};
@@ -19,7 +19,7 @@ pub enum CloudCall {
     /// Remove Download.
     Removed(Vec<ItemRef>),
     /// Keep Downloaded, on or off.
-    Kept(Vec<ItemRef>, Keeping),
+    Kept(Vec<ItemRef>, bool),
     /// Save a Copy.
     Copied(Vec<ItemRef>),
 }
@@ -254,7 +254,7 @@ impl Clouds for FakeClouds {
             | _ => {
                 let mut next = found.clone();
                 next.state = CloudState::Cloud;
-                next.keeping = Keeping::NotKept;
+                next.kept = false;
                 next.share = None;
                 Ok(next)
             }
@@ -301,18 +301,15 @@ impl Clouds for FakeClouds {
         Ok(answer)
     }
 
-    fn keep(&self, items: &[ItemRef], keeping: Keeping) -> Result<Vec<Refused>, CloudError> {
+    fn keep(&self, items: &[ItemRef], keep: bool) -> Result<Vec<Refused>, CloudError> {
         self.check()?;
         self.lock()
             .calls
-            .push(CloudCall::Kept(items.to_vec(), keeping));
+            .push(CloudCall::Kept(items.to_vec(), keep));
         Ok(self.each(items, |_, _, found| {
             let mut next = found.clone();
-            next.keeping = keeping;
-            match keeping {
-                Keeping::Kept => Ok(started(&next)),
-                Keeping::NotKept => Ok(next),
-            }
+            next.kept = keep;
+            if keep { Ok(started(&next)) } else { Ok(next) }
         }))
     }
 

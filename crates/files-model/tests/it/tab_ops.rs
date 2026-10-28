@@ -1,12 +1,10 @@
 //! Changes under way with several tabs: every report of a job goes to the tab that asked for it.
 
 use files_core::{
-    Answer, ByteSize, Conflict, ConflictKind, FileName, FolderPath, OpFailure, OpKind, Progress,
-    Resolution, Summary,
+    Answer, ByteSize, Conflict, ConflictKind, FileName, Finish, FolderPath, OpEvent, OpFailure,
+    OpKind, Outcome, Progress, Resolution, Summary,
 };
-use files_model::{
-    Availability, Effect, End, Input, OpEvent, Outcome, Question, TabId, Tabbed, Tabs, Work,
-};
+use files_model::{Effect, Input, Question, TabId, Tabbed, Tabs, Work};
 
 use crate::common::{at, home, name};
 
@@ -27,8 +25,8 @@ fn conflict(text: &str) -> Conflict {
     Conflict::new(name(text), folder, ConflictKind::Copy, 0)
 }
 
-fn finished(kind: OpKind, end: End, undo: Option<OpKind>) -> OpEvent {
-    OpEvent::Finished(Outcome::new(summary(kind), end, undo.map(summary)))
+fn finished(kind: OpKind, finish: Finish, undo: Option<OpKind>) -> OpEvent {
+    OpEvent::Finished(Outcome::new(summary(kind), finish, undo.map(summary)))
 }
 
 /// What a tab shows of the change under way: its kind, and the name it is asking about.
@@ -87,7 +85,7 @@ fn overlapping_jobs_of_two_tabs_each_report_to_their_own_tab() {
         (
             "A ends; B has not started",
             a,
-            finished(Copy, End::Done, None),
+            finished(Copy, Finish::Done, None),
             (None, None),
             (None, None),
         ),
@@ -108,7 +106,7 @@ fn overlapping_jobs_of_two_tabs_each_report_to_their_own_tab() {
         (
             "B ends",
             b,
-            finished(Move, End::Done, None),
+            finished(Move, Finish::Done, None),
             (None, None),
             (None, None),
         ),
@@ -146,15 +144,15 @@ fn what_a_closed_tabs_job_reports_is_dropped_but_its_question_is_answered_stop()
             OpEvent::Asking(conflict("a.txt")),
             vec![Tabbed::new(a, stop)],
         ),
-        ("done", finished(OpKind::Copy, End::Done, None), vec![]),
+        ("done", finished(OpKind::Copy, Finish::Done, None), vec![]),
         (
             "stopped",
-            finished(OpKind::Copy, End::Stopped, None),
+            finished(OpKind::Copy, Finish::Stopped, None),
             vec![],
         ),
         (
             "a failure is told in the front tab",
-            finished(OpKind::Copy, End::Failed(OpFailure::NoSpace), None),
+            finished(OpKind::Copy, Finish::Failed(OpFailure::NoSpace), None),
             vec![Tabbed::new(b, Effect::Tell(OpFailure::NoSpace))],
         ),
     ];
@@ -174,11 +172,8 @@ fn a_closed_tabs_finished_job_still_updates_what_undo_would_take_back() {
     let (tabs, a, b) = two();
     let (tabs, _) = tabs.step(Input::ShowTab(a), at(0));
     let (tabs, _) = tabs.step(Input::CloseTab, at(0));
-    assert_eq!(tabs.front().can_undo(), Availability::Unavailable);
-    let done = finished(OpKind::Trash, End::Done, Some(OpKind::Trash));
+    assert!(!tabs.front().can_undo());
+    let done = finished(OpKind::Trash, Finish::Done, Some(OpKind::Trash));
     let (tabs, _) = tabs.heard(a, Input::Op(done), at(0));
-    assert_eq!(
-        tabs.get(b).unwrap().browser().can_undo(),
-        Availability::Available
-    );
+    assert!(tabs.get(b).unwrap().browser().can_undo());
 }

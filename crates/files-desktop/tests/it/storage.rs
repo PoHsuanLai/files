@@ -3,9 +3,7 @@
 
 use std::time::Duration;
 
-use files_core::{
-    CloudKind, CloudNews, CloudState, DriveId, DriveState, FolderPath, ItemRef, Keeping,
-};
+use files_core::{CloudKind, CloudNews, CloudState, DriveId, DriveState, FolderPath, ItemRef};
 use files_desktop::{DesktopClouds, Storage};
 use files_fs::{CloudError, Clouds};
 use syncd_fakes::storage::{FakeStorage, World, serve};
@@ -104,10 +102,7 @@ async fn items_stand_where_the_service_says_and_unknown_paths_are_left_out() {
     assert_eq!(rows.len(), 3);
     assert_eq!(find(&beach).unwrap().state, CloudState::Cloud);
     let taxes = find(&taxes).unwrap();
-    assert_eq!(
-        (taxes.state, taxes.keeping),
-        (CloudState::Downloaded, Keeping::Kept)
-    );
+    assert_eq!((taxes.state, taxes.kept), (CloudState::Downloaded, true));
     let plan = find(&plan).unwrap();
     assert_eq!(plan.kind, CloudKind::Online);
     assert!(plan.url.is_some(), "an online document carries its address");
@@ -154,18 +149,15 @@ async fn keeping_and_removing_are_asked_and_a_refusal_comes_back_in_words() {
     let report = item(&rig, "OneDrive/Documents/Report.docx");
     let plan = item(&rig, "Google Drive/Projects/Plan.gdoc");
     assert!(
-        within(
-            rig.storage
-                .keep(std::slice::from_ref(&report), Keeping::Kept)
-        )
-        .await
-        .unwrap()
-        .is_empty()
+        within(rig.storage.keep(std::slice::from_ref(&report), true))
+            .await
+            .unwrap()
+            .is_empty()
     );
     let kept = within(rig.storage.items(std::slice::from_ref(&report)))
         .await
         .unwrap();
-    assert_eq!(kept[0].1.keeping, Keeping::Kept);
+    assert!(kept[0].1.kept);
     let refused = within(rig.storage.download(std::slice::from_ref(&plan)))
         .await
         .unwrap();

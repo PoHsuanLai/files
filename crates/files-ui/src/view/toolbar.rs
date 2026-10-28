@@ -8,13 +8,15 @@ use ds::components::chrome::toolbar::view::Toolbar;
 use ds::components::content::label::LabelStyle;
 use ds::components::controls::choice::Choice;
 use ds::components::controls::segmented::Tracking;
-use ds::prelude::{Availability, Icon, Label, SegmentedControl, Shown};
+use ds::prelude::{Icon, Label, SegmentedControl, Shown};
 use ds::style::tokens::control_size::ControlSize;
 use files_core::ViewMode;
 use files_model::Input;
 
+use crate::menu::enabled;
 use crate::places::title_words;
 use crate::state::Browse;
+use crate::words::view_title;
 
 /// What a press on the toolbar asks for.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -24,20 +26,12 @@ enum Tool {
     ShowSidebar,
 }
 
-/// The toolbar's availability for the model's.
-fn live(can: files_model::Availability) -> Availability {
-    match can {
-        files_model::Availability::Available => Availability::Enabled,
-        files_model::Availability::Unavailable => Availability::Disabled,
-    }
-}
-
 /// The view switcher's choices.
 fn view_choices() -> Vec<Choice<ViewMode>> {
-    vec![
-        Choice::new(ViewMode::List, "List"),
-        Choice::new(ViewMode::Icons, "Icons"),
-    ]
+    [ViewMode::List, ViewMode::Icons]
+        .into_iter()
+        .map(|mode| Choice::new(mode, view_title(mode)))
+        .collect()
 }
 
 /// The toolbar over the folder: Back and Forward (and Show Sidebar while it is folded away), and
@@ -48,8 +42,8 @@ pub(super) fn FolderBar(browse: Browse, sidebar: Signal<Shown>) -> Element {
         let state = browse.state.read();
         (
             title_words(state.location()),
-            live(state.can_go_back()),
-            live(state.can_go_forward()),
+            enabled(state.can_go_back()),
+            enabled(state.can_go_forward()),
             state.prefs().view,
         )
     };
