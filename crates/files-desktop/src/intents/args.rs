@@ -4,7 +4,8 @@
 
 use std::path::{Path, PathBuf};
 
-use docket_core::{AppRefusal, Args, FailText, Invocation, ParamName, TargetValue, Value};
+use docket_core::{AppRefusal, FailText, Invocation};
+use docket_vocab::{Args, ParamName, TargetValue, Value};
 use files_core::{FileName, FolderPath, ItemRef};
 
 use super::ask::Ask;

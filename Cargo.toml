@@ -31,11 +31,11 @@ chordkit = { git = "https://github.com/PoHsuanLai/chordkit.git", rev = "99eec9dd
 # anyview, the desktop's viewer: Quick Look is its light tier, `anyview-peek`'s worker and card, hosted as
 # mailo hosts them (headless otherwise: no media player, no D-Bus). The rev is anyview's main, which names
 # the quire rev above. `anyview-core` is the vocabulary (`FilePath`), `anyview-fs` opens a path as an input.
-anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f2e5631257a31b4c52db1550861101321352fc7c" }  # f2e56312 (quire v0.3.55)
-anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f2e5631257a31b4c52db1550861101321352fc7c" }  # f2e56312 (quire v0.3.55)
-anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f2e5631257a31b4c52db1550861101321352fc7c" }  # f2e56312 (quire v0.3.55)
-anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f2e5631257a31b4c52db1550861101321352fc7c" }  # f2e56312 (quire v0.3.55)
-anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f2e5631257a31b4c52db1550861101321352fc7c", default-features = false }  # f2e56312 (quire v0.3.55)
+anyview-core = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f5f039ce3963d4fbdb0009bd20751edc07a75330" }  # f5f039ce (Round B)
+anyview-fs = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f5f039ce3963d4fbdb0009bd20751edc07a75330" }  # f5f039ce (Round B)
+anyview-image = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f5f039ce3963d4fbdb0009bd20751edc07a75330" }  # f5f039ce (Round B)
+anyview-platform = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f5f039ce3963d4fbdb0009bd20751edc07a75330" }  # f5f039ce (Round B)
+anyview-peek = { git = "https://github.com/PoHsuanLai/anyview.git", rev = "f5f039ce3963d4fbdb0009bd20751edc07a75330", default-features = false }  # f2e56312 (quire v0.3.55)
 # Copied from quire/docs/workspace-deps.toml at the rev above.
 dioxus = { version = "0.7", default-features = false, features = ["macro", "html", "hooks", "signals"] }
 # Dates in the list view, in the person's own time zone.
@@ -46,21 +46,25 @@ notify = "8.2"
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "process"] }
 zbus = { version = "5.19", default-features = false, features = ["tokio"] }
 # files-desktop: the only crate that names docket or porter (scripts/check-boundary.sh), as
-# temor-desktop is for temor. The revs and URLs follow docket: docket 01390d02 locks porter
-# f7e47a71 and prov e1e97251 (spelt without .git), the ones pinned here, so one of each is
+# temor-desktop is for temor. The revs and URLs follow docket: docket 77be9598 locks porter
+# 31799cfa and prov 628083b3 (spelt without .git), the ones pinned here, so one of each is
 # locked. docket-provider's `dbus` feature serves the provider: no router, no cedar. No [patch]
 # is needed.
-docket-provider = { git = "https://github.com/PoHsuanLai/docket.git", rev = "01390d02c4e79327dbb00c35819b90f2c8d633ae", features = ["dbus"] }
-docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "01390d02c4e79327dbb00c35819b90f2c8d633ae" }
+docket-provider = { git = "https://github.com/PoHsuanLai/docket.git", rev = "77be9598ddcb7cc2b010c2d8b0570d11c676097f", features = ["dbus"] }
+docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "77be9598ddcb7cc2b010c2d8b0570d11c676097f" }
+docket-manifest = { git = "https://github.com/PoHsuanLai/docket.git", rev = "77be9598ddcb7cc2b010c2d8b0570d11c676097f" }
+docket-vocab = { git = "https://github.com/PoHsuanLai/docket.git", rev = "77be9598ddcb7cc2b010c2d8b0570d11c676097f" }
+docket-wire = { git = "https://github.com/PoHsuanLai/docket.git", rev = "77be9598ddcb7cc2b010c2d8b0570d11c676097f" }
 # Who may call Files' provider (intentd's unit), and the stand-in a test names for it.
-docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "01390d02c4e79327dbb00c35819b90f2c8d633ae" }
-prov = { git = "https://github.com/PoHsuanLai/prov", rev = "e1e9725126c44b369086fdb0ce7f8da2e3048b8c" }
-porter-core = { git = "https://github.com/PoHsuanLai/porter", rev = "f7e47a71ac30ab46dd0629fc8c2b2ae9cfcae261" }
+docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "77be9598ddcb7cc2b010c2d8b0570d11c676097f" }
+prov = { git = "https://github.com/PoHsuanLai/prov", rev = "628083b3b2a1f09d68a12d3d4bc256ad8c4a09cb" }
+porter-core = { git = "https://github.com/PoHsuanLai/porter", rev = "31799cfa9a355df8f57af99a2f060a65c980601d" }
+porter-ids      = { git = "https://github.com/PoHsuanLai/porter", rev = "31799cfa9a355df8f57af99a2f060a65c980601d" }
 # org.quire.Storage1, the cloud drives (files-desktop only): the same porter rev as above, which
 # holds storage S1.
-porter-dbus = { git = "https://github.com/PoHsuanLai/porter", rev = "f7e47a71ac30ab46dd0629fc8c2b2ae9cfcae261" }
+porter-dbus = { git = "https://github.com/PoHsuanLai/porter", rev = "31799cfa9a355df8f57af99a2f060a65c980601d" }
 # TEST TOOLING (files-desktop dev-dependency only): syncd's fake Storage1, served on a private bus.
-syncd-fakes = { git = "https://github.com/PoHsuanLai/porter", rev = "f7e47a71ac30ab46dd0629fc8c2b2ae9cfcae261" }
+syncd-fakes = { git = "https://github.com/PoHsuanLai/porter", rev = "31799cfa9a355df8f57af99a2f060a65c980601d" }
 # The tests of files-desktop write the calls the router sends as JSON.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

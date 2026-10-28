@@ -13,6 +13,10 @@ publish.workspace = true
 testing = []
 
 [dependencies]
+docket-wire = { workspace = true }
+docket-manifest = { workspace = true }
+docket-vocab = { workspace = true }
+porter-ids = { workspace = true }
 docket-provider = { workspace = true }
 docket-core = { workspace = true }
 docket-dbus = { workspace = true }

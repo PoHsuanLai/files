@@ -6,10 +6,9 @@ use std::future::Future;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, PoisonError};
 
-use docket_core::{
-    ActivatedInvocation, AppRefusal, Args, CallId, FileRef, Invocation, Manifest, Origin, Outcome,
-    ParamName, TargetValue, Value, validate,
-};
+use docket_core::{ActivatedInvocation, AppRefusal, Invocation, Outcome};
+use docket_manifest::{Manifest, validate};
+use docket_vocab::{Args, CallId, FileRef, Origin, ParamName, TargetValue, Value};
 use files_core::{FileName, FolderPath, ItemRef, Location, OpKind};
 use files_desktop::intents::{self, MANIFEST};
 use files_desktop::{Ask, Refusal, Reply, Undoing, Window};

@@ -3,7 +3,8 @@
 
 use std::collections::HashMap;
 
-use docket_core::{AppRefusal, Outcome, TargetValue, UndoFault, Undoable, Value};
+use docket_core::{AppRefusal, Outcome, UndoFault, Undoable};
+use docket_vocab::{TargetValue, Value};
 use files_core::{FileName, FolderPath, Location, OpKind};
 use files_desktop::intents;
 use files_desktop::{Ask, Undoing};

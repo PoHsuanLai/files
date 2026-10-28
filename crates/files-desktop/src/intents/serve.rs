@@ -2,8 +2,8 @@
 
 use std::sync::Arc;
 
-use docket_core::{Manifest, ValidManifest, validate};
 use docket_dbus::callers::{Identity, intentd_only};
+use docket_manifest::{Manifest, ValidManifest, validate};
 use docket_provider::serve_on_with;
 use porter_core::AppName;
 use zbus::Connection;
