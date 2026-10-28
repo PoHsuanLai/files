@@ -46,25 +46,25 @@ notify = "8.2"
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "process"] }
 zbus = { version = "5.19", default-features = false, features = ["tokio"] }
 # files-desktop: the only crate that names docket or porter (scripts/check-boundary.sh), as
-# temor-desktop is for temor. The revs and URLs follow docket: docket f04f4dda locks porter
-# 43ed7a6a and prov 6181fa3b (spelt without .git), the ones pinned here, so one of each is
+# temor-desktop is for temor. The revs and URLs follow docket: docket 7bb397e5 locks porter
+# ad54ea46 and prov f6cc175c (spelt without .git), the ones pinned here, so one of each is
 # locked. docket-provider's `dbus` feature serves the provider: no router, no cedar. No [patch]
 # is needed.
-docket-provider = { git = "https://github.com/PoHsuanLai/docket.git", rev = "f04f4ddafc61c86977920bb77f26bf76469e6dd0", features = ["dbus"] }
-docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "f04f4ddafc61c86977920bb77f26bf76469e6dd0" }
-docket-manifest = { git = "https://github.com/PoHsuanLai/docket.git", rev = "f04f4ddafc61c86977920bb77f26bf76469e6dd0" }
-docket-vocab = { git = "https://github.com/PoHsuanLai/docket.git", rev = "f04f4ddafc61c86977920bb77f26bf76469e6dd0" }
-docket-wire = { git = "https://github.com/PoHsuanLai/docket.git", rev = "f04f4ddafc61c86977920bb77f26bf76469e6dd0" }
+docket-provider = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67", features = ["dbus"] }
+docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
+docket-manifest = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
+docket-vocab = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
+docket-wire = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
 # Who may call Files' provider (intentd's unit), and the stand-in a test names for it.
-docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "f04f4ddafc61c86977920bb77f26bf76469e6dd0" }
-prov = { git = "https://github.com/PoHsuanLai/prov", rev = "6181fa3ba3c6b4df573e32d0c4b233a12234fad4" }
-porter-core = { git = "https://github.com/PoHsuanLai/porter", rev = "43ed7a6a2ad74719973f60493c59606c855b3145" }
-porter-ids      = { git = "https://github.com/PoHsuanLai/porter", rev = "43ed7a6a2ad74719973f60493c59606c855b3145" }
+docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "7bb397e5b4e95ab9ec95dea56d93690bc6c13e67" }
+prov = { git = "https://github.com/PoHsuanLai/prov", rev = "f6cc175c4c6d815b6faa3d58b7875ca00def836d" }
+porter-core = { git = "https://github.com/PoHsuanLai/porter", rev = "ad54ea46a9d6ef23039371f5f12c1ed8fccb4cb7" }
+porter-ids      = { git = "https://github.com/PoHsuanLai/porter", rev = "ad54ea46a9d6ef23039371f5f12c1ed8fccb4cb7" }
 # org.quire.Storage1, the cloud drives (files-desktop only): the same porter rev as above, which
 # holds storage S1.
-porter-dbus = { git = "https://github.com/PoHsuanLai/porter", rev = "43ed7a6a2ad74719973f60493c59606c855b3145" }
+porter-dbus = { git = "https://github.com/PoHsuanLai/porter", rev = "ad54ea46a9d6ef23039371f5f12c1ed8fccb4cb7" }
 # TEST TOOLING (files-desktop dev-dependency only): syncd's fake Storage1, served on a private bus.
-syncd-fakes = { git = "https://github.com/PoHsuanLai/porter", rev = "43ed7a6a2ad74719973f60493c59606c855b3145" }
+syncd-fakes = { git = "https://github.com/PoHsuanLai/porter", rev = "ad54ea46a9d6ef23039371f5f12c1ed8fccb4cb7" }
 # The tests of files-desktop write the calls the router sends as JSON.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
