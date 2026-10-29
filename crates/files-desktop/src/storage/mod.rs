@@ -11,9 +11,9 @@ mod decode;
 mod error;
 mod follow;
 
+use ferry_bus::StorageProxy;
 use files_core::{CloudDrive, CloudItem, ItemRef, Refused, SavedCopies};
 use files_fs::{CloudError, CloudGuard, Clouds, News};
-use porter_dbus::sync::StorageProxy;
 use tokio::runtime::Handle;
 use tokio::task::JoinHandle;
 use zbus::Connection;

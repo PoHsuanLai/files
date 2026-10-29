@@ -46,25 +46,26 @@ notify = "8.2"
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "process"] }
 zbus = { version = "5.19", default-features = false, features = ["tokio"] }
 # files-desktop: the only crate that names docket or porter (scripts/check-boundary.sh), as
-# temor-desktop is for temor. The revs and URLs follow docket: docket 576145b9 locks porter
-# c718d203 and prov 33608605 (spelt without .git), the ones pinned here, so one of each is
-# locked. docket-provider's `dbus` feature serves the provider: no router, no cedar. No [patch]
+# temor-desktop is for temor. The revs and URLs follow docket: docket fe272208 locks porter
+# f406782b and prov 03c855eb (spelt without .git), the ones pinned here, and ferry e61b264 locks
+# the same porter, so one of each is locked. docket-provider's `dbus` feature serves the provider: no router, no cedar. No [patch]
 # is needed.
-docket-provider = { git = "https://github.com/PoHsuanLai/docket.git", rev = "576145b9dacbafe4d3e299289ec1adf228091a14", features = ["dbus"] }
-docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "576145b9dacbafe4d3e299289ec1adf228091a14" }
-docket-manifest = { git = "https://github.com/PoHsuanLai/docket.git", rev = "576145b9dacbafe4d3e299289ec1adf228091a14" }
-docket-vocab = { git = "https://github.com/PoHsuanLai/docket.git", rev = "576145b9dacbafe4d3e299289ec1adf228091a14" }
-docket-wire = { git = "https://github.com/PoHsuanLai/docket.git", rev = "576145b9dacbafe4d3e299289ec1adf228091a14" }
+docket-provider = { git = "https://github.com/PoHsuanLai/docket.git", rev = "fe272208251a7aa9528df5ebc347f3a8498aec9c", features = ["dbus"] }
+docket-core = { git = "https://github.com/PoHsuanLai/docket.git", rev = "fe272208251a7aa9528df5ebc347f3a8498aec9c" }
+docket-manifest = { git = "https://github.com/PoHsuanLai/docket.git", rev = "fe272208251a7aa9528df5ebc347f3a8498aec9c" }
+docket-vocab = { git = "https://github.com/PoHsuanLai/docket.git", rev = "fe272208251a7aa9528df5ebc347f3a8498aec9c" }
+docket-wire = { git = "https://github.com/PoHsuanLai/docket.git", rev = "fe272208251a7aa9528df5ebc347f3a8498aec9c" }
 # Who may call Files' provider (intentd's unit), and the stand-in a test names for it.
-docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "576145b9dacbafe4d3e299289ec1adf228091a14" }
-prov = { git = "https://github.com/PoHsuanLai/prov", rev = "336086056fa18dd014f7853c7179de8587a25792" }
-porter-core = { git = "https://github.com/PoHsuanLai/porter", rev = "c718d2036daad7e052e1d89f1fe0ca4679168427" }
-porter-ids      = { git = "https://github.com/PoHsuanLai/porter", rev = "c718d2036daad7e052e1d89f1fe0ca4679168427" }
-# org.quire.Storage1, the cloud drives (files-desktop only): the same porter rev as above, which
-# holds storage S1.
-porter-dbus = { git = "https://github.com/PoHsuanLai/porter", rev = "c718d2036daad7e052e1d89f1fe0ca4679168427" }
+docket-dbus = { git = "https://github.com/PoHsuanLai/docket.git", rev = "fe272208251a7aa9528df5ebc347f3a8498aec9c" }
+prov = { git = "https://github.com/PoHsuanLai/prov", rev = "03c855eb4c80779522cf712075dead4a761adc4f" }
+porter-core = { git = "https://github.com/PoHsuanLai/porter", rev = "f406782b90b67f62f0f14ec5e78aec8992b5d709" }
+porter-ids      = { git = "https://github.com/PoHsuanLai/porter", rev = "f406782b90b67f62f0f14ec5e78aec8992b5d709" }
+# The rows the cloud drives carry (`Details`, files-desktop only): the same porter rev as above.
+porter-dbus = { git = "https://github.com/PoHsuanLai/porter", rev = "f406782b90b67f62f0f14ec5e78aec8992b5d709" }
+# org.quire.Storage1, the cloud drives (files-desktop only): syncd's bus vocabulary, in ferry.
+ferry-bus = { git = "https://github.com/PoHsuanLai/ferry", rev = "e61b2648d8c455b6b36612aece7f51a6dd5ff96c" }
 # TEST TOOLING (files-desktop dev-dependency only): syncd's fake Storage1, served on a private bus.
-syncd-fakes = { git = "https://github.com/PoHsuanLai/porter", rev = "c718d2036daad7e052e1d89f1fe0ca4679168427" }
+syncd-fakes = { git = "https://github.com/PoHsuanLai/ferry", rev = "e61b2648d8c455b6b36612aece7f51a6dd5ff96c" }
 # The tests of files-desktop write the calls the router sends as JSON.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

@@ -1,4 +1,4 @@
-//! The cloud service over a private bus, against porter's own fake of it (`syncd-fakes`): the
+//! The cloud service over a private bus, against ferry's own fake of it (`syncd-fakes`): the
 //! drives, where items stand, the three asks, the news, and the service going away and back.
 
 use std::time::Duration;

@@ -1,18 +1,18 @@
 //! The service's rows as files-core's vocabulary. An unknown word is an error, except a drive's
 //! state, which the service says a caller shows as it shows an error.
 
+use ferry_bus::{
+    DRIVE_KEY_LABEL, DRIVE_KEY_LOCAL, DRIVE_KEY_PATH, DRIVE_KEY_PROVIDER, DRIVE_KEY_STATE,
+    DRIVE_KEY_TOTAL, DRIVE_KEY_USED, DRIVE_KEY_WORDS, ITEM_KEY_FRACTION, ITEM_KEY_KEPT,
+    ITEM_KEY_KIND, ITEM_KEY_OTHER, ITEM_KEY_STATE, ITEM_KEY_URL, ITEM_KEY_WORDS, ItemKind,
+    ItemState, Refused as WireRefused, Saved as WireSaved,
+};
 use files_core::{
     AccountLabel, ByteSize, CloudDrive, CloudItem, CloudKind, CloudState, CloudWords, DriveId,
     DriveState, FolderPath, ItemRef, OnlineUrl, ProviderName, Refused, Saved, SavedCopies, Share,
     Usage,
 };
 use porter_dbus::Details;
-use porter_dbus::sync::{
-    DRIVE_KEY_LABEL, DRIVE_KEY_LOCAL, DRIVE_KEY_PATH, DRIVE_KEY_PROVIDER, DRIVE_KEY_STATE,
-    DRIVE_KEY_TOTAL, DRIVE_KEY_USED, DRIVE_KEY_WORDS, ITEM_KEY_FRACTION, ITEM_KEY_KEPT,
-    ITEM_KEY_KIND, ITEM_KEY_OTHER, ITEM_KEY_STATE, ITEM_KEY_URL, ITEM_KEY_WORDS, ItemKind,
-    ItemState, Refused as WireRefused, Saved as WireSaved,
-};
 
 use super::error::StorageError;
 
@@ -38,15 +38,15 @@ fn flag(details: &Details, key: &str) -> Option<bool> {
 }
 
 fn wire_state(word: Option<String>) -> DriveState {
-    let state = word.and_then(|word| porter_dbus::sync::DriveState::from_word(&word));
+    let state = word.and_then(|word| ferry_bus::DriveState::from_word(&word));
     match state {
-        Some(porter_dbus::sync::DriveState::Starting) => DriveState::Starting,
-        Some(porter_dbus::sync::DriveState::Ready) => DriveState::Ready,
-        Some(porter_dbus::sync::DriveState::Syncing) => DriveState::Syncing,
-        Some(porter_dbus::sync::DriveState::Offline) => DriveState::Offline,
-        Some(porter_dbus::sync::DriveState::Paused) => DriveState::Paused,
-        Some(porter_dbus::sync::DriveState::NeedsSignIn) => DriveState::NeedsSignIn,
-        Some(porter_dbus::sync::DriveState::Error) | Some(_) | None => DriveState::Error,
+        Some(ferry_bus::DriveState::Starting) => DriveState::Starting,
+        Some(ferry_bus::DriveState::Ready) => DriveState::Ready,
+        Some(ferry_bus::DriveState::Syncing) => DriveState::Syncing,
+        Some(ferry_bus::DriveState::Offline) => DriveState::Offline,
+        Some(ferry_bus::DriveState::Paused) => DriveState::Paused,
+        Some(ferry_bus::DriveState::NeedsSignIn) => DriveState::NeedsSignIn,
+        Some(ferry_bus::DriveState::Error) | Some(_) | None => DriveState::Error,
     }
 }
 

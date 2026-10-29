@@ -26,6 +26,7 @@ files-fs = { workspace = true }
 futures-util = { workspace = true }
 porter-core = { workspace = true }
 porter-dbus = { workspace = true }
+ferry-bus = { workspace = true }
 prov = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
